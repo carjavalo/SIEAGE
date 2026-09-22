@@ -1,0 +1,67 @@
+REPORTE DE IMPORTACIÓN - PRINCIPAL-2026 (4) (1).xlsx
+======================================================================
+
+REGISTROS GENERADOS
+  estudiantes    363
+  acudientes     353
+  barrios        95
+  grupos         211
+  matrículas     1846
+
+MATRÍCULAS POR AÑO
+  2015  31
+  2016  51
+  2017  74
+  2018  87
+  2019  95
+  2020  111
+  2021  127
+  2022  159
+  2023  202
+  2024  246
+  2025  300
+  2026  363
+
+ESTADO DEL AÑO 2026
+  activo       315
+  retirado     32
+  cancelado    16
+
+INCIDENCIAS
+
+  [barrio_unificado]  8 caso(s)
+    - Alfonso López <- Alfonso Lopez, Alfonso Lòpez, Alfonso López
+    - Manuela Beltran <- Manuela Beltran, Manuela Beltrán
+    - Alfonso Bonilla Aragon <- Alfonso Bonilla Aragon, Alfonso Bonilla Aragón
+    - Andres Sanin <- Andres Sanin, Andrés Sanin
+    - Marroquin <- Marroquin, Marroquín
+    - Marroquín 2 <- Marroquin 2, Marroquín 2
+    - Alfonso López 3 <- Alfonso Lopez 3, Alfonso López 3
+    - Alfonso Lopez 3 Etapa <- Alfonso Lopez 3 Etapa, Alfonso López 3 Etapa
+
+  [documento_duplicado]  1 caso(s)
+    - 10-2!fila 35 · Rosero Hendo Hasli Yorlady · doc 1086137008 ya usado por "Rosero Hendo Hasli Yorlady" -> fila omitida
+
+  [grupo_sin_numero]  1 caso(s)
+    - 11-2!fila 18 · Marmol Duran Maria Fernanda · 2025 grado 10 sin número de grupo
+
+  [parentesco_normalizado]  1 caso(s)
+    - 10-6!fila 25 · "Cuñada" -> Otro
+
+  [sin_marca_matricula]  16 caso(s)
+    - 10-1!fila 33 · Plaza Cortes Maria Fernanda · columna A vacía -> estado "cancelado"
+    - 10-1!fila 39 · Cadenas Vargas Benjamin · columna A vacía -> estado "cancelado"
+    - 10-2!fila 36 · Acosta Lozano Karol Fernanda · columna A vacía -> estado "cancelado"
+    - 10-2!fila 37 · Mejia Olave Sharon Saray · columna A vacía -> estado "cancelado"
+    - 10-2!fila 38 · Riascos Valencia Gloria Esthefany · columna A vacía -> estado "cancelado"
+    - 10-3!fila 41 · Moreno Castrillon Jhon Sebastian · columna A vacía -> estado "cancelado"
+    - 10-3!fila 42 · Quiñones Sevillano Sarah Michel · columna A vacía -> estado "cancelado"
+    - 10-3!fila 43 · Valencia Murillo Sara Michell · columna A vacía -> estado "cancelado"
+    - 11-1!fila 35 · Sarmiento Gonzalez Mishell Dahiana · columna A vacía -> estado "cancelado"
+    - 11-2!fila 32 · Laguna Toro Ana Sofia · columna A vacía -> estado "cancelado"
+    - 11-3!fila 31 · Garcia Garcia Karen Sofia · columna A vacía -> estado "cancelado"
+    - 11-3!fila 32 · Lopez Vargas Juan David · columna A vacía -> estado "cancelado"
+    - 11-3!fila 33 · Rengifo Agudelo Julian Andres · columna A vacía -> estado "cancelado"
+    - 11-4!fila 34 · Sanchez Ospina Juan Manuel · columna A vacía -> estado "cancelado"
+    - 11-5!fila 31 · Suarez Forero Lina Marcela · columna A vacía -> estado "cancelado"
+    - 11-5!fila 32 · Valencia Zambrano Esbar Emilio · columna A vacía -> estado "cancelado"
