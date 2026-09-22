@@ -1,0 +1,231 @@
+REPORTE DE IMPORTACIÓN MULTI-SEDE · matrícula 2026
+========================================================================
+
+LIBROS PROCESADOS
+  P   Principal              11 grupos   363 estudiantes
+  LF  Los Farallones         22 grupos   911 estudiantes
+  RP  Rafael Pombo           14 grupos   500 estudiantes
+  PT  Purificación Trujillo  14 grupos   443 estudiantes
+  CP  Central Provivienda    10 grupos   316 estudiantes
+  TOTAL                      71 grupos  2533 estudiantes
+
+REGISTROS GENERADOS
+  estudiantes    2533
+  acudientes     2037
+  barrios        261
+  grupos         562
+  matrículas     9406
+  boletines (crudos) 633
+
+MATRÍCULAS POR AÑO
+  2015     34
+  2016     67
+  2017    135
+  2018    205
+  2019    300
+  2020    412
+  2021    542
+  2022    752
+  2023   1057
+  2024   1418
+  2025   1951
+  2026   2533
+
+AÑO 2026 POR SEDE Y ESTADO
+  Principal              activo      315
+  Principal              cancelado    16
+  Principal              retirado     32
+  Los Farallones         activo      759
+  Los Farallones         cancelado    21
+  Los Farallones         retirado    131
+  Central Provivienda    activo      281
+  Central Provivienda    cancelado     3
+  Central Provivienda    retirado     32
+  Rafael Pombo           activo      436
+  Rafael Pombo           cancelado    19
+  Rafael Pombo           retirado     45
+  Purificación Trujillo  activo      391
+  Purificación Trujillo  cancelado     9
+  Purificación Trujillo  retirado     43
+
+INCIDENCIAS
+
+  [barrio_unificado]  29 caso(s)
+    - Alfonso López <- Alfonso Lopez, Alfonso Lòpez, Alfonso López
+    - Manuela Beltran <- Manuela Beltran, Manuela Beltrán
+    - Ciudad Cordoba <- Ciudad Cordoba, Ciudad Córdoba
+    - Ciudadela Del Rio <- Ciudadela Del Rio, Ciudadela Del Río
+    - Alfonso López Etapa 3 <- Alfonso Lopez Etapa 3, Alfonso López Etapa 3
+    - Las Orquideas <- Las Orquideas, Las Orquídeas
+    - Alfonso Bonilla Aragon <- Alfonso Bonilla Aragon, Alfonso Bonilla Aragón
+    - Andres Sanin <- Andres Sanin, Andrés Sanin, Andrés Sanín
+    - Marroquin <- Marroquin, Marroquín
+    - Marroquín Ii <- Marroquin Ii, Marroquín Ii
+    - Urbanización Pereira <- Urbanizacion Pereira, Urbanización Pereira
+    - Marroquin 2 <- Marroquin 2, Marroquín 2
+    - Alfonso López 3 <- Alfonso Lopez 3, Alfonso López 3
+    - Alfonso López 3 Etapa <- Alfonso Lopez 3 Etapa, Alfonso López 3 Etapa
+    - Alirio Mora Beltrán <- Alirio Mora Beltran, Alirio Mora Beltrán
+    - Alfonso López Segunda Etapa <- Alfonso Lopez Segunda Etapa, Alfonso López Segunda Etapa
+    - Alfonso López 1 <- Alfonso Lopez 1, Alfonso López 1
+    - Urbanización Pereira Juanchito <- Urbanizacion Pereira Juanchito, Urbanización Pereira Juanchito
+    - Alfonso López 1 Etapa <- Alfonso Lopez 1 Etapa, Alfonso López 1 Etapa
+    - Alfonso Lopez Etapa 2 <- Alfonso Lopez Etapa 2, Alfonso López Etapa 2
+    - Alfonso López Primera Etapa <- Alfonso Lopez Primera Etapa, Alfonso López Primera Etapa
+    - Rio Cauca <- Rio Cauca, Río Cauca
+    - Alfonso López 2 Etapa <- Alfonso Lopez 2 Etapa, Alfonso López 2 Etapa
+    - Bonilla Aragón <- Bonilla Aragon, Bonilla Aragón
+    - Alfonso Lopez Ii <- Alfonso Lopez Ii, Alfonso López Ii
+    - Alfonso López Iii <- Alfonso Lopez Iii, Alfonso López Iii
+    - Alfonzo Lopez <- Alfonzo Lopez, Alfonzo López
+    - Cali Mio Desepaz <- Cali Mio Desepaz, Cali Mío Desepaz
+    - Alfonso López 2 <- Alfonso Lopez 2, Alfonso López 2
+
+  [boletin_valor_raro]  1 caso(s)
+    - PT!3-3 fila 8 · Carvajal Florez Jostin Alejandro · boletín 1º = "1191221971"
+
+  [documento_duplicado]  42 caso(s)
+    - P!10-2 fila 35 · Rosero Hendo Hasli Yorlady · doc 1086137008 -> se conserva P!10-1 fila 35
+    - LF!7-5 fila 38 · España Duran Anny Yuliana · doc 1110375574 -> se conserva LF!7-1 fila 10
+    - LF!7-5 fila 62 · Garcia Gamargo Rosbeyli Esmeralda · doc 3815515 -> se conserva LF!7-5 fila 50
+    - LF!8-3 fila 40 · Sanchez Trejos Hilary · doc 1107868901 -> se conserva LF!8-1 fila 41
+    - LF!9-4 fila 40 · Lozada Riascos Juan Jose · doc 1109923748 -> se conserva LF!9-1 fila 17
+    - RP!2-1 fila 32 · Manderano Valencia Angel Santiago · doc 1150695296 -> se conserva PT!2-1 fila 15
+    - RP!2-1 fila 33 · Renteria Suarez Landy Michel · doc 1115464268 -> se conserva CP!2-2 fila 21
+    - RP!3-1 fila 26 · Rodriguez Vergara Samuel · doc 1104844771 -> se conserva RP!2-1 fila 22
+    - RP!3-1 fila 34 · Campillo Holguin Danna Valentina · doc 1109684010 -> se conserva PT!3-1 fila 10
+    - RP!3-1 fila 35 · Diaz Vasquez Victoria · doc 1108339659 -> se conserva CP!3-2 fila 11
+    - RP!3-1 fila 36 · Segura Lopez Eithan Joel · doc 1111701417 -> se conserva PT!3-1 fila 26
+    - RP!3-1 fila 45 · Arias Chavarriaga Austin · doc 1144213639 -> se conserva CP!3-1 fila 34
+    - RP!4-2 fila 47 · Wilches Gamboa Lauren · doc 1089630911 -> se conserva PT!4-2 fila 24
+    - PT!1-1 fila 20 · Velasquez Guerra Gael Alejandro · doc 6279964 -> se conserva CP!1-1 fila 27
+    - PT!1-1 fila 21 · Viez Palacios Kendry Javier · doc 1191223385 -> se conserva RP!1-2 fila 24
+    - PT!1-1 fila 22 · Hernandez Morillo Camila Isabel · doc 1241440412 -> se conserva RP!1-1 fila 41
+    - PT!1-2 fila 53 · Baos Barrero Brian · doc 1241440597 -> se conserva RP!1-2 fila 4
+    - PT!1-2 fila 54 · Giraldo Perez Evangeline · doc 1104849158 -> se conserva CP!1-1 fila 10
+    - PT!1-2 fila 56 · Patiño Bueno Dulce Maria · doc 1108572119 -> se conserva CP!1-1 fila 18
+    - PT!1-2 fila 57 · Arboleda Perea Elzy Yuranny · doc 1143998693 -> se conserva PT!1-2 fila 6
+    - PT!2-1 fila 37 · Viveros Nuñez Dilan Andres · doc 1109685614 -> se conserva PT!2-2 fila 41
+    - PT!2-1 fila 39 · Landazuri Robayo Isabela · doc 1222218770 -> se conserva CP!2-2 fila 11
+    - PT!2-1 fila 43 · Tamayo Vaca Oriana Valentina · doc 1109686006 -> se conserva CP!2-1 fila 37
+    - PT!3-1 fila 31 · Portocarrero Salazar Kollin Josue · doc 1109936656 -> se conserva RP!3-1 fila 23
+    - PT!3-2 fila 28 · Angulo Riascos Nicol Dayana · doc 1106523139 -> se conserva PT!3-1 fila 4
+    - PT!3-2 fila 29 · Leonett Gonzalez Anthonella Stefania · doc 6323650 -> se conserva PT!3-1 fila 18
+    - PT!3-3 fila 29 · Marin Marin Marianyelis Valentina · doc 7845040 -> se conserva CP!3-2 fila 16
+    - PT!4-1 fila 33 · Marcano Garcia Saimar Alvanelys · doc 6654083 -> se conserva CP!4-1 fila 16
+    - PT!4-2 fila 28 · Nuñez Brittany Micheell · doc 1107517585 -> se conserva PT!4-3 fila 53
+    - PT!4-2 fila 30 · Zapata Hernandez Giomar Jean Carlos · doc 7237818 -> se conserva PT!4-2 fila 25
+    ... y 12 más
+
+  [duplicado_ambiguo]  4 caso(s)
+    - 3815515 · Garcia Gamargo Rosbeyli Esmeralda · LF!7-5 vs LF!7-5
+    - 1104844771 · Rodriquez Vergara Santiago · RP!2-1 vs RP!3-1
+    - 1111690843 · Garcia Ramirez Dailyn Sofia · RP!5-1 vs PT!5-1
+    - 7237818 · Zapata Hernandez Giomar Jean Carlos · PT!4-2 vs PT!4-2
+
+  [grupo_sin_numero]  1 caso(s)
+    - P!11-2 fila 18 · Marmol Duran Maria Fernanda · 2025 grado 10 sin número de grupo
+
+  [hoja_jornada_mixta]  6 caso(s)
+    - P!10-3 · {'Mañana': 38, 'Tarde': 2} -> el grupo queda como Mañana
+    - LF!6-2 · {'Mañana': 36, 'Tarde': 1} -> el grupo queda como Mañana
+    - LF!6-7 · {'Tarde': 28, 'Mañana': 2} -> el grupo queda como Tarde
+    - LF!8-3 · {'Tarde': 36, 'Mañana': 1} -> el grupo queda como Tarde
+    - LF!9-3 · {'Tarde': 37, 'Mañana': 1} -> el grupo queda como Tarde
+    - PT!1-2 · {'Tarde': 55, 'Mañana': 1} -> el grupo queda como Tarde
+
+  [jornada_sin_definir]  214 caso(s)
+    - LF!6-1 fila 15 · "Por definir" -> NULL
+    - LF!6-1 fila 39 · "Por definir" -> NULL
+    - LF!6-1 fila 42 · "Por definir" -> NULL
+    - LF!6-1 fila 44 · "Por definir" -> NULL
+    - LF!6-1 fila 15 · "Por definir" -> NULL
+    - LF!6-1 fila 39 · "Por definir" -> NULL
+    - LF!6-1 fila 42 · "Por definir" -> NULL
+    - LF!6-1 fila 44 · "Por definir" -> NULL
+    - LF!6-2 fila 37 · "Por definir" -> NULL
+    - LF!6-2 fila 39 · "Por definir" -> NULL
+    - LF!6-2 fila 41 · "Por definir" -> NULL
+    - LF!6-2 fila 42 · "Por definir" -> NULL
+    - LF!6-2 fila 37 · "Por definir" -> NULL
+    - LF!6-2 fila 39 · "Por definir" -> NULL
+    - LF!6-2 fila 41 · "Por definir" -> NULL
+    - LF!6-2 fila 42 · "Por definir" -> NULL
+    - LF!6-3 fila 3 · "Por definir" -> NULL
+    - LF!6-3 fila 4 · "Por definir" -> NULL
+    - LF!6-3 fila 5 · "Por definir" -> NULL
+    - LF!6-3 fila 7 · "Por definir" -> NULL
+    - LF!6-3 fila 8 · "Por definir" -> NULL
+    - LF!6-3 fila 9 · "Por definir" -> NULL
+    - LF!6-3 fila 10 · "Por definir" -> NULL
+    - LF!6-3 fila 11 · "Por definir" -> NULL
+    - LF!6-3 fila 12 · "Por definir" -> NULL
+    - LF!6-3 fila 13 · "Por definir" -> NULL
+    - LF!6-3 fila 14 · "Por definir" -> NULL
+    - LF!6-3 fila 15 · "Por definir" -> NULL
+    - LF!6-3 fila 17 · "Por definir" -> NULL
+    - LF!6-3 fila 18 · "Por definir" -> NULL
+    ... y 184 más
+
+  [jornada_typo]  2 caso(s)
+    - LF!6-6 fila 7 · "Trade" -> Tarde
+    - LF!6-6 fila 7 · "Trade" -> Tarde
+
+  [modalidad_fuera_de_la_media]  2 caso(s)
+    - RP!2-2 fila 3 · grado 2 trae "." -> ignorado
+    - CP!2-1 fila 30 · grado 2 trae "Electricidad" -> ignorado
+
+  [parentesco_normalizado]  9 caso(s)
+    - P!10-6 fila 25 · "Cuñada" -> Otro
+    - LF!6-5 fila 11 · "Madrasta" -> Otro
+    - LF!6-5 fila 14 · "Cuñada" -> Otro
+    - LF!9-4 fila 5 · "Acudiente-tutor" -> Otro
+    - RP!2-3 fila 18 · "Madrina" -> Otro
+    - PT!1-2 fila 52 · "Cuidadora" -> Otro
+    - PT!2-1 fila 20 · "Padre sustituto" -> Otro
+    - PT!5-1 fila 37 · "Padre sustituto" -> Otro
+    - CP!0-2 fila 10 · "Papá" -> Otro
+
+  [sede_desconocida]  2 caso(s)
+    - RP!3-1 fila 25 · Rivas Valenzuela Edwin Jose · 2023 código "(vacío)" -> omitido
+    - PT!1-2 fila 21 · Manzano Manzano Daiskel Victoria · 2025 código "(vacío)" -> omitido
+
+  [sin_documento]  1 caso(s)
+    - RP!3-1 fila 46 · Lopez Delgado
+
+  [sin_marca_matricula]  68 caso(s)
+    - P!10-1 fila 33 · Plaza Cortes Maria Fernanda · columna A = "(vacío)" -> cancelado
+    - P!10-1 fila 39 · Cadenas Vargas Benjamin · columna A = "(vacío)" -> cancelado
+    - P!10-2 fila 36 · Acosta Lozano Karol Fernanda · columna A = "(vacío)" -> cancelado
+    - P!10-2 fila 37 · Mejia Olave Sharon Saray · columna A = "(vacío)" -> cancelado
+    - P!10-2 fila 38 · Riascos Valencia Gloria Esthefany · columna A = "(vacío)" -> cancelado
+    - P!10-3 fila 41 · Moreno Castrillon Jhon Sebastian · columna A = "(vacío)" -> cancelado
+    - P!10-3 fila 42 · Quiñones Sevillano Sarah Michel · columna A = "(vacío)" -> cancelado
+    - P!10-3 fila 43 · Valencia Murillo Sara Michell · columna A = "(vacío)" -> cancelado
+    - P!11-1 fila 35 · Sarmiento Gonzalez Mishell Dahiana · columna A = "(vacío)" -> cancelado
+    - P!11-2 fila 32 · Laguna Toro Ana Sofia · columna A = "(vacío)" -> cancelado
+    - P!11-3 fila 31 · Garcia Garcia Karen Sofia · columna A = "(vacío)" -> cancelado
+    - P!11-3 fila 32 · Lopez Vargas Juan David · columna A = "(vacío)" -> cancelado
+    - P!11-3 fila 33 · Rengifo Agudelo Julian Andres · columna A = "(vacío)" -> cancelado
+    - P!11-4 fila 34 · Sanchez Ospina Juan Manuel · columna A = "(vacío)" -> cancelado
+    - P!11-5 fila 31 · Suarez Forero Lina Marcela · columna A = "(vacío)" -> cancelado
+    - P!11-5 fila 32 · Valencia Zambrano Esbar Emilio · columna A = "(vacío)" -> cancelado
+    - LF!7-1 fila 41 · Buendia Candelo Sara · columna A = "(vacío)" -> cancelado
+    - LF!7-2 fila 50 · Garcia Gaviria Hazlyn Valentina · columna A = "(vacío)" -> cancelado
+    - LF!7-2 fila 52 · Muñoz Muñoz Salome · columna A = "(vacío)" -> cancelado
+    - LF!7-2 fila 53 · Muñoz Vasquez Martin Esteban · columna A = "(vacío)" -> cancelado
+    - LF!7-2 fila 54 · Palomeque Holguin Andres Matias · columna A = "(vacío)" -> cancelado
+    - LF!7-3 fila 48 · Ramirez Loaiza Jhonny Alexander · columna A = "(vacío)" -> cancelado
+    - LF!7-3 fila 49 · Torres Restrepo Matias · columna A = "(vacío)" -> cancelado
+    - LF!7-4 fila 41 · Gutierrez Briceño Dixon Alejandro · columna A = "(vacío)" -> cancelado
+    - LF!7-4 fila 42 · Nuñez Sinisterra Danna Lizeth · columna A = "(vacío)" -> cancelado
+    - LF!7-4 fila 43 · Preciado Cardenas Ana Sofia · columna A = "(vacío)" -> cancelado
+    - LF!7-4 fila 44 · Querales Olivera Eliezer Jose · columna A = "(vacío)" -> cancelado
+    - LF!7-5 fila 39 · Galindo Quintero Karla Esperanza · columna A = "(vacío)" -> cancelado
+    - LF!7-5 fila 40 · Toro Acosta Valerin Sofia · columna A = "(vacío)" -> cancelado
+    - LF!8-1 fila 54 · Marmolejo Mendoza Stiven Andres · columna A = "(vacío)" -> cancelado
+    ... y 38 más
+
+  [tipo_doc_desconocido]  2 caso(s)
+    - RP!1-1 fila 40 · Martinez Manau Alexis Gabriel · "PPT" -> T.I.
+    - RP!2-1 fila 38 · Montilla Lopez Juan Jose · "T.I" -> T.I.

@@ -1,27 +1,460 @@
-﻿hoja;estudiante;documento;columna_GRUPO_2026;columna_GRUPO_2025;grupo_importado
-10-1;Baltan Ruiz Yidwar Andres;1107069412;10-4;9-2;10-1
-10-1;Plaza Cortes Maria Fernanda;1109188429;9°;9-1;10-1
-10-1;Cadenas Vargas Benjamin;1109192347;10°;9-1;10-1
-10-2;Castillo Sinisterra Valentina;1108336329;10°;9-3;10-2
-10-2;Padilla Calvache Juan Esteban;1109924883;10°;9-2;10-2
-10-2;Quintero Viafara Darwin;1109118904;10°;9-3;10-2
-10-2;Acosta Lozano Karol Fernanda;1058354679;10°;9-2;10-2
-10-2;Mejia Olave Sharon Saray;1111680060;9°;9-2;10-2
-10-2;Riascos Valencia Gloria Esthefany;1148447335;10°;9-2;10-2
-10-3;Moreno Castrillon Jhon Sebastian;1111678369;9°;9-3;10-3
-10-3;Quiñones Sevillano Sarah Michel;1108567886;9°;9-3;10-3
-10-3;Valencia Murillo Sara Michell;1104822335;10°;9-3;10-3
-10-4;Solano Tello Maria Jose;1104824616;10°;9-4;10-4
-11-1;Reyes Celorio Valentina;1143955528;10-2;10-1;11-1
-11-1;Arroyo Celis Miguel Angel;1109669956;10-1;10-1;11-1
-11-2;Laguna Toro Ana Sofia;1108258450;10-2;10-2;11-2
-11-3;Quiñonez Salazar Ana Mailyn;1110048523;10-6;10-2;11-3
-11-3;Riascos Rodriguez Darwin Andres;1113365879;10-6;10-3;11-3
-11-3;Valencia Rodriguez Nikol Brillit;1107063534;10-6;10-5;11-3
-11-3;Acosta Salazar Julieth Paola;1256347;10-3;10-3;11-3
-11-3;Garcia Garcia Karen Sofia;1111674267;10-3;10-3;11-3
-11-3;Rengifo Agudelo Julian Andres;1115188003;10-3;10-3;11-3
-11-4;Restrepo Salazar Veronica;1107858601;11-5;10-5;11-4
-11-4;Cuero Aguirre Maria Camila;1111674881;10-4;10-4;11-4
-11-4;Valencia Quiñones Evelin Dayana;1107069256;10-4;10-4;11-4
-11-5;Suarez Forero Lina Marcela;1118024914;10-5;10-5;11-5
+﻿sede;hoja;estudiante;documento;columna_GRUPO_2026;columna_GRUPO_2025;grupo_importado
+P;10-1;Baltan Ruiz Yidwar Andres;1107069412;10-4;9-2;10-1
+P;10-1;Plaza Cortes Maria Fernanda;1109188429;9°;9-1;10-1
+P;10-1;Cadenas Vargas Benjamin;1109192347;10°;9-1;10-1
+P;10-2;Castillo Sinisterra Valentina;1108336329;10°;9-3;10-2
+P;10-2;Padilla Calvache Juan Esteban;1109924883;10°;9-2;10-2
+P;10-2;Quintero Viafara Darwin;1109118904;10°;9-3;10-2
+P;10-2;Acosta Lozano Karol Fernanda;1058354679;10°;9-2;10-2
+P;10-2;Mejia Olave Sharon Saray;1111680060;9°;9-2;10-2
+P;10-2;Riascos Valencia Gloria Esthefany;1148447335;10°;9-2;10-2
+P;10-3;Moreno Castrillon Jhon Sebastian;1111678369;9°;9-3;10-3
+P;10-3;Quiñones Sevillano Sarah Michel;1108567886;9°;9-3;10-3
+P;10-3;Valencia Murillo Sara Michell;1104822335;10°;9-3;10-3
+P;10-4;Solano Tello Maria Jose;1104824616;10°;9-4;10-4
+P;11-1;Reyes Celorio Valentina;1143955528;10-2;10-1;11-1
+P;11-1;Arroyo Celis Miguel Angel;1109669956;10-1;10-1;11-1
+P;11-2;Laguna Toro Ana Sofia;1108258450;10-2;10-2;11-2
+P;11-3;Quiñonez Salazar Ana Mailyn;1110048523;10-6;10-2;11-3
+P;11-3;Riascos Rodriguez Darwin Andres;1113365879;10-6;10-3;11-3
+P;11-3;Valencia Rodriguez Nikol Brillit;1107063534;10-6;10-5;11-3
+P;11-3;Acosta Salazar Julieth Paola;1256347;10-3;10-3;11-3
+P;11-3;Garcia Garcia Karen Sofia;1111674267;10-3;10-3;11-3
+P;11-3;Rengifo Agudelo Julian Andres;1115188003;10-3;10-3;11-3
+P;11-4;Restrepo Salazar Veronica;1107858601;11-5;10-5;11-4
+P;11-4;Cuero Aguirre Maria Camila;1111674881;10-4;10-4;11-4
+P;11-4;Valencia Quiñones Evelin Dayana;1107069256;10-4;10-4;11-4
+P;11-5;Suarez Forero Lina Marcela;1118024914;10-5;10-5;11-5
+LF;6-1;Holguin Villegas Samuel Stiven;1143986940;6°;5-1;6-1
+LF;6-1;Yepes Cano Dulce Maria;1111560410;6°;5-2;6-1
+LF;6-1;Molina Ortiz Thiago;1109932357;6°;5-1;6-1
+LF;6-1;Valbuena Rengifo Thiago;1110052864;6°;5-2;6-1
+LF;6-2;Arias Castro Jhoel Steve;1108569452;6°;5-2;6-2
+LF;6-2;Imbachi Quintero Lised Daniela;1110054556;6°;5-2;6-2
+LF;6-2;Restrepo Castrillon Jhoan David;1109679709;6°;5-2;6-2
+LF;6-2;Vente Noviteño Brinny Nicol;1064490692;6°;5-2;6-2
+LF;6-2;Encalada Moncada Dylan Santiago;1150692580;6-3;No;6-2
+LF;6-3;Arteaga Gutierrez Jadinson Abraham;6514388;6°;5-2;6-3
+LF;6-3;Arroyo Ocampo Juan Sebastian;1104831877;6°;5-1;6-3
+LF;6-3;Bastardo Acuña Elizabeth Victoria;1128309;6°;5-2;6-3
+LF;6-3;Castro Rubio Juan Esteban;1109929081;6°;5-1;6-3
+LF;6-3;Castro Valencia Lauren Yuliana;1105383697;6°;5-1;6-3
+LF;6-3;Chilito Palacios Eylin Nahiara;1108568895;6°;5-1;6-3
+LF;6-3;Cundumi Ibarra Sharon Liseth;1222453375;6°;5-2;6-3
+LF;6-3;Duque Tola Jefrey Esteven;1109677394;6°;5-2;6-3
+LF;6-3;Espitia Mosquera Jean Paul;1109678282;6°;5-1;6-3
+LF;6-3;Garcia Diaz Soffy Nahela;1111694591;6°;5-2;6-3
+LF;6-3;Garzon Rodriguez Danna Sofia;1150946170;6°;5-1;6-3
+LF;6-3;Gonzales Ruales Laura Sofia;1111690978;6°;5-1;6-3
+LF;6-3;Jaramillo Alba Luis Miguel;1105933315;6°;6-2;6-3
+LF;6-3;Loaiza Jimenez Dylan;1105383940;6°;5-1;6-3
+LF;6-3;Lopez Valencia Salome;1108654689;6°;5-2;6-3
+LF;6-3;Lozano Londoño Dylan;1109679073;6°;5-1;6-3
+LF;6-3;Mosquera Garavito Erick Samuel;1109556720;6°;5-1;6-3
+LF;6-3;Mulato Mosquera Ashley Mariana;1111692369;6°;5-1;6-3
+LF;6-3;Nieto Diaz Whitney Mariana;1113681081;6°;5-2;6-3
+LF;6-3;Ordoñez Botero Laura Valentina;1110302594;6°;5-1;6-3
+LF;6-3;Quiñonez Vela Geraldine;1111693482;6°;5-1;6-3
+LF;6-3;Rocha Flor Geremy;1191220598;6°;5-2;6-3
+LF;6-3;Rodriguez Lenis Santiago;1111691288;6°;5-1;6-3
+LF;6-3;Rojas Gomez Jael Sebastian;1109120354;6°;5-1;6-3
+LF;6-3;Trujillo Garcia Dominic Yael;1108649075;6°;5-1;6-3
+LF;6-3;Valencia Devia Hector Sneider;1077472484;6°;5-1;6-3
+LF;6-3;Vargas Mamian Dilan Camilo;1110053218;6°;5-1;6-3
+LF;6-3;Villegas Lañas Justin Andres;1109676056;6°;6-5;6-3
+LF;6-3;Yonda Huila Sherazade;1191220632;6°;5-1;6-3
+LF;6-3;Cardona Hurtado Maria Jose;1111562527;6°;5-1;6-3
+LF;6-3;Quiñones Sevillano Yaiden Samara;1111694606;6°;5-2;6-3
+LF;6-3;Muñoz Rincon Nathaly;1107869084;6°;6-4;6-3
+LF;6-4;Acosta Medina Hyan Santiago;1110302056;6°;5-2;6-4
+LF;6-4;Aguirre Marea Leonel Alexander;6579870;6°;5-2;6-4
+LF;6-4;Bastardo Acuña Isabel Valentina;1127402;6°;5-2;6-4
+LF;6-4;Botero Mendoza Juan Estevan;1104831261;6°;5-2;6-4
+LF;6-4;Castillo Figueroa Jacobo;1110300427;6°;5-1;6-4
+LF;6-4;Cortes Cantero Valentina;1109195711;6°;5-1;6-4
+LF;6-4;Cuero Hurtado Mariana;1111692011;6°;5-2;6-4
+LF;6-4;Espinosa Gonzalez Danna Salome;1105384154;6°;6-5;6-4
+LF;6-4;Florez Collazos Anthony;1109679099;6°;5-1;6-4
+LF;6-4;Garces Calvo Valery;1107097395;6°;5-1;6-4
+LF;6-4;Garcia Marin Arianna;1104834743;6°;5-1;6-4
+LF;6-4;Martinez Orovio Sara Sofia;1139837757;6°;5-1;6-4
+LF;6-4;Medina Torres Sebastian David;4879828;6°;5-1;6-4
+LF;6-4;Montealegre Gutierrez Valentina;1108338533;6°;6-2;6-4
+LF;6-4;Mosquera Chara Salome;1232791127;6°;5-1;6-4
+LF;6-4;Mosquera Garces Leidy;1108648545;6°;6-1;6-4
+LF;6-4;Mosquera Motato Juan Jose;1232790311;6°;5-1;6-4
+LF;6-4;Mosquera Rebolledo Gabriel Santiago;1104837255;6°;5-1;6-4
+LF;6-4;Muelas Patiño Kevin Andres;1110054365;6°;5-1;6-4
+LF;6-4;Perea Silva Brigny Alejandra;1114488983;6°;5-1;6-4
+LF;6-4;Perez Barbosa Andres;1144215004;6°;5-2;6-4
+LF;6-4;Perez Rodriguez Aranza Paola;3003066;6°;5-1;6-4
+LF;6-4;Quiñones Arboleda Zara Dayani;1104834998;6°;5-1;6-4
+LF;6-4;Saenz Restrepo Jhoan Sebastian;1108569378;6°;5-1;6-4
+LF;6-4;San Miguel Bermudez Gabriel Alejandro;1151971254;6°;5-1;6-4
+LF;6-4;Sinisterra Cabrera Dulce Maria;1066844837;6°;5-1;6-4
+LF;6-4;Calvo Muñoz Axel;1232791719;6°;5-1;6-4
+LF;6-4;Cañaveral Figueroa Dominic Alexander;1143986755;6°;5-2;6-4
+LF;6-4;Castillo Diaz Santiago;1232791298;6°;5-2;6-4
+LF;6-4;Cifuentes Araujo Maik Alejandro;1030341619;6°;5-1;6-4
+LF;6-4;Hernandez Nieves Christian Alejandro;3904055;6°;5-1;6-4
+LF;6-4;Murillo Godoy Yostin Stiwar;1111806944;6°;5-2;6-4
+LF;6-4;Perez Rodriguez Marlon Rafael;1084457598;6°;5-2;6-4
+LF;6-5;Ambuila Cambindo Neymar Junior;1111689995;6°;5-2;6-5
+LF;6-5;Bolivar Martinez Mariana Angelica;1151971475;6°;5-2;6-5
+LF;6-5;Caicedo Valencia Breiner Estiven;1107868483;6°;5-2;6-5
+LF;6-5;Erazo Narvaez Maria Jose;1089487261;6°;5-2;6-5
+LF;6-5;Garcia Osorio Salome;1113069718;6°;5-2;6-5
+LF;6-5;Herrera Bolivar Jeremy Santiago;1109932072;6°;5-2;6-5
+LF;6-5;Lopez Candelo Maria Yulieth;1076333084;6°;5-2;6-5
+LF;6-5;Lopez Hoyos Xleyder Alexander;1109678272;6°;5-2;6-5
+LF;6-5;Lopez Ruiz Wendy Sarany;1109679910;6°;5-2;6-5
+LF;6-5;Manderano Valencia Salome;1104836236;6°;5-2;6-5
+LF;6-5;Mina Lombo Johan Santiago;1105382121;6°;5-2;6-5
+LF;6-5;Mosquera Perea Thiago Stif;1030341069;6°;5-2;6-5
+LF;6-5;Mosquera Ramos Maria Jose;1114895781;6°;5-2;6-5
+LF;6-5;Noreña Vallejo Hanny Sofia;1109680262;6°;5-2;6-5
+LF;6-5;Ortiz Cuenut Brayan Stevan;1108338888;6°;5-2;6-5
+LF;6-5;Paz Murillo Maria Alejandra;1143988206;6°;5-2;6-5
+LF;6-5;Perea Zuñiga Luis Fernando;1139836702;6°;5-2;6-5
+LF;6-5;Prado Alixon Sarai;1107095498;6°;5-2;6-5
+LF;6-5;Quiñonez Cordoba Chaira Andrea;1143973128;6°;5-2;6-5
+LF;6-5;Ramos Sinisterra Maria Jose;1061214789;6°;5-2;6-5
+LF;6-5;Saavedra Villegas Luis Felipe;1114316680;6°;5-2;6-5
+LF;6-5;Sanchez Landazuri Lady Salome;1107543838;6°;5-2;6-5
+LF;6-5;Sevillano Echevery Jorman;1143967090;6°;5-2;6-5
+LF;6-5;Soto Henao Hanna Sofia;1139837359;6°;5-2;6-5
+LF;6-5;Torijano Borrero Alan Francisco;1109677082;6°;5-2;6-5
+LF;6-5;Trejos Restrepo Dulce Maria;1059708856;6°;5-2;6-5
+LF;6-5;Uzcategui Arce Aranza Fiorella;6037254;6°;5-2;6-5
+LF;6-5;Valenzuela Orozco Luciana;1109931307;6°;5-2;6-5
+LF;6-5;Villanueva Aristizabal Alejandro;1111688903;6°;5-2;6-5
+LF;6-5;Agudelo Duque Jhon Alejandro;1109556966;6°;5-2;6-5
+LF;6-5;Agudelo Duque Matias Jose;1109556967;6°;5-2;6-5
+LF;6-5;Cuero Lopez Janner Stiven;1143983685;6°;5-2;6-5
+LF;6-5;Escobar Mosquera Jean Pierre;1131124471;6°;5-2;6-5
+LF;6-5;Rojo Cortes Dilan Santiago;1232792505;6°;5-2;6-5
+LF;6-5;Caro Moreno Laura Gisell;1109931748;6°;5-2;6-5
+LF;6-5;Suarez Osorio Santiago;1110053396;6°;5-2;6-5
+LF;6-6;Valencia Pote Isabella;1111688173;6°;6-6;6-6
+LF;6-6;Valencia Tello Debby Geormaryoni;1062317735;6°;6-7;6-6
+LF;6-6;Valoyes Sanchez Heydi Daniela;1108648228;6°;6-6;6-6
+LF;6-6;Velasco Zamorano Isaac Steef;1126567473;6°;5-2;6-6
+LF;6-6;Zambrano Hinojosa Kevin Andres;1111685625;6°;6-7;6-6
+LF;6-6;Caicedo Valencia Yara Nicol;1143979971;6°;5-2;6-6
+LF;6-7;Banguera Guerrero Keiller David;1191219397;6°;5-2;6-7
+LF;6-7;Cortes Castro Miguel Angel;1105388231;6°;6-2;6-7
+LF;6-7;Gutierrez Fonseca Martin;1109679489;6°;6-1;6-7
+LF;6-7;Castillo Celorio Brickgny Sofia;1111810921;6-6;No;6-7
+LF;6-7;Patiño Arias Dilan Alejandro;1112059307;6°;5-2;6-7
+LF;7-1;Bravo Gonzalez Emily Dahiana;1105387501;7-4;6-4;7-1
+LF;7-1;Bustos Claros Shaira Nikol;1080296227;7-4;6-4;7-1
+LF;7-1;Galeano Mina Mateo;1105388593;7-3;6-3;7-1
+LF;7-1;Hernandez Ramirez Shamuel;1109677378;7-4;6-4;7-1
+LF;7-1;Montes Franco Jein Catherenn;1108647742;7-5;6-5;7-1
+LF;7-1;Parga Prado Juan Esteban;1149938747;7-4;6-4;7-1
+LF;7-1;Quintero Cuero Brayan Steven;1109928472;7-5;6-5;7-1
+LF;7-1;Reyes Montoya Maria De Los Angeles;1110374991;7-4;6-4;7-1
+LF;7-1;Sanchez Penagos Sharid Lucia;1110301002;7°;7-1;7-1
+LF;7-1;Serna Montoya Dylan Eduardo;1110301192;7°;7-3;7-1
+LF;7-1;Torres Rivas Jeremy Estiven;1108569290;7-5;6-5;7-1
+LF;7-1;Verdugo Ramos Saray Andrea;1111686264;7-4;6-4;7-1
+LF;7-1;Yela Lenis Aymara Alejandra;1109678611;7-5;6-5;7-1
+LF;7-1;Gonzalez Palomino Eilin Saray;1027534996;7-5;6-5;7-1
+LF;7-2;Balanta Ruiz Liam Santiago;1110052991;7-5;6-5;7-2
+LF;7-2;Candelo Cuero Breiner Fabian;1143959731;7-4;6-4;7-2
+LF;7-2;Correa Martínez Jairo Daniel;1051747471;7-5;6-5;7-2
+LF;7-2;Guerra Aguirre Karielis Paola;7998994;7-5;6-5;7-2
+LF;7-2;Montaño Cortes Chaira Isabella;1109678376;7-4;6-4;7-2
+LF;7-2;Ospina Rendon Samuel;1104832869;7-5;6-5;7-2
+LF;7-2;Puerta Vargas Jhon Breyner;1139836609;7°;7-2;7-2
+LF;7-2;Ramos Palacios Jean Carlos;1080698430;7-5;6-5;7-2
+LF;7-2;Rivas Valenzuela Sara Sailin;1109678301;7-4;6-4;7-2
+LF;7-2;Suaza Muñoz Juan Jose;1232788560;7-4;6-4;7-2
+LF;7-2;Urdaneta Lezcano Elisbell Angelit;1042467899;7-5;6-5;7-2
+LF;7-2;Vallejo Hernandez Thiago;1109679192;7-4;6-4;7-2
+LF;7-2;Vasquez Calle Salome;1110051053;7°;7-1;7-2
+LF;7-2;Wilches Gamboa Antonella;1089620962;7-4;6-4;7-2
+LF;7-2;Zabala Zapata Joshua;1104834381;7-5;6-5;7-2
+LF;7-2;Arcos Varela Ela Mariana;1111558434;6°;6-4;7-2
+LF;7-2;Gomez Quintero Dayling Michelle;1109120094;7-4;6-4;7-2
+LF;7-2;Guerrero Valderruten Juan Felipe;1108338474;6°;6-2;7-2
+LF;7-2;Guzman Lopez Sebastian Camilo;1023396221;6°;6-2;7-2
+LF;7-2;Lambertino Restrepo Hayelen Andrea;1139837168;7-4;6-4;7-2
+LF;7-2;Murillo Cuero Dilan Samuel;1111691532;7-4;6-4;7-2
+LF;7-2;Portela Cabal Emanuel;1108647611;6°;6-4;7-2
+LF;7-2;Renteria Garces Dayana;1107860815;6°;6-2;7-2
+LF;7-2;Reyes Echeverry Brayan;1109677584;7-4;6-4;7-2
+LF;7-2;Garcia Gaviria Hazlyn Valentina;1109675479;6°;6-2;7-2
+LF;7-2;Muñoz Muñoz Salome;1109194745;7-4;6-4;7-2
+LF;7-2;Muñoz Vasquez Martin Esteban;1109929566;7-4;6-4;7-2
+LF;7-2;Palomeque Holguin Andres Matias;1105381521;6°;6-4;7-2
+LF;7-3;Alvarez Hurtado Juan Esteban;1109672925;7°;7-3;7-3
+LF;7-3;Arias Reyes Keisy Juliana;1107866191;7-5;6-5;7-3
+LF;7-3;Florez Peña Mayerly Saray;1110299874;7°;7-3;7-3
+LF;7-3;Florez Redin Saray Dalila;1061777240;7-4;6-4;7-3
+LF;7-3;Garcia Solarte Nathali Sofia;1105387623;7-5;6-5;7-3
+LF;7-3;Lozano Gonzalez Maria Jose;1111557670;7-5;6-5;7-3
+LF;7-3;Patiño Alegria Adriana Sofia;1107098660;7-5;6-5;7-3
+LF;7-3;Quintero Rosales Dilany Celeste;1110374359;7-4;6-4;7-3
+LF;7-3;Sepulveda Peña Jeidy Julieth;1191219004;7-5;6-5;7-3
+LF;7-3;Vela Parada Sebastian;1110052086;7°;7-2;7-3
+LF;7-3;Velez Duque Saray;1112157725;7-4;6-4;7-3
+LF;7-3;Velez Lopez Miguel Matias;1109194362;7-5;6-5;7-3
+LF;7-3;Campo Vargas Minsy Hendel;1215963800;7-1;6-1;7-3
+LF;7-3;Cardenas Cristian David;1117355520;6°;6-5;7-3
+LF;7-3;Giraldo Morales Sebastian Alexander;1113532697;6°;6-3;7-3
+LF;7-3;Gutierrez Rodriguez Oriana;1166464833;7-5;6-5;7-3
+LF;7-3;Leiva Peña Daniela Valentina;5238385;6°;6-5;7-3
+LF;7-3;Nates Mosquera Cristopher Alexander;1030340950;6°;6-3;7-3
+LF;7-3;Oliva Calvache Andres Felipe;1104825275;7-5;6-5;7-3
+LF;7-3;Ramirez Loaiza Jhonny Alexander;1110051343;6°;6-5;7-3
+LF;7-3;Torres Restrepo Matias;1113788736;6°;6-5;7-3
+LF;7-4;Bermudez Murillo Yosuan Jossue;1113152435;7-6;6-6;7-4
+LF;7-4;Mosquera Sanchez Erick Samuel;1110301357;7-6;6-6;7-4
+LF;7-4;Naranjo Maracay Anyelin Nikol;5394295;7-6;6-6;7-4
+LF;7-4;Nuñez Ramos Ian Daniel;1143970066;7-6;6-6;7-4
+LF;7-4;Tose Correa Gabriela;1109926249;7-6;6-6;7-4
+LF;7-4;Caicedo Montaño Juan Jose;1111689393;7-6;6-6;7-4
+LF;7-4;Delgado Tovar Angel David;6158182;7-6;6-6;7-4
+LF;7-4;Estrada Castaño Arlex Santiago;1175714011;6°;6-6;7-4
+LF;7-4;Estrada Castaño Linda Saray;1109679002;6°;6-6;7-4
+LF;7-4;Figueroa Orobio Laura Sofia;1107863946;7-6;6-6;7-4
+LF;7-4;Hurtado Caicedo Chery Yaritza;1089801865;7-6;6-6;7-4
+LF;7-4;Llanos Muñoz Laura Valentina;1117938888;7-6;6-6;7-4
+LF;7-4;Mora Blandon Juan Esteban;1109676200;7-6;6-6;7-4
+LF;7-4;Riasco Cortes Jhonny Matias;1126566643;7-6;6-6;7-4
+LF;7-4;Saavedra Orobio Maria Camila;1107866292;7-6;6-6;7-4
+LF;7-4;Gutierrez Briceño Dixon Alejandro;6523678;6°;6-6;7-4
+LF;7-4;Nuñez Sinisterra Danna Lizeth;1114062442;6°;6-6;7-4
+LF;7-4;Preciado Cardenas Ana Sofia;1108569167;6°;6-6;7-4
+LF;7-4;Querales Olivera Eliezer Jose;5613719;6°;6-6;7-4
+LF;7-5;Balanta Herrera Joan Francisco;1066844323;7-7;6-7;7-5
+LF;7-5;Batalla Cambindo Juan Miguel;1191219537;7-7;6-7;7-5
+LF;7-5;Batioja Cortes Luz Estefani;1085551462;7-4;No;7-5
+LF;7-5;Bustamante Arboleda Yehira;1111690017;7-7;6-7;7-5
+LF;7-5;Castillo Cordoba Dilan Ferney;1030341353;7-7;6-7;7-5
+LF;7-5;Cordero Loyo Ronnier Alexander;6335627;7-7;6-7;7-5
+LF;7-5;Escruceria Arenas Mariana;1106521034;7-7;6-7;7-5
+LF;7-5;Estupiñan Pereira Jeicob Samuel;1111556928;7-7;6-7;7-5
+LF;7-5;Hurtado Torres Sharon Alexa;1143954872;7°;7-6;7-5
+LF;7-5;Mina Nieto Alanys Shanayha;1108338730;7-7;6-7;7-5
+LF;7-5;Murillo Placeres Joshua;1111685845;7°;7-5;7-5
+LF;7-5;Ospina Hinojosa Suani Michell;1111686920;7-7;6-7;7-5
+LF;7-5;Ruiz Rodriguez Kimbirlyn Daian;1107084481;7-7;6-7;7-5
+LF;7-5;Salazar Cuellar Gabriela;1080295641;7-7;6-7;7-5
+LF;7-5;Torres Riascos Shirley Dayana;1143954875;7-7;6-7;7-5
+LF;7-5;Uribe Grijalba Juan David;1111684617;7-7;6-7;7-5
+LF;7-5;Villa Montoya Maycol Alexander;1149938791;7-7;6-7;7-5
+LF;7-5;Aguilar Chaverra Jhonsel David;1106519609;6°;6-7;7-5
+LF;7-5;Arena Fernandez Aaron Alejandro;1109563937;6°;6-7;7-5
+LF;7-5;Baltan Bustos Valeri;1143967810;6°;6-7;7-5
+LF;7-5;Burgos Sinisterra Maria Camila;1114062883;6°;6-7;7-5
+LF;7-5;Cortes Landazury Zully Yoreli;1087823042;7-7;6-7;7-5
+LF;7-5;Escobar Ordoñez Jose Daniel;1111556496;6°;6-7;7-5
+LF;7-5;Hidalgo Jimenez Danna Alejandra;1107541588;7-7;6-7;7-5
+LF;7-5;Mina Perea Juan Esteban;1111689041;7-7;6-7;7-5
+LF;7-5;Perlaza Valderrama Jose David;1108647597;6°;6-7;7-5
+LF;7-5;Popayan Omen Valeria;1114734862;6°;6-7;7-5
+LF;7-5;Ramirez Sanchez Juan Pablo;1111686841;6°;6-7;7-5
+LF;7-5;Tamayo Tamayo Priscila;1088323007;7-7;6-7;7-5
+LF;7-5;Viveros Andrade Jeferson David;1061759044;6°;6-7;7-5
+LF;7-5;Galindo Quintero Karla Esperanza;1110053360;6°;6-7;7-5
+LF;7-5;Toro Acosta Valerin Sofia;1108337861;6°;6-7;7-5
+LF;7-5;Clavijo Rivera Sharol Sofia;1111690880;7-4;No;7-5
+LF;7-5;Yonda Valencia Emiline Sofia;1059602382;6-7;No;7-5
+LF;8-1;Caldon Olaya Jhosep Andres;1105381105;8°;8-1;8-1
+LF;8-1;Cifuentes Quiñones Maylen Andrea;1110051202;8-3;7-3;8-1
+LF;8-1;Daza Silva Sebastian;1107866849;8-3;7-3;8-1
+LF;8-1;Escorche Rondon Alessandra Daniela;5009878;8-3;7-3;8-1
+LF;8-1;Meneses Velasco Gabriel Santiago;1112405627;8-3;7-3;8-1
+LF;8-1;Perez Garcia Alex Dubrazka;7113604;8-3;7-3;8-1
+LF;8-1;Perez Mora Yeison Daniel;1103114732;8-3;7-3;8-1
+LF;8-1;Rodriguez Romero Ivanis Camila;8079097;8°;8-2;8-1
+LF;8-1;Rodriguez Tez Deiby Santiago;1107866584;8-3;7-3;8-1
+LF;8-1;Rubio Micolta Valery;1109677570;8-2;7-2;8-1
+LF;8-1;Varela Obregon Jeremy;1108568970;8-3;7-3;8-1
+LF;8-1;Vera Muriel Laura;1191218177;8-3;7-3;8-1
+LF;8-1;Arteaga Cajamarca Duvan Alejandro;1109119963;8-3;7-3;8-1
+LF;8-1;Otero Mambuscay Juan Felipe;1105380776;8°;8-2;8-1
+LF;8-1;Salas Garcia Isabela;1111808062;8°;8-2;8-1
+LF;8-2;Cadrazco Duarte Greyci Candelaria;1032022981;8-1;7-1;8-2
+LF;8-2;Campaz Leon Hillary Andrea;1110052242;8-3;7-3;8-2
+LF;8-2;Candela Rondon Maick Alejandro;1022995768;8-3;7-3;8-2
+LF;8-2;Caro Caro Maria Del Mar;1109676840;8-3;7-3;8-2
+LF;8-2;Castro Castro Ruben Alejandro;5143302;8-3;7-3;8-2
+LF;8-2;Cumber Trochez Santiago;1191218516;8-3;7-3;8-2
+LF;8-2;Diaz Herrera Nicolas;1111686414;8-3;7-3;8-2
+LF;8-2;Erazo Gaitan David Santiago;1109674586;8-3;7-3;8-2
+LF;8-2;Escobar Guevara Brandon Andres;1109673368;8°;8-1;8-2
+LF;8-2;Fernandez Neira Kevin Stewart;1107866508;8-3;7-3;8-2
+LF;8-2;Garcia Bonilla Kevin Andres;1105383176;8-3;7-3;8-2
+LF;8-2;Mejia Peña Jersson Andres;1110299099;8-3;7-3;8-2
+LF;8-2;Ramirez Palomino Michael Esteban;1109675501;8-3;7-3;8-2
+LF;8-2;Riascos Rebolledo Kristhine Sharik;1150943288;8-3;7-3;8-2
+LF;8-2;Torres Garcia Joan Andres;1107869242;8-3;7-3;8-2
+LF;8-2;Vasco Velasquez Santiago;1109192886;8-3;7-3;8-2
+LF;8-2;Arango Restrepo Samuel;1105386514;7°;7-3;8-2
+LF;8-2;Cifuentes Bahos Sara;1108337519;8-3;7-3;8-2
+LF;8-2;Cuero Cuero Juan Sebastian;1105383513;7°;7-2;8-2
+LF;8-2;Fori Lopez Lewuis Steven;1109193623;7°;7-3;8-2
+LF;8-2;Herrera Pinzon Mariana Estrella;1196714676;8-3;7-3;8-2
+LF;8-2;Muriel Erazo Liseth;1109675532;7°;7-3;8-2
+LF;8-2;Osorio Cardenas Cristian David;1110050803;7°;7-3;8-2
+LF;8-2;Rivas Ortiz Samuel Stiven;1107864836;8-3;7-3;8-2
+LF;8-2;Valencia Granja Dayan Saray;1196713613;7°;7-3;8-2
+LF;8-2;Moreno Cortes Michael;1104824337;7°;7-3;8-2
+LF;8-2;Castillo Tabares Leah;1109676005;7°;7-2;8-2
+LF;8-3;Albornoz Bolaños Sara Nicol;1143962878;8-4;7-4;8-3
+LF;8-3;Ambuila Cambindo Beyli Tatiana;1111684560;8-4;7-4;8-3
+LF;8-3;Ante Anchico Juan David;1061213161;8-4;7-4;8-3
+LF;8-3;Aranda Villalobos Ana Lucia;1107529466;8-4;7-4;8-3
+LF;8-3;Aranguren Peña Deriannys Yilisbeth;7804074;8-4;7-4;8-3
+LF;8-3;Arevalo Castro Ezequiel Emmanuel;1235256502;8-4;7-4;8-3
+LF;8-3;Calvo Holguin Greicher Alejandra;1107867314;8-4;7-4;8-3
+LF;8-3;Calvo Holguin Greicher Valeria;1107867315;8-4;7-4;8-3
+LF;8-3;Camacho Castro Kevin Andres;1107072113;8-4;7-4;8-3
+LF;8-3;Camilo Esterilla Aslly Saray;1108648357;8-4;7-4;8-3
+LF;8-3;Castro Bravo Samuel Mauricio;1104830440;8-4;7-4;8-3
+LF;8-3;Delgado Manyoma Alam Camilo;1190463630;8-4;7-4;8-3
+LF;8-3;Hurtado Lozand Mayra Alejandra;1143975252;8-4;7-4;8-3
+LF;8-3;Montes Acevedo Luisa Fernanda;1105933060;8-4;7-4;8-3
+LF;8-3;Mosquera Ramos Lauren Nicol;1114890192;8-4;7-4;8-3
+LF;8-3;Murcia Pineda Maria Camila;1111556026;8-4;7-4;8-3
+LF;8-3;Oidor Salas Santiago;1105932688;8-6;7-6;8-3
+LF;8-3;Ojeda Morales Emmanuel;1109925326;8-4;7-4;8-3
+LF;8-3;Ortiz Lemos Laura Melysa;1107868350;8-4;7-4;8-3
+LF;8-3;Peña Samaniego Cristopeer Samuel;1125473613;8-4;7-4;8-3
+LF;8-3;Rodriguez Galeano Matias;1107868766;8-4;7-4;8-3
+LF;8-3;Salgado Becerra Anthony;1107868388;8-4;7-4;8-3
+LF;8-3;Sanchez Landazuri Dilan Leonardo;1107543521;8-4;7-4;8-3
+LF;8-3;Santos Chala Samuel Matias;1109565368;8-4;7-4;8-3
+LF;8-3;Tuberquia Marroquin David Santiago;1109554125;8-4;7-4;8-3
+LF;8-3;Valencia Valencia Marien;1148952699;8-4;7-4;8-3
+LF;8-3;Chud Cespedes Mailen Gisell;1107868674;8-4;7-4;8-3
+LF;8-3;Correa Capote Ashlee Alexandra;1107068295;7°;7-4;8-3
+LF;8-3;Llanos Muñoz Maria Fernanda;1117936274;8-4;7-4;8-3
+LF;8-3;Osorio Garcia Maria Jose;1111685469;8-4;7-4;8-3
+LF;8-3;Renteria Rivas Dhimar Yesid;1076822998;8-4;7-4;8-3
+LF;8-3;Trejos Sanchez Linda Sofia;1110052744;8-4;7-4;8-3
+LF;8-3;Velez Chamorro Katherin;1104828842;8-4;7-4;8-3
+LF;8-4;Abella Giraldo Sara Sofia;1109192106;8-5;7-5;8-4
+LF;8-4;Altuna Casierra Cristian Camilo;1191218137;8-5;7-5;8-4
+LF;8-4;Bolivar Martinez Adriana Paola;1151971474;8-5;7-5;8-4
+LF;8-4;Bonilla Bonilla Danna Michel;1150944062;8-5;7-5;8-4
+LF;8-4;Cano Fernandez Sara Sofia;1111556387;8-5;7-5;8-4
+LF;8-4;Casanova Escobar Kevin Alejandro;1109550751;8-5;7-5;8-4
+LF;8-4;Castaño Torres Joel Sebastian;1107083801;8-5;7-5;8-4
+LF;8-4;Cuero Agualimpia Santiago Alejandro;1111687772;8-5;7-5;8-4
+LF;8-4;Giraldo Pelaez Sara Valentina;1105382099;8-5;7-5;8-4
+LF;8-4;Gomez Satizabal Laura Sofia;1111688269;8-5;7-5;8-4
+LF;8-4;Hurtado Valencia Alison;1105382127;8-5;7-5;8-4
+LF;8-4;Jones Gomez Juan Esteban;1107869022;8-5;7-5;8-4
+LF;8-4;Landazury Renteria Michel Fernando;1087820687;8-5;7-5;8-4
+LF;8-4;Maita Rojas Osnaylin De Los Angeles;7790734;8-5;7-5;8-4
+LF;8-4;Martinez Vargas Edieth Manuel;1104830470;8-5;7-5;8-4
+LF;8-4;Mosquera Borrero Daniel;1109551730;8-5;No;8-4
+LF;8-4;Palacios Mosquera Leidy Alexandra;1115456873;8-5;7-5;8-4
+LF;8-4;Payan Hurtado Brandon Steban;1191218583;8-5;7-5;8-4
+LF;8-4;Perez Bermudez Lindsay Tamara;1059913625;8-5;No;8-4
+LF;8-4;Renteria Cabezas Melany Yaritza;1109192755;8-5;7-5;8-4
+LF;8-4;Rodriguez Hurtado Hector Alexis;1111683835;8-5;7-5;8-4
+LF;8-4;Serna Rada Damara Camila;1039698222;8-5;7-5;8-4
+LF;8-4;Tapie Vargas Karen Yalena;1107864107;8-5;7-5;8-4
+LF;8-4;Torres Chiquito Bayoleth Dayanna;1143971208;8-5;7-5;8-4
+LF;8-4;Velez Bedoya Mariana;1019085756;8-5;7-5;8-4
+LF;8-4;Zuniga Arrechea Sara Valentina;1066843978;8-5;7-5;8-4
+LF;8-4;Alvarez Lozano Randy Yesid;1091989353;8-5;7-5;8-4
+LF;8-4;Jaramillo Balanta Kentberly Saray;1105382125;8-5;7-5;8-4
+LF;8-4;Mancilla Landazuri Sherith Sofia;1110050380;8-5;7-5;8-4
+LF;8-4;Nuñez Barbosa Juan Jose;1105380494;7°;7-5;8-4
+LF;8-4;Ramirez Quiñonez Emerson Yamir;1111796455;7°;7-5;8-4
+LF;8-4;Lozada Chaparro Xamara;1105932163;8-5;7-5;8-4
+LF;8-5;Arango Cortes Saray Daniela;1109675753;7°;7-6;8-5
+LF;8-5;Bucan Moreno Franchesca Valentina;6900928;8-6;7-6;8-5
+LF;8-5;Cortes Landazury Emily Teresa;1087817707;8-6;7-6;8-5
+LF;8-5;Delgado Garcia Joseph;1110052206;8-6;7-6;8-5
+LF;8-5;Diaz Medina Samuel David;1109676022;8-6;7-6;8-5
+LF;8-5;Garcia Jimenez Miguel Alexander;7613509;8-6;7-6;8-5
+LF;8-5;Gonzalez Bello Luis Santiago;1149937082;8°;8-3;8-5
+LF;8-5;Maceto Urbano Melanny Sofia;1112228298;8-6;7-6;8-5
+LF;8-5;Rojas Sanchez Mariam Yuneisy;1139835164;7°;7-6;8-5
+LF;8-5;Vargas Rasma Lesly Yuliet;1121219164;7°;7-6;8-5
+LF;8-5;Yunda Ramirez Juan Esteban;1110052463;8-6;7-6;8-5
+LF;8-5;Pillimue Narvaez Albeiro;1112053752;7°;7-6;8-5
+LF;8-5;Campo Bravo Cristhian Alexander;1109120020;8-4;No;8-5
+LF;9-1;Rubio Echavarria Sara;1053831986;8°;8-1;9-1
+LF;9-2;Martinez Arenas Anthony Jhoan;1109674515;8°;8-2;9-2
+LF;9-4;Calderon Avila Joseph Gabriel;1108256240;9-5;8-5;9-4
+LF;9-4;Delgado Angulo Laura;1104829618;9-2;No;9-4
+LF;9-5;Obando Perlaza Michael Andres;1107078900;9-4;8-4;9-5
+LF;9-5;Murcia Rojas Maria Jose;1108567976;8°;8-5;9-5
+RP;0-2;gonzalez jimenez mathyas Jhosue;1117360825;0-3;No;0-2
+RP;1-1;Romero Micolta Cristopher Manuel;1109686484;1-2;0-2;1-1
+RP;1-2;Baos Barrero Brian;1241440597;1-1;0-2;1-2
+RP;1-2;Viez Palacios Kendry Javier;1191223385;1-1;0-1;1-2
+RP;1-2;Mendez Rojas Abraham David;6321828;1-3;No;1-2
+RP;1-2;Parra Hoyos Kaily Yezabel;1152228296;0-2;No;1-2
+RP;2-1;Perea Ledezma Dahlia;1241438927;1-1;1-1;2-1
+RP;2-1;Aguiño Bueno Davinson Sneyder;1087214421;2-2;1-2;2-1
+RP;2-1;Romero Parra Ian Samuel;1122939853;1-1;1-1;2-1
+RP;2-2;Villa Rojas Salome;1109685935;2-1;1-1;2-2
+RP;2-2;Agredo Martinez Luciana;1108340029;2-3;1-3;2-2
+RP;2-2;Reyes Echeverry Isabella;1109683989;2-3;1-3;2-2
+RP;2-2;Castaño Arias Maira Alejandra;1089634139;2-3;1-3;2-2
+RP;2-2;Cova Vallejo Charlotte Iremi;1232809573;2-3;1-3;2-2
+RP;2-2;Ospina Rodriguez Naythan Giovanny;1144001288;2-3;No;2-2
+RP;2-3;Rodriguez Rivera Angel Gabriel;6766713;2-2;No;2-3
+RP;5-1;arzayus angola Valery Xiomara;232794277;5-2;No;5-1
+RP;5-2;Aguirre Hernandez Nicolas;1110056345;5-1;4-1;5-2
+RP;5-2;Benavides Baquero Santiago;1109558479;5-3;4-3;5-2
+RP;5-3;Roldan Solorzano Jacobo;1104838556;5-2;4-2;5-3
+RP;5-3;Marquinez Murillo Sharol Gabriela;1030341448;4-3;4-3;5-3
+RP;5-3;Romero Parra Valery;1122935203;4-3;4-3;5-3
+PT;1-2;Barradas Gonzalez Emmanuel David;1104849246;1-3;0-3;1-2
+PT;1-2;Riascos Prado Whister Stitch;1104848329;1-3;0-3;1-2
+PT;1-2;Bonilla Alegria Kenji Smith;1066847438;1-3;0-3;1-2
+PT;1-2;Rojas Cruz Jose David;1067471004;1-3;0-3;1-2
+PT;2-1;Borrero Mejia Maria De Los Angeles;1232806291;1-1;1-1;2-1
+PT;2-2;Aguirre Velasco Jose Alexander;1234199308;1-2;1-2;2-2
+PT;3-3;Barradas Gonzalez Lucia Isabella;6015078;3-2;2-2;3-3
+PT;3-3;Cabrera Espinoza Edgar Gabriel;5357741;3-2;2-2;3-3
+PT;3-3;Cadavid Arias Celeste;1036521290;3-2;No;3-3
+PT;3-3;Cadavid Zuluaga Samantha Josephine;1111701215;3-2;2-2;3-3
+PT;3-3;Carvajal Florez Jostin Alejandro;1191221971;3-2;2-2;3-3
+PT;3-3;Castillo Alvarado Jose David;1111569787;3-2;2-2;3-3
+PT;3-3;Combariza Chaparro Thiago;1107526036;3-2;2-2;3-3
+PT;3-3;Cuero Naboyan Samay;1087705781;3-2;2-2;3-3
+PT;3-3;Florez Castaño Emily;1232805596;3-2;2-2;3-3
+PT;3-3;Galindo Angulo Luciana;1115463006;3-2;No;3-3
+PT;3-3;Gonzalez Riascos Vaiolin Samantha;1108339647;3-2;No;3-3
+PT;3-3;Henao Valladares Isabella;1232800428;3-2;2-2;3-3
+PT;3-3;Labrada Victoria Sarah;1108650520;3-2;No;3-3
+PT;3-3;Loyo Medina Ashlyhanyerlis Yannethelys;6486463;3-2;2-2;3-3
+PT;3-3;Maita Rojas Aleuzenev De Los Angeles;7790745;3-2;2-2;3-3
+PT;3-3;Muñoz Serna Dylan Joel;1108570833;3-2;2-2;3-3
+PT;3-3;Ramirez Torres Valerin;1143992115;3-2;No;3-3
+PT;3-3;Velazquez Ladera Wiliangel Lucia;5656739;3-2;2-2;3-3
+PT;3-3;Viveros Valencia Braidy Asly;1109564567;3-2;2-2;3-3
+PT;3-3;Roviera Alvarez Karol Angelina;1046539463;3-2;No;3-3
+PT;4-3;Aguirre Velasco Mariana;1114489649;3-3;3-3;4-3
+PT;4-3;Querales Olivera Luiciana Valentina;5613859;3-3;3-3;4-3
+PT;4-3;florez hidrobo joseph andres;1116080592;4-2;No;4-3
+CP;0-1;Bonilla Bejarano Marco Antonio;1110305909;0-2;No;0-1
+CP;0-1;Hernandez Correa Melani Zaray;1151973214;0-2;No;0-1
+CP;0-1;Perlaza Mina Oriana Alibeth;1232815126;0-2;No;0-1
+CP;0-1;Sanchez Vasquez Matthew;1107871050;0-2;No;0-1
+CP;0-2;Gomez Martinez Dilan Andres;1107537959;0-1;No;0-2
+CP;2-1;Padilla Agudelo Camilo;1232805214;2-2;1-2;2-1
+CP;2-2;Tesares Lago Yaklier Eduardo;1081933986;1-2;1-2;2-2
+CP;3-1;Angulo Yesquen Briana Shari;1109683957;3-2;No;3-1
+CP;3-2;Bustos Ardila Mathias;1109683338;3-1;3-1;3-2
+CP;3-2;Chilito Palacios Briany Michell;1108570860;3-1;3-1;3-2
+CP;3-2;Cortes Goyes Dilan Esteban;1111697941;3-1;3-1;3-2
+CP;3-2;Marin Marin Marianyelis Valentina;7845040;3-1;2-2;3-2
+CP;4-1;Marcano Garcia Saimar Alvanelys;6654083;4-2;3-1;4-1
+CP;4-1;Cabrera Garcia Brittany;1150693715;4-2;No;4-1
+CP;4-1;Guerrero Zuñiga Martin Ali;1232794977;4-2;No;4-1
+CP;4-1;Preciado Chaparro Mathias Enrrique;1146542316;4-2;No;4-1
+CP;4-1;Rendon Pantoja Luciana;1109682743;4-2;No;4-1
+CP;4-1;Quintero Guedez Ricardo;3644042;4-2;No;4-1
+CP;5-2;Gomez Guacas Jhelenn Luciana;1111692390;4-2;4-2;5-2
