@@ -18,6 +18,7 @@
 -- Idea central: las 24 columnas "GRUPO 20XX" del Excel se convierten en
 -- filas de `matriculas` (1 fila = 1 estudiante en 1 año lectivo).
 -- =====================================================================
+
 -- ---------- 1. Institución y sedes -----------------------------------
 CREATE TABLE instituciones (
   id              TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -213,6 +214,22 @@ CREATE TABLE entregas_boletin (
   CONSTRAINT fk_bol_mat FOREIGN KEY (matricula_id) REFERENCES matriculas(id) ON DELETE CASCADE,
   CONSTRAINT fk_bol_per FOREIGN KEY (periodo_id)   REFERENCES periodos(id)
 ) ENGINE=InnoDB;
+
+-- Las 10 columnas "BOLETÍN 1º..10º" del Excel, guardadas SIN INTERPRETAR.
+-- No se sabe todavía si esos números son periodos del año lectivo o grados
+-- anteriores, así que no se pueden meter en `entregas_boletin` (que exige un
+-- periodo real). Aquí se conserva el valor literal de la celda; cuando el
+-- colegio confirme el significado, se traduce desde esta tabla y se elimina.
+CREATE TABLE boletines_excel (
+  id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  matricula_id   INT UNSIGNED NOT NULL COMMENT 'la matrícula del año en curso',
+  numero         TINYINT UNSIGNED NOT NULL COMMENT 'el encabezado: 1 = 1º ... 10 = 10º',
+  valor          VARCHAR(20) NOT NULL COMMENT 'texto literal de la celda: S, NO APLICA, ...',
+  UNIQUE KEY uq_bol_excel (matricula_id, numero),
+  KEY ix_bol_excel_valor (valor),
+  CONSTRAINT fk_bolx_mat FOREIGN KEY (matricula_id)
+    REFERENCES matriculas(id) ON DELETE CASCADE
+) ENGINE=InnoDB COMMENT='Datos crudos de las columnas BOLETÍN del Excel, pendientes de interpretar';
 
 -- ---------- 8. Vistas equivalentes a las hojas de resumen ------------
 CREATE OR REPLACE VIEW v_estudiantes_actuales AS
