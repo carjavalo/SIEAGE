@@ -166,7 +166,13 @@ export function Opciones({ id, etiqueta, opciones, valor, onCambio, error, ayuda
     return (
         <div className={cn('flex flex-col gap-2', ancho === 'completo' && 'sm:col-span-2')}>
             <Etiqueta id={idEtiqueta}>{etiqueta}</Etiqueta>
-            <div role="radiogroup" aria-labelledby={idEtiqueta} aria-describedby={describir(id, error, ayuda)} className={cn('grid gap-2.5', columnas)}>
+            <div
+                role="radiogroup"
+                aria-labelledby={idEtiqueta}
+                aria-describedby={describir(id, error, ayuda)}
+                aria-invalid={!!error}
+                className={cn('grid gap-2.5', columnas)}
+            >
                 {opciones.map((opcion, i) => {
                     const elegida = opcion.valor === valor;
                     return (
