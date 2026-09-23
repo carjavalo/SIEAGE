@@ -22,7 +22,7 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->create();
 
         $response = $this->post('/login', [
-            'email' => $user->email,
+            'usuario' => $user->usuario,
             'password' => 'password',
         ]);
 
@@ -35,7 +35,7 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->create();
 
         $this->post('/login', [
-            'email' => $user->email,
+            'usuario' => $user->usuario,
             'password' => 'wrong-password',
         ]);
 
@@ -50,5 +50,17 @@ class AuthenticationTest extends TestCase
 
         $this->assertGuest();
         $response->assertRedirect('/');
+    }
+
+    public function test_inactive_users_can_not_authenticate()
+    {
+        $user = User::factory()->create(['activo' => false]);
+
+        $this->post('/login', [
+            'usuario' => $user->usuario,
+            'password' => 'password',
+        ]);
+
+        $this->assertGuest();
     }
 }

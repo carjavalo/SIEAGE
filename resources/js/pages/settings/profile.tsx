@@ -24,7 +24,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
 
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
         name: auth.user.name,
-        email: auth.user.email,
+        email: auth.user.email ?? '',
     });
 
     const submit: FormEventHandler = (e) => {
@@ -67,7 +67,6 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                 className="mt-1 block w-full"
                                 value={data.email}
                                 onChange={(e) => setData('email', e.target.value)}
-                                required
                                 autoComplete="username"
                                 placeholder="Email address"
                             />
