@@ -4,8 +4,8 @@ import { UserInfo } from '@/components/user-info';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
-import { Head, useForm, usePage } from '@inertiajs/react';
-import { CheckCircle2, FileSpreadsheet, LoaderCircle, UploadCloud, X } from 'lucide-react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { CheckCircle2, FileSpreadsheet, GraduationCap, LoaderCircle, UploadCloud, X } from 'lucide-react';
 import { type ChangeEvent, type DragEvent, type FormEventHandler, useState } from 'react';
 
 const EXTENSIONES = ['xlsx', 'xls'];
@@ -75,12 +75,19 @@ export default function Dashboard() {
             <div className="bg-background text-foreground flex min-h-screen flex-col">
                 <header className="flex items-center justify-between px-6 py-5 md:px-10">
                     <div className="flex items-center gap-3">
-                        <img src="/logo-escuela.jpg" alt="" className="size-9 rounded-full object-cover ring-1 ring-black/5" />
+                        <img src="/sieage-logo.png" alt="SIEAGE" className="h-11 w-auto rounded-md object-contain" />
                         <div className="leading-tight">
                             <p className="text-sm font-semibold tracking-tight">{name}</p>
                             <p className="text-muted-foreground text-xs">I.E. Alfonso López Pumarejo</p>
                         </div>
                     </div>
+                    <Link
+                        href="/estudiantes"
+                        className="mr-3 ml-auto flex items-center gap-2 rounded-full bg-[#EEF2FB] px-4 py-2 text-sm font-medium text-[#1E3A7B] transition hover:bg-[#DCE5F8]"
+                    >
+                        <GraduationCap className="size-4" />
+                        Estudiantes
+                    </Link>
                     {auth.user && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
