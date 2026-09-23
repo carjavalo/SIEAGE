@@ -31,13 +31,14 @@ export function PanelLateral({ anio, actual, alcanzado, onIr }: ProgresoProps) {
         <aside className="sticky top-4 hidden h-[calc(100vh-2rem)] flex-col justify-between overflow-y-auto rounded-[32px] bg-[#F2FBF7] p-10 lg:flex xl:p-12">
             <Marca />
 
-            <div className="py-10">
+            {/* En pantallas bajas (laptops de 768 px) todo se compacta para no necesitar scroll. */}
+            <div className="py-10 [@media(max-height:820px)]:py-6">
                 <p className="text-[13px] font-medium text-[#55706A]">Inscripción · Año lectivo {anio}</p>
-                <p className="mt-3 max-w-sm text-[38px] leading-[1.08] font-semibold tracking-[-0.03em] xl:text-[42px]">
+                <p className="mt-3 max-w-sm text-[38px] leading-[1.08] font-semibold tracking-[-0.03em] xl:text-[42px] [@media(max-height:680px)]:hidden [@media(max-height:820px)]:text-[30px]">
                     Tu lugar en el colegio empieza aquí.
                 </p>
 
-                <ol className="mt-10">
+                <ol className="mt-10 [@media(max-height:820px)]:mt-7">
                     {PASOS.map((paso, i) => {
                         const hecho = actual > i;
                         const esActual = actual === i;
@@ -45,7 +46,7 @@ export function PanelLateral({ anio, actual, alcanzado, onIr }: ProgresoProps) {
                         const Icono = paso.icono;
 
                         return (
-                            <li key={paso.corto} className="relative pb-6 last:pb-0">
+                            <li key={paso.corto} className="relative pb-6 last:pb-0 [@media(max-height:820px)]:pb-4">
                                 {i < PASOS.length - 1 && (
                                     <span aria-hidden className="absolute top-11 bottom-1 left-[19px] w-[2px] overflow-hidden rounded-full bg-[#D5E8E0]">
                                         <span
