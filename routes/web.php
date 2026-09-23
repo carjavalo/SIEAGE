@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\EstudianteController;
 use App\Http\Controllers\ImportacionController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -12,6 +13,9 @@ Route::middleware(['auth'])->group(function () {
     })->name('dashboard');
 
     Route::post('importaciones', [ImportacionController::class, 'store'])->name('importaciones.store');
+
+    Route::get('estudiantes', [EstudianteController::class, 'index'])->name('estudiantes.index');
+    Route::get('estudiantes/{estudiante}', [EstudianteController::class, 'show'])->whereNumber('estudiante')->name('estudiantes.show');
 });
 
 require __DIR__.'/settings.php';
