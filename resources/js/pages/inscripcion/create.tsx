@@ -127,10 +127,8 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
         }
         const pendientes = erroresPorEnfocar.current;
         erroresPorEnfocar.current = null;
-        if (pendientes) {
-            requestAnimationFrame(() => enfocarPrimerError(pendientes));
-            return;
-        }
+        // El efecto corre después de pintar el paso nuevo: sus campos ya existen.
+        if (pendientes) return enfocarPrimerError(pendientes);
         window.scrollTo({ top: 0, behavior: sinMovimiento() ? 'auto' : 'smooth' });
         titulo.current?.focus({ preventScroll: true });
     }, [paso]);
@@ -146,7 +144,9 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
     const marcarErrores = (errs: Errores) => {
         form.clearErrors(...PASOS[paso].campos);
         form.setError(errs as Record<Campo, string>);
-        requestAnimationFrame(() => enfocarPrimerError(errs));
+        // Sin requestAnimationFrame: los campos ya están en pantalla, y rAF se
+        // pausa si la pestaña queda en segundo plano.
+        enfocarPrimerError(errs);
         const n = Object.keys(errs).length;
         sileo.warning({
             title: n === 1 ? 'Falta un dato' : `Faltan ${n} datos`,
