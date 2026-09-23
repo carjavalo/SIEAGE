@@ -1,21 +1,30 @@
-import { BotonPrincipal, BotonSecundario, Buscador, CampoArea, CampoTexto, Opciones, type OpcionVisual, Seccion } from '@/components/inscripcion/controles';
+import {
+    BotonPrincipal,
+    BotonSecundario,
+    Buscador,
+    CampoArea,
+    CampoTexto,
+    Opciones,
+    type OpcionVisual,
+    Seccion,
+} from '@/components/inscripcion/controles';
 import { BarraMovil, PanelLateral } from '@/components/inscripcion/progreso';
 import {
-    CAMPOS_COMPARTIDOS_ENTRE_HERMANOS,
     type Campo,
+    CAMPOS_COMPARTIDOS_ENTRE_HERMANOS,
     DATOS_VACIOS,
     type DatosInscripcion,
     type Errores,
     etiquetaDe,
     etiquetaParentesco,
     fechaLarga,
-    GRUPOS_ETNICOS,
     type Grado,
+    GRUPOS_ETNICOS,
     NIVELES_SISBEN,
     nombreCompleto,
     PAISES,
-    PASOS,
     pasoDelCampo,
+    PASOS,
     SEXOS,
     TIPOS_DOCUMENTO,
     TIPOS_SANGRE,
@@ -259,7 +268,7 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
                 <link href="https://fonts.bunny.net/css?family=outfit:400,500,600" rel="stylesheet" />
             </Head>
 
-            <div className="grid min-h-screen bg-white p-4 font-['Outfit',ui-sans-serif,system-ui,sans-serif] text-[#17302A] lg:grid-cols-[400px_minmax(0,1fr)] lg:gap-4 xl:grid-cols-[460px_minmax(0,1fr)]">
+            <div className="grid min-h-screen bg-white p-4 font-['Outfit',ui-sans-serif,system-ui,sans-serif] text-[#16223F] lg:grid-cols-[400px_minmax(0,1fr)] lg:gap-4 xl:grid-cols-[460px_minmax(0,1fr)]">
                 <PanelLateral anio={anioLectivo} actual={paso} alcanzado={alcanzado} onIr={irA} />
 
                 <main className="flex min-w-0 flex-col">
@@ -271,7 +280,12 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
                             <div aria-hidden className="absolute -left-[10000px] size-px overflow-hidden">
                                 <label>
                                     No llenar
-                                    <input tabIndex={-1} autoComplete="off" value={data.sitio_web} onChange={(e) => form.setData('sitio_web', e.target.value)} />
+                                    <input
+                                        tabIndex={-1}
+                                        autoComplete="off"
+                                        value={data.sitio_web}
+                                        onChange={(e) => form.setData('sitio_web', e.target.value)}
+                                    />
                                 </label>
                             </div>
 
@@ -291,7 +305,7 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
                                 {enPasos && (
                                     <>
                                         <header className="mb-9 space-y-2">
-                                            <p className="text-[13px] font-medium text-[#1F7A5C]">
+                                            <p className="text-[13px] font-medium text-[#1E3A7B]">
                                                 Paso {paso + 1} de {PASOS.length}
                                             </p>
                                             <h2
@@ -301,7 +315,7 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
                                             >
                                                 {PASOS[paso].titulo}
                                             </h2>
-                                            <p className="text-base text-[#55706A]">{PASOS[paso].descripcion}</p>
+                                            <p className="text-base text-[#56627F]">{PASOS[paso].descripcion}</p>
                                         </header>
 
                                         <div className="space-y-10">
@@ -309,9 +323,19 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
                                                 <>
                                                     <Seccion titulo="Nombre completo">
                                                         <CampoTexto {...props('primer_nombre')} etiqueta="Primer nombre" autoComplete="off" />
-                                                        <CampoTexto {...props('segundo_nombre')} etiqueta="Segundo nombre" opcional autoComplete="off" />
+                                                        <CampoTexto
+                                                            {...props('segundo_nombre')}
+                                                            etiqueta="Segundo nombre"
+                                                            opcional
+                                                            autoComplete="off"
+                                                        />
                                                         <CampoTexto {...props('primer_apellido')} etiqueta="Primer apellido" autoComplete="off" />
-                                                        <CampoTexto {...props('segundo_apellido')} etiqueta="Segundo apellido" opcional autoComplete="off" />
+                                                        <CampoTexto
+                                                            {...props('segundo_apellido')}
+                                                            etiqueta="Segundo apellido"
+                                                            opcional
+                                                            autoComplete="off"
+                                                        />
                                                         <Opciones {...props('sexo')} etiqueta="Sexo" opciones={SEXOS} />
                                                     </Seccion>
 
@@ -323,10 +347,24 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
                                                             opciones={PAISES}
                                                         />
                                                         {data.pais_nacimiento === 'Otro' && (
-                                                            <CampoTexto {...props('pais_nacimiento_otro')} etiqueta="¿En qué país?" ancho="completo" autoFocus />
+                                                            <CampoTexto
+                                                                {...props('pais_nacimiento_otro')}
+                                                                etiqueta="¿En qué país?"
+                                                                ancho="completo"
+                                                                autoFocus
+                                                            />
                                                         )}
-                                                        <CampoTexto {...props('ciudad_nacimiento')} etiqueta="Ciudad de nacimiento" placeholder="Ej. Cali, Valle" />
-                                                        <CampoTexto {...props('fecha_nacimiento')} etiqueta="Fecha de nacimiento" type="date" max={hoy()} />
+                                                        <CampoTexto
+                                                            {...props('ciudad_nacimiento')}
+                                                            etiqueta="Ciudad de nacimiento"
+                                                            placeholder="Ej. Cali, Valle"
+                                                        />
+                                                        <CampoTexto
+                                                            {...props('fecha_nacimiento')}
+                                                            etiqueta="Fecha de nacimiento"
+                                                            type="date"
+                                                            max={hoy()}
+                                                        />
                                                     </Seccion>
 
                                                     <Seccion titulo="Documento de identidad">
@@ -338,7 +376,12 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
                                                             columnas="grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3"
                                                         />
                                                         {data.tipo_documento === 'Otro' && (
-                                                            <CampoTexto {...props('tipo_documento_otro')} etiqueta="¿Qué documento es?" ancho="completo" autoFocus />
+                                                            <CampoTexto
+                                                                {...props('tipo_documento_otro')}
+                                                                etiqueta="¿Qué documento es?"
+                                                                ancho="completo"
+                                                                autoFocus
+                                                            />
                                                         )}
                                                         <CampoTexto
                                                             {...props('numero_documento')}
@@ -348,7 +391,11 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
                                                             autoComplete="off"
                                                             ayuda="Solo números, sin puntos ni espacios."
                                                         />
-                                                        <CampoTexto {...props('ciudad_expedicion')} etiqueta="Ciudad de expedición" placeholder="Ej. Cali, Valle" />
+                                                        <CampoTexto
+                                                            {...props('ciudad_expedicion')}
+                                                            etiqueta="Ciudad de expedición"
+                                                            placeholder="Ej. Cali, Valle"
+                                                        />
                                                     </Seccion>
                                                 </>
                                             )}
@@ -371,7 +418,12 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
                                                             opciones={TIPOS_SANGRE}
                                                             columnas="grid-cols-4"
                                                         />
-                                                        <CampoTexto {...props('eps')} etiqueta="EPS a la que está afiliado" placeholder="Nombre de la EPS" ancho="completo" />
+                                                        <CampoTexto
+                                                            {...props('eps')}
+                                                            etiqueta="EPS a la que está afiliado"
+                                                            placeholder="Nombre de la EPS"
+                                                            ancho="completo"
+                                                        />
                                                         <Opciones
                                                             {...props('sisben')}
                                                             etiqueta="Nivel del SISBÉN"
@@ -397,7 +449,12 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
                                                             columnas="grid-cols-2 sm:grid-cols-3"
                                                         />
                                                         {data.grupo_etnico === 'Otro' && (
-                                                            <CampoTexto {...props('grupo_etnico_otro')} etiqueta="¿Cuál?" ancho="completo" autoFocus />
+                                                            <CampoTexto
+                                                                {...props('grupo_etnico_otro')}
+                                                                etiqueta="¿Cuál?"
+                                                                ancho="completo"
+                                                                autoFocus
+                                                            />
                                                         )}
                                                     </Seccion>
                                                 </>
@@ -456,10 +513,28 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
                                             {paso === 3 && (
                                                 <>
                                                     <Seccion titulo="Nombre completo">
-                                                        <CampoTexto {...props('acudiente_primer_nombre')} etiqueta="Primer nombre" autoComplete="given-name" />
-                                                        <CampoTexto {...props('acudiente_segundo_nombre')} etiqueta="Segundo nombre" opcional autoComplete="additional-name" />
-                                                        <CampoTexto {...props('acudiente_primer_apellido')} etiqueta="Primer apellido" autoComplete="family-name" />
-                                                        <CampoTexto {...props('acudiente_segundo_apellido')} etiqueta="Segundo apellido" opcional autoComplete="off" />
+                                                        <CampoTexto
+                                                            {...props('acudiente_primer_nombre')}
+                                                            etiqueta="Primer nombre"
+                                                            autoComplete="given-name"
+                                                        />
+                                                        <CampoTexto
+                                                            {...props('acudiente_segundo_nombre')}
+                                                            etiqueta="Segundo nombre"
+                                                            opcional
+                                                            autoComplete="additional-name"
+                                                        />
+                                                        <CampoTexto
+                                                            {...props('acudiente_primer_apellido')}
+                                                            etiqueta="Primer apellido"
+                                                            autoComplete="family-name"
+                                                        />
+                                                        <CampoTexto
+                                                            {...props('acudiente_segundo_apellido')}
+                                                            etiqueta="Segundo apellido"
+                                                            opcional
+                                                            autoComplete="off"
+                                                        />
                                                         <Opciones
                                                             {...props('acudiente_parentesco')}
                                                             onCambio={elegir('acudiente_parentesco', 'acudiente_parentesco_otro')}
@@ -468,7 +543,12 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
                                                             columnas="grid-cols-2 sm:grid-cols-3"
                                                         />
                                                         {data.acudiente_parentesco === 'Otro' && (
-                                                            <CampoTexto {...props('acudiente_parentesco_otro')} etiqueta="¿Cuál?" ancho="completo" autoFocus />
+                                                            <CampoTexto
+                                                                {...props('acudiente_parentesco_otro')}
+                                                                etiqueta="¿Cuál?"
+                                                                ancho="completo"
+                                                                autoFocus
+                                                            />
                                                         )}
                                                     </Seccion>
 
@@ -480,8 +560,17 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
                                                             maxLength={15}
                                                             ayuda="Solo números, sin puntos ni espacios."
                                                         />
-                                                        <CampoTexto {...props('acudiente_ciudad_expedicion')} etiqueta="Ciudad de expedición" placeholder="Ej. Cali, Valle" />
-                                                        <CampoTexto {...props('acudiente_fecha_nacimiento')} etiqueta="Fecha de nacimiento" type="date" max={hoy()} />
+                                                        <CampoTexto
+                                                            {...props('acudiente_ciudad_expedicion')}
+                                                            etiqueta="Ciudad de expedición"
+                                                            placeholder="Ej. Cali, Valle"
+                                                        />
+                                                        <CampoTexto
+                                                            {...props('acudiente_fecha_nacimiento')}
+                                                            etiqueta="Fecha de nacimiento"
+                                                            type="date"
+                                                            max={hoy()}
+                                                        />
                                                     </Seccion>
 
                                                     <Seccion titulo="Contacto">
@@ -494,7 +583,13 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
                                                             autoComplete="tel"
                                                             placeholder="Ej. 3001234567"
                                                         />
-                                                        <CampoTexto {...props('acudiente_telefono_2')} etiqueta="Otro teléfono" type="tel" numerico maxLength={10} />
+                                                        <CampoTexto
+                                                            {...props('acudiente_telefono_2')}
+                                                            etiqueta="Otro teléfono"
+                                                            type="tel"
+                                                            numerico
+                                                            maxLength={10}
+                                                        />
                                                         <CampoTexto
                                                             {...props('acudiente_correo')}
                                                             etiqueta="Correo electrónico"
@@ -519,7 +614,7 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
                                             )}
                                         </div>
 
-                                        <div className="mt-12 flex items-center justify-between gap-3 border-t border-[#E4F1EC] pt-6">
+                                        <div className="mt-12 flex items-center justify-between gap-3 border-t border-[#E3E9F6] pt-6">
                                             <BotonSecundario type="button" onClick={() => irA(paso - 1)} disabled={processing}>
                                                 <ArrowLeft className="size-[18px]" />
                                                 Atrás
@@ -562,28 +657,28 @@ function Bienvenida({ anio, titulo, onComenzar }: ConTitulo & { anio: number; on
 
     return (
         <div>
-            <span className="inline-flex rounded-full bg-[#DDF4EA] px-3 py-1 text-[13px] font-medium text-[#165C45]">Año lectivo {anio}</span>
+            <span className="inline-flex rounded-full bg-[#DCE5F8] px-3 py-1 text-[13px] font-medium text-[#172E63]">Año lectivo {anio}</span>
             <h1 ref={titulo} tabIndex={-1} className="mt-5 text-[40px] leading-[1.05] font-semibold tracking-[-0.03em] outline-none sm:text-[46px]">
                 Inscripción de estudiantes
             </h1>
-            <p className="mt-4 text-[17px] leading-relaxed text-[#55706A]">
-                Gracias por elegir la Institución Educativa Alfonso López Pumarejo. Completa este formulario para inscribir al estudiante; la secretaría
-                revisará los datos y se pondrá en contacto contigo.
+            <p className="mt-4 text-[17px] leading-relaxed text-[#56627F]">
+                Gracias por elegir la Institución Educativa Alfonso López Pumarejo. Completa este formulario para inscribir al estudiante; la
+                secretaría revisará los datos y se pondrá en contacto contigo.
             </p>
 
-            <div className="mt-9 rounded-[24px] border-[1.5px] border-[#E4F1EC] p-6">
+            <div className="mt-9 rounded-[24px] border-[1.5px] border-[#E3E9F6] p-6">
                 <p className="text-sm font-semibold">Antes de empezar, ten a mano</p>
                 <ul className="mt-4 space-y-3.5">
                     {tenerAMano.map(({ icono: Icono, texto }) => (
                         <li key={texto} className="flex items-center gap-3.5 text-[15px]">
-                            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#F2FBF7] text-[#1F7A5C]">
+                            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#EEF2FB] text-[#1E3A7B]">
                                 <Icono className="size-[18px]" />
                             </span>
                             {texto}
                         </li>
                     ))}
                 </ul>
-                <p className="mt-5 flex items-center gap-2 border-t border-[#E4F1EC] pt-4 text-[13px] text-[#55706A]">
+                <p className="mt-5 flex items-center gap-2 border-t border-[#E3E9F6] pt-4 text-[13px] text-[#56627F]">
                     <Clock className="size-4" />
                     Toma unos 5 minutos · {PASOS.length} pasos
                 </p>
@@ -594,7 +689,7 @@ function Bienvenida({ anio, titulo, onComenzar }: ConTitulo & { anio: number; on
                 <ArrowRight className="size-[18px]" />
             </BotonPrincipal>
 
-            <p className="mt-6 rounded-[14px] bg-[#FFF4EE] px-4 py-3.5 text-sm leading-relaxed text-[#7A3E22]">
+            <p className="mt-6 rounded-[14px] bg-[#EEF2FB] px-4 py-3.5 text-sm leading-relaxed text-[#1E3A7B]">
                 ¿Vas a inscribir a varios hijos? Al terminar podrás inscribir al siguiente sin volver a escribir tus datos.
             </p>
         </div>
@@ -606,15 +701,16 @@ type EnviadoProps = ConTitulo & { estudiante: string; telefono: string; correo: 
 function Enviado({ titulo, estudiante, telefono, correo, onHermano, onTerminar }: EnviadoProps) {
     return (
         <div>
-            <div className="flex size-16 items-center justify-center rounded-full bg-[#DDF4EA]">
-                <Check strokeWidth={2.5} className="animate-in zoom-in-50 size-8 text-[#1F7A5C] duration-500 motion-reduce:animate-none" />
+            <div className="flex size-16 items-center justify-center rounded-full bg-[#DCE5F8]">
+                <Check strokeWidth={2.5} className="animate-in zoom-in-50 size-8 text-[#1E3A7B] duration-500 motion-reduce:animate-none" />
             </div>
             <h1 ref={titulo} tabIndex={-1} className="mt-7 text-[40px] leading-[1.05] font-semibold tracking-[-0.03em] outline-none sm:text-[44px]">
                 ¡Inscripción enviada!
             </h1>
-            <p className="mt-4 text-[17px] leading-relaxed text-[#55706A]">
-                Recibimos los datos de <span className="font-medium text-[#17302A]">{estudiante}</span>. La secretaría los revisará y te contactará al{' '}
-                <span className="font-medium text-[#17302A]">{telefono}</span> o al correo <span className="font-medium break-all text-[#17302A]">{correo}</span>.
+            <p className="mt-4 text-[17px] leading-relaxed text-[#56627F]">
+                Recibimos los datos de <span className="font-medium text-[#16223F]">{estudiante}</span>. La secretaría los revisará y te contactará al{' '}
+                <span className="font-medium text-[#16223F]">{telefono}</span> o al correo{' '}
+                <span className="font-medium break-all text-[#16223F]">{correo}</span>.
             </p>
 
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -626,7 +722,7 @@ function Enviado({ titulo, estudiante, telefono, correo, onHermano, onTerminar }
                     Terminar
                 </BotonSecundario>
             </div>
-            <p className="mt-5 text-[13px] text-[#55706A]">Tus datos como acudiente y los de la residencia quedan llenos para el siguiente.</p>
+            <p className="mt-5 text-[13px] text-[#56627F]">Tus datos como acudiente y los de la residencia quedan llenos para el siguiente.</p>
         </div>
     );
 }
@@ -659,7 +755,10 @@ function Revision({
                 ['Sexo', etiquetaDe(SEXOS, data.sexo)],
                 ['Nació en', `${data.ciudad_nacimiento}, ${otro(data.pais_nacimiento, data.pais_nacimiento_otro)}`],
                 ['Fecha de nacimiento', fechaLarga(data.fecha_nacimiento)],
-                ['Documento', `${data.tipo_documento === 'Otro' ? data.tipo_documento_otro : etiquetaDe(TIPOS_DOCUMENTO, data.tipo_documento)} ${data.numero_documento}`],
+                [
+                    'Documento',
+                    `${data.tipo_documento === 'Otro' ? data.tipo_documento_otro : etiquetaDe(TIPOS_DOCUMENTO, data.tipo_documento)} ${data.numero_documento}`,
+                ],
                 ['Expedido en', data.ciudad_expedicion],
             ],
         },
@@ -686,7 +785,15 @@ function Revision({
         {
             paso: 3,
             filas: [
-                ['Nombre', nombreCompleto(data.acudiente_primer_nombre, data.acudiente_segundo_nombre, data.acudiente_primer_apellido, data.acudiente_segundo_apellido)],
+                [
+                    'Nombre',
+                    nombreCompleto(
+                        data.acudiente_primer_nombre,
+                        data.acudiente_segundo_nombre,
+                        data.acudiente_primer_apellido,
+                        data.acudiente_segundo_apellido,
+                    ),
+                ],
                 ['Parentesco', data.acudiente_parentesco === 'Otro' ? data.acudiente_parentesco_otro : etiquetaParentesco(data.acudiente_parentesco)],
                 ['Documento', `${data.acudiente_numero_documento} · ${data.acudiente_ciudad_expedicion}`],
                 ['Fecha de nacimiento', fechaLarga(data.acudiente_fecha_nacimiento)],
@@ -701,16 +808,16 @@ function Revision({
             {bloques.map(({ paso, filas }) => {
                 const { corto, icono: Icono } = PASOS[paso];
                 return (
-                    <section key={paso} aria-label={corto} className="rounded-[22px] border-[1.5px] border-[#E4F1EC] p-5 sm:p-6">
+                    <section key={paso} aria-label={corto} className="rounded-[22px] border-[1.5px] border-[#E3E9F6] p-5 sm:p-6">
                         <div className="mb-4 flex items-center justify-between gap-3">
                             <h3 className="flex items-center gap-2.5 text-base font-semibold">
-                                <Icono className="size-[18px] text-[#1F7A5C]" />
+                                <Icono className="size-[18px] text-[#1E3A7B]" />
                                 {corto}
                             </h3>
                             <button
                                 type="button"
                                 onClick={() => onEditar(paso)}
-                                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-[#1F7A5C] transition-colors hover:bg-[#F2FBF7] focus-visible:ring-4 focus-visible:ring-[#DDF4EA] focus-visible:outline-none"
+                                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-[#1E3A7B] transition-colors hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none"
                             >
                                 <Pencil className="size-3.5" />
                                 Editar
@@ -719,7 +826,7 @@ function Revision({
                         <dl className="grid gap-x-6 gap-y-3.5 sm:grid-cols-2">
                             {filas.map(([dt, dd]) => (
                                 <div key={dt} className="min-w-0">
-                                    <dt className="text-[13px] text-[#55706A]">{dt}</dt>
+                                    <dt className="text-[13px] text-[#56627F]">{dt}</dt>
                                     <dd className="text-[15px] font-medium break-words">{dd}</dd>
                                 </div>
                             ))}
@@ -731,7 +838,11 @@ function Revision({
             <label
                 className={cn(
                     'flex cursor-pointer gap-3.5 rounded-[22px] border-[1.5px] p-5 transition-colors duration-200',
-                    data.autorizacion_datos ? 'border-[#9ADBC3] bg-[#F2FBF7]' : error ? 'border-[#F0B4AB] bg-[#FFF8F6]' : 'border-transparent bg-[#FFF4EE]',
+                    data.autorizacion_datos
+                        ? 'border-[#6E8BD6] bg-[#EEF2FB]'
+                        : error
+                          ? 'border-[#F0B4AB] bg-[#FFF8F6]'
+                          : 'border-transparent bg-[#EEF2FB]',
                 )}
             >
                 <input
@@ -741,11 +852,11 @@ function Revision({
                     onChange={(e) => onAutorizar(e.target.checked)}
                     aria-invalid={!!error}
                     aria-describedby={error ? 'autorizacion_datos-error' : undefined}
-                    className="mt-0.5 size-[18px] shrink-0 cursor-pointer accent-[#1F7A5C]"
+                    className="mt-0.5 size-[18px] shrink-0 cursor-pointer accent-[#1E3A7B]"
                 />
-                <span className="text-sm leading-relaxed text-[#3C564F]">
-                    Autorizo a la Institución Educativa Alfonso López Pumarejo a usar estos datos únicamente para el proceso de matrícula, conforme a la Ley
-                    1581 de 2012 de protección de datos personales.
+                <span className="text-sm leading-relaxed text-[#3E4A68]">
+                    Autorizo a la Institución Educativa Alfonso López Pumarejo a usar estos datos únicamente para el proceso de matrícula, conforme a
+                    la Ley 1581 de 2012 de protección de datos personales.
                 </span>
             </label>
             {error && (

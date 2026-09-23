@@ -4,12 +4,12 @@ import { type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, us
 
 /**
  * Controles propios del formulario público. Siguen los tokens del login
- * (Outfit, verde #1F7A5C, bordes #D5E8E0) y no dependen de shadcn.
+ * (Outfit, verde #1E3A7B, bordes #D3DDF3) y no dependen de shadcn.
  */
 
 const CAMPO =
-    'h-[52px] w-full rounded-[14px] border-[1.5px] bg-white px-4 text-[15px] text-[#17302A] outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-[#8AA39C] focus:ring-4';
-const CAMPO_NORMAL = 'border-[#D5E8E0] hover:border-[#B9D6CB] focus:border-[#9ADBC3] focus:ring-[#DDF4EA]';
+    'h-[52px] w-full rounded-[14px] border-[1.5px] bg-white px-4 text-[15px] text-[#16223F] outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-[#8C97B3] focus:ring-4';
+const CAMPO_NORMAL = 'border-[#D3DDF3] hover:border-[#B9C8EC] focus:border-[#6E8BD6] focus:ring-[#DCE5F8]';
 const CAMPO_ERROR = 'border-[#F0B4AB] focus:border-[#E0897D] focus:ring-[#FDECEA]';
 
 export function claseCampo(error?: string) {
@@ -24,11 +24,11 @@ function describir(id: string, error?: string, ayuda?: string) {
 // ------------------------------------------------------------------ piezas --
 
 function Etiqueta({ htmlFor, id, children, opcional }: { htmlFor?: string; id?: string; children: ReactNode; opcional?: boolean }) {
-    const clase = 'flex items-baseline justify-between gap-3 text-sm font-medium text-[#17302A]';
+    const clase = 'flex items-baseline justify-between gap-3 text-sm font-medium text-[#16223F]';
     const contenido = (
         <>
             {children}
-            {opcional && <span className="text-[13px] font-normal text-[#8AA39C]">Opcional</span>}
+            {opcional && <span className="text-[13px] font-normal text-[#8C97B3]">Opcional</span>}
         </>
     );
     // Un grupo de radios no tiene un único control al que apuntar: su título
@@ -47,17 +47,14 @@ function Etiqueta({ htmlFor, id, children, opcional }: { htmlFor?: string; id?: 
 function Nota({ id, error, ayuda }: { id: string; error?: string; ayuda?: string }) {
     if (error) {
         return (
-            <p
-                id={`${id}-error`}
-                className="animate-in fade-in-0 slide-in-from-top-1 text-sm text-[#B42318] duration-200 motion-reduce:animate-none"
-            >
+            <p id={`${id}-error`} className="animate-in fade-in-0 slide-in-from-top-1 text-sm text-[#B42318] duration-200 motion-reduce:animate-none">
                 {error}
             </p>
         );
     }
     if (ayuda) {
         return (
-            <p id={`${id}-ayuda`} className="text-[13px] leading-snug text-[#55706A]">
+            <p id={`${id}-ayuda`} className="text-[13px] leading-snug text-[#56627F]">
                 {ayuda}
             </p>
         );
@@ -74,9 +71,9 @@ export function Seccion({ titulo, children }: { titulo: string; children: ReactN
     const id = useId();
     return (
         <section aria-labelledby={id} className="space-y-[18px]">
-            <h3 id={id} className="flex items-center gap-3 text-[12px] font-semibold tracking-[0.1em] text-[#55706A] uppercase">
+            <h3 id={id} className="flex items-center gap-3 text-[12px] font-semibold tracking-[0.1em] text-[#56627F] uppercase">
                 {titulo}
-                <span aria-hidden className="h-px flex-1 bg-[#E4F1EC]" />
+                <span aria-hidden className="h-px flex-1 bg-[#E3E9F6]" />
             </h3>
             <div className="grid gap-[18px] sm:grid-cols-2">{children}</div>
         </section>
@@ -120,7 +117,19 @@ export function CampoTexto({ id, etiqueta, valor, onCambio, error, ayuda, opcion
 
 type CampoAreaProps = Omit<CampoTextoProps, 'numerico'> & { filas?: number };
 
-export function CampoArea({ id, etiqueta, valor, onCambio, error, ayuda, opcional, ancho = 'completo', filas = 3, placeholder, maxLength }: CampoAreaProps) {
+export function CampoArea({
+    id,
+    etiqueta,
+    valor,
+    onCambio,
+    error,
+    ayuda,
+    opcional,
+    ancho = 'completo',
+    filas = 3,
+    placeholder,
+    maxLength,
+}: CampoAreaProps) {
     return (
         <div className={cn('flex flex-col gap-2', ancho === 'completo' && 'sm:col-span-2')}>
             <Etiqueta htmlFor={id} opcional={opcional}>
@@ -180,12 +189,12 @@ export function Opciones({ id, etiqueta, opciones, valor, onCambio, error, ayuda
                             key={opcion.valor}
                             className={cn(
                                 'relative flex min-h-[52px] cursor-pointer items-center gap-3 rounded-[14px] border-[1.5px] bg-white px-4 py-3 text-[15px] leading-snug transition-all duration-200 select-none active:scale-[0.98] motion-reduce:transition-none',
-                                'has-[:focus-visible]:border-[#9ADBC3] has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-[#DDF4EA]',
+                                'has-[:focus-visible]:border-[#6E8BD6] has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-[#DCE5F8]',
                                 elegida
-                                    ? 'border-[#1F7A5C] bg-[#F2FBF7] font-medium text-[#165C45]'
+                                    ? 'border-[#1E3A7B] bg-[#EEF2FB] font-medium text-[#172E63]'
                                     : error
-                                      ? 'border-[#F0B4AB] text-[#17302A] hover:border-[#E0897D]'
-                                      : 'border-[#D5E8E0] text-[#17302A] hover:border-[#9ADBC3] hover:bg-[#FAFDFC]',
+                                      ? 'border-[#F0B4AB] text-[#16223F] hover:border-[#E0897D]'
+                                      : 'border-[#D3DDF3] text-[#16223F] hover:border-[#6E8BD6] hover:bg-[#F9FAFD]',
                             )}
                         >
                             <input
@@ -201,7 +210,7 @@ export function Opciones({ id, etiqueta, opciones, valor, onCambio, error, ayuda
                                 aria-hidden
                                 className={cn(
                                     'flex size-[18px] shrink-0 items-center justify-center rounded-full border-[1.5px] transition-colors duration-200',
-                                    elegida ? 'border-[#1F7A5C] bg-[#1F7A5C]' : 'border-[#B9D6CB] bg-white',
+                                    elegida ? 'border-[#1E3A7B] bg-[#1E3A7B]' : 'border-[#B9C8EC] bg-white',
                                 )}
                             >
                                 <Check
@@ -210,7 +219,7 @@ export function Opciones({ id, etiqueta, opciones, valor, onCambio, error, ayuda
                                 />
                             </span>
                             <span className="min-w-0">{opcion.etiqueta}</span>
-                            {opcion.detalle && <span className="ml-auto pl-2 text-[13px] font-normal text-[#8AA39C]">{opcion.detalle}</span>}
+                            {opcion.detalle && <span className="ml-auto pl-2 text-[13px] font-normal text-[#8C97B3]">{opcion.detalle}</span>}
                         </label>
                     );
                 })}
@@ -321,13 +330,13 @@ export function Buscador({ id, etiqueta, valor, onCambio, sugerencias, placehold
                 <ChevronDown
                     aria-hidden
                     className={cn(
-                        'pointer-events-none absolute top-1/2 right-4 size-[18px] -translate-y-1/2 text-[#8AA39C] transition-transform duration-200',
+                        'pointer-events-none absolute top-1/2 right-4 size-[18px] -translate-y-1/2 text-[#8C97B3] transition-transform duration-200',
                         mostrarLista && 'rotate-180',
                     )}
                 />
 
                 {mostrarLista && (
-                    <div className="animate-in fade-in-0 slide-in-from-top-1 absolute z-20 mt-2 w-full overflow-hidden rounded-[16px] border-[1.5px] border-[#D5E8E0] bg-white shadow-[0_18px_40px_-18px_rgba(23,48,42,0.35)] duration-150 motion-reduce:animate-none">
+                    <div className="animate-in fade-in-0 slide-in-from-top-1 absolute z-20 mt-2 w-full overflow-hidden rounded-[16px] border-[1.5px] border-[#D3DDF3] bg-white shadow-[0_18px_40px_-18px_rgba(22,34,63,0.35)] duration-150 motion-reduce:animate-none">
                         {filtradas.length > 0 ? (
                             <ul id={idLista} role="listbox" aria-label={etiqueta} className="max-h-64 overflow-y-auto overscroll-contain p-1.5">
                                 {filtradas.map((s, i) => {
@@ -343,17 +352,17 @@ export function Buscador({ id, etiqueta, valor, onCambio, sugerencias, placehold
                                             onClick={() => elegir(s)}
                                             className={cn(
                                                 'flex cursor-pointer items-center justify-between gap-3 rounded-[10px] px-3 py-2.5 text-[15px] transition-colors',
-                                                i === activo ? 'bg-[#F2FBF7] text-[#165C45]' : 'text-[#17302A]',
+                                                i === activo ? 'bg-[#EEF2FB] text-[#172E63]' : 'text-[#16223F]',
                                             )}
                                         >
                                             {s}
-                                            {actual && <Check aria-hidden className="size-4 shrink-0 text-[#1F7A5C]" />}
+                                            {actual && <Check aria-hidden className="size-4 shrink-0 text-[#1E3A7B]" />}
                                         </li>
                                     );
                                 })}
                             </ul>
                         ) : (
-                            <p id={idLista} className="px-4 py-3.5 text-sm text-[#55706A]">
+                            <p id={idLista} className="px-4 py-3.5 text-sm text-[#56627F]">
                                 No está en la lista. Puedes dejarlo escrito así.
                             </p>
                         )}
@@ -374,7 +383,7 @@ export function BotonPrincipal({ cargando, children, className, disabled, ...res
         <button
             disabled={disabled || cargando}
             className={cn(
-                'flex h-14 items-center justify-center gap-2 rounded-[18px] bg-[#1F7A5C] px-7 text-base font-semibold text-white transition-all duration-200 hover:bg-[#165C45] focus-visible:ring-4 focus-visible:ring-[#9ADBC3] focus-visible:outline-none active:scale-[0.98] disabled:pointer-events-none disabled:opacity-70',
+                'flex h-14 items-center justify-center gap-2 rounded-[18px] bg-[#1E3A7B] px-7 text-base font-semibold text-white transition-all duration-200 hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#6E8BD6] focus-visible:outline-none active:scale-[0.98] disabled:pointer-events-none disabled:opacity-70',
                 className,
             )}
             {...resto}
@@ -389,7 +398,7 @@ export function BotonSecundario({ children, className, ...resto }: ButtonHTMLAtt
     return (
         <button
             className={cn(
-                'flex h-14 items-center justify-center gap-2 rounded-[18px] px-5 text-base font-medium text-[#3C564F] transition-colors duration-200 hover:bg-[#F2FBF7] focus-visible:ring-4 focus-visible:ring-[#DDF4EA] focus-visible:outline-none disabled:opacity-50',
+                'flex h-14 items-center justify-center gap-2 rounded-[18px] px-5 text-base font-medium text-[#3E4A68] transition-colors duration-200 hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none disabled:opacity-50',
                 className,
             )}
             {...resto}

@@ -6,10 +6,10 @@ import { Check, ShieldCheck } from 'lucide-react';
 export function Marca({ compacta }: { compacta?: boolean }) {
     return (
         <div className="flex items-center gap-3">
-            <img src="/logo-escuela.jpg" alt="" className={cn('rounded-xl object-cover', compacta ? 'size-9' : 'size-11')} />
+            <img src="/sieage-logo.png" alt="SIEAGE" className={cn('w-auto rounded-lg object-contain shadow-sm', compacta ? 'h-11' : 'h-16')} />
             <div className="leading-tight">
                 <p className={cn('font-semibold tracking-tight', compacta ? 'text-base' : 'text-xl')}>SIEAGE</p>
-                <p className="text-[13px] text-[#55706A]">I.E. Alfonso López Pumarejo · Cali</p>
+                
             </div>
         </div>
     );
@@ -28,7 +28,7 @@ export function PanelLateral({ anio, actual, alcanzado, onIr }: ProgresoProps) {
     const enviado = actual >= PASOS.length;
 
     return (
-        <aside className="sticky top-4 hidden h-[calc(100vh-2rem)] flex-col justify-between overflow-y-auto rounded-[32px] bg-[#F2FBF7] p-10 lg:flex xl:p-12">
+        <aside className="sticky top-4 hidden h-[calc(100vh-2rem)] flex-col justify-between overflow-y-auto rounded-[32px] bg-gradient-to-b from-[#EEF2FB] to-[#DCE5F8] p-10 lg:flex xl:p-12">
             <Marca />
 
             {/* En pantallas bajas (laptops de 768 px) todo se compacta para no necesitar scroll. */}
@@ -48,10 +48,13 @@ export function PanelLateral({ anio, actual, alcanzado, onIr }: ProgresoProps) {
                         return (
                             <li key={paso.corto} className="relative pb-6 last:pb-0 [@media(max-height:820px)]:pb-4">
                                 {i < PASOS.length - 1 && (
-                                    <span aria-hidden className="absolute top-11 bottom-1 left-[19px] w-[2px] overflow-hidden rounded-full bg-[#D5E8E0]">
+                                    <span
+                                        aria-hidden
+                                        className="absolute top-11 bottom-1 left-[19px] w-[2px] overflow-hidden rounded-full bg-[#D3DDF3]"
+                                    >
                                         <span
                                             className={cn(
-                                                'block w-full rounded-full bg-[#1F7A5C] transition-[height] duration-500 ease-out',
+                                                'block w-full rounded-full bg-[#1E3A7B] transition-[height] duration-500 ease-out',
                                                 hecho ? 'h-full' : 'h-0',
                                             )}
                                         />
@@ -62,22 +65,27 @@ export function PanelLateral({ anio, actual, alcanzado, onIr }: ProgresoProps) {
                                     disabled={!puedeIr}
                                     onClick={() => onIr(i)}
                                     aria-current={esActual ? 'step' : undefined}
-                                    className="group flex w-full items-center gap-4 rounded-2xl text-left focus-visible:ring-4 focus-visible:ring-[#DDF4EA] focus-visible:outline-none disabled:cursor-default"
+                                    className="group flex w-full items-center gap-4 rounded-2xl text-left focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none disabled:cursor-default"
                                 >
                                     <span
                                         className={cn(
                                             'flex size-10 shrink-0 items-center justify-center rounded-full transition-all duration-300',
-                                            hecho && 'bg-[#1F7A5C] text-white',
-                                            esActual && 'scale-105 bg-white text-[#1F7A5C] shadow-[0_6px_18px_-6px_rgba(31,122,92,0.45)] ring-2 ring-[#1F7A5C]',
-                                            !hecho && !esActual && 'bg-white text-[#8AA39C] ring-1 ring-[#D5E8E0]',
+                                            hecho && 'bg-[#1E3A7B] text-white',
+                                            esActual &&
+                                                'scale-105 bg-white text-[#1E3A7B] shadow-[0_6px_18px_-6px_rgba(30,58,123,0.45)] ring-2 ring-[#1E3A7B]',
+                                            !hecho && !esActual && 'bg-white text-[#8C97B3] ring-1 ring-[#D3DDF3]',
                                             puedeIr && 'group-hover:scale-105',
                                         )}
                                     >
                                         {hecho ? <Check className="size-[18px]" strokeWidth={2.5} /> : <Icono className="size-[18px]" />}
                                     </span>
                                     <span className="leading-tight">
-                                        <span className={cn('block text-[15px] font-medium', !hecho && !esActual && 'text-[#55706A]')}>{paso.corto}</span>
-                                        <span className="text-[13px] text-[#8AA39C]">{hecho ? 'Listo' : esActual ? 'En curso' : `Paso ${i + 1}`}</span>
+                                        <span className={cn('block text-[15px] font-medium', !hecho && !esActual && 'text-[#56627F]')}>
+                                            {paso.corto}
+                                        </span>
+                                        <span className="text-[13px] text-[#8C97B3]">
+                                            {hecho ? 'Listo' : esActual ? 'En curso' : `Paso ${i + 1}`}
+                                        </span>
                                     </span>
                                 </button>
                             </li>
@@ -86,8 +94,8 @@ export function PanelLateral({ anio, actual, alcanzado, onIr }: ProgresoProps) {
                 </ol>
             </div>
 
-            <p className="flex items-center gap-2 text-[13px] text-[#55706A]">
-                <ShieldCheck className="size-4 shrink-0 text-[#1F7A5C]" />
+            <p className="flex items-center gap-2 text-[13px] text-[#56627F]">
+                <ShieldCheck className="size-4 shrink-0 text-[#1E3A7B]" />
                 Tus datos se usan solo para el proceso de matrícula.
             </p>
         </aside>
@@ -100,11 +108,11 @@ export function BarraMovil({ actual }: Pick<ProgresoProps, 'actual'>) {
     const avance = actual >= PASOS.length ? 100 : ((actual + 1) / PASOS.length) * 100;
 
     return (
-        <div className="sticky top-0 z-10 -mx-4 -mt-4 border-b border-[#E4F1EC] bg-white/90 px-4 pt-4 pb-3 backdrop-blur-md lg:hidden">
+        <div className="sticky top-0 z-10 -mx-4 -mt-4 border-b border-[#E3E9F6] bg-white/90 px-4 pt-4 pb-3 backdrop-blur-md lg:hidden">
             <div className="flex items-center justify-between gap-3">
                 <Marca compacta />
                 {enPasos && (
-                    <p className="text-[13px] font-medium text-[#55706A]">
+                    <p className="text-[13px] font-medium text-[#56627F]">
                         {actual + 1} de {PASOS.length}
                     </p>
                 )}
@@ -116,9 +124,9 @@ export function BarraMovil({ actual }: Pick<ProgresoProps, 'actual'>) {
                     aria-valuemin={0}
                     aria-valuemax={100}
                     aria-valuenow={Math.round(avance)}
-                    className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#E4F1EC]"
+                    className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#E3E9F6]"
                 >
-                    <div className="h-full rounded-full bg-[#1F7A5C] transition-[width] duration-500 ease-out" style={{ width: `${avance}%` }} />
+                    <div className="h-full rounded-full bg-[#1E3A7B] transition-[width] duration-500 ease-out" style={{ width: `${avance}%` }} />
                 </div>
             )}
         </div>
