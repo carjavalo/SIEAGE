@@ -157,15 +157,18 @@
     }
 }
 
-/* Toasts (Sileo): el verde de éxito, alineado con la marca #1F7A5C. Sobre la
-   píldora oscura del tema claro se usa un tono más luminoso para que contraste. */
-:root {
+/* Toasts (Sileo). Sileo inyecta su propio <style> en tiempo de ejecución,
+   después de este archivo: por eso los ajustes cuelgan de [data-sileo-viewport],
+   que tiene más especificidad y gana sin importar el orden de carga. */
+[data-sileo-viewport] {
+    /* Verde de éxito alineado con la marca #1F7A5C, más luminoso para que
+       contraste sobre la píldora oscura del tema claro. */
     --sileo-state-success: #3dbe8b;
 }
 
 /* Sileo pone los títulos en "Capitalize" (pensado para títulos cortos en
-   inglés). En español deja "Hay Datos Por Corregir": se escriben en tipo
-   oración directamente en cada llamada a sileo. */
-[data-sileo-title] {
+   inglés) y en español deja "Hay Datos Por Corregir". Los títulos se
+   escriben en tipo oración en cada llamada a sileo. */
+[data-sileo-viewport] [data-sileo-title] {
     text-transform: none;
 }
