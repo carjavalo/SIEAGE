@@ -1,8 +1,11 @@
+// Sileo no inyecta su CSS: va antes de app.css para que la marca pueda sobrescribirlo.
+import 'sileo/styles.css';
 import '../css/app.css';
 
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
+import { Toaster } from 'sileo';
 import { route as routeFn } from 'ziggy-js';
 import { initializeTheme } from './hooks/use-appearance';
 
@@ -18,7 +21,12 @@ createInertiaApp({
     setup({ el, App, props }) {
         const root = createRoot(el);
 
-        root.render(<App {...props} />);
+        root.render(
+            <>
+                <App {...props} />
+                <Toaster position="top-center" theme="light" />
+            </>,
+        );
     },
     progress: {
         color: '#4B5563',

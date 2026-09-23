@@ -156,3 +156,9 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* Toasts (Sileo): el verde de éxito, alineado con la marca #1F7A5C. Sobre la
+   píldora oscura del tema claro se usa un tono más luminoso para que contraste. */
+:root {
+    --sileo-state-success: #3dbe8b;
+}
