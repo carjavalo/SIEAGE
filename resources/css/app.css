@@ -157,8 +157,22 @@
     }
 }
 
-/* Toasts (Sileo): el verde de éxito, alineado con la marca #1F7A5C. Sobre la
-   píldora oscura del tema claro se usa un tono más luminoso para que contraste. */
-:root {
-    --sileo-state-success: #3dbe8b;
+/* Toasts (Sileo): píldora blanca (fill en app.tsx) con la paleta azul de la app.
+   Los tonos de estado son oscuros para que contrasten sobre el blanco. */
+/* Sobre el contenedor (no :root) para ganarle a los valores por defecto de la librería. */
+[data-sileo-viewport] {
+    --sileo-state-success: #1c8a5e;
+    --sileo-state-loading: #56627f;
+    --sileo-state-error: #c0392b;
+    --sileo-state-warning: #b7791f;
+    --sileo-state-info: #1e3a7b;
+    --sileo-state-action: #1e3a7b;
+}
+
+[data-sileo-viewport] [data-sileo-toast] {
+    filter: drop-shadow(0 0 0.5px rgba(30, 58, 123, 0.45)) drop-shadow(0 10px 24px rgba(22, 34, 63, 0.14));
+}
+
+[data-sileo-viewport][data-theme='light'] [data-sileo-toast] [data-sileo-description] {
+    color: #56627f;
 }

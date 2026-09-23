@@ -24,12 +24,12 @@ createInertiaApp({
         root.render(
             <>
                 <App {...props} />
-                <Toaster position="top-center" theme="light" />
+                <Toaster position="top-center" theme="light" options={{ fill: '#FFFFFF' }} />
             </>,
         );
     },
     progress: {
-        color: '#4B5563',
+        color: '#1E3A7B',
     },
 });
 
