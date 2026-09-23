@@ -80,6 +80,13 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
     const titulo = useRef<HTMLHeadingElement>(null);
     const erroresPorEnfocar = useRef<Errores | null>(null);
     const montado = useRef(false);
+    const aviso = useRef<string | null>(null);
+
+    /** Retira el toast de "faltan datos" en cuanto deja de ser cierto. */
+    const quitarAviso = () => {
+        if (aviso.current) sileo.dismiss(aviso.current);
+        aviso.current = null;
+    };
 
     const opcionesGrado = useMemo<OpcionVisual[]>(
         () => grados.map((g) => ({ valor: String(g.id), etiqueta: g.nombre, detalle: g.numero === 0 ? 'Preescolar' : `${g.numero}º` })),
@@ -148,7 +155,8 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
         // pausa si la pestaña queda en segundo plano.
         enfocarPrimerError(errs);
         const n = Object.keys(errs).length;
-        sileo.warning({
+        quitarAviso();
+        aviso.current = sileo.warning({
             title: n === 1 ? 'Falta un dato' : `Faltan ${n} datos`,
             description: 'Los marcamos en rojo para que los revises.',
         });
@@ -158,6 +166,7 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
         const errs = validarPaso(paso, data);
         if (Object.keys(errs).length) return marcarErrores(errs);
         form.clearErrors(...PASOS[paso].campos);
+        quitarAviso();
         irA(paso + 1);
     };
 
@@ -166,6 +175,7 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
     const enviar = () => {
         const errs = validarPaso(REVISION, data);
         if (Object.keys(errs).length) return marcarErrores(errs);
+        quitarAviso();
 
         const envio = new Promise<void>((resolver, rechazar) => {
             let respondio = false;

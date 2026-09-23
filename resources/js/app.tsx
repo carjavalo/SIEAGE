@@ -1,5 +1,3 @@
-// Sileo no inyecta su CSS: va antes de app.css para que la marca pueda sobrescribirlo.
-import 'sileo/styles.css';
 import '../css/app.css';
 
 import { createInertiaApp } from '@inertiajs/react';
