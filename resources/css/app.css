@@ -162,3 +162,10 @@
 :root {
     --sileo-state-success: #3dbe8b;
 }
+
+/* Sileo pone los títulos en "Capitalize" (pensado para títulos cortos en
+   inglés). En español deja "Hay Datos Por Corregir": se escriben en tipo
+   oración directamente en cada llamada a sileo. */
+[data-sileo-title] {
+    text-transform: none;
+}
