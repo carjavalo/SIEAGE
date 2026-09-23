@@ -179,6 +179,7 @@ export function Opciones({ id, etiqueta, opciones, valor, onCambio, error, ayuda
                 role="radiogroup"
                 aria-labelledby={idEtiqueta}
                 aria-describedby={describir(id, error, ayuda)}
+                aria-invalid={!!error}
                 className={cn('grid gap-2.5', columnas)}
             >
                 {opciones.map((opcion, i) => {
