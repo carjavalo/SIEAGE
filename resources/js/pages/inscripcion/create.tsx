@@ -521,7 +521,8 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
                                                             {...props('barrio')}
                                                             etiqueta="Barrio"
                                                             sugerencias={barrios}
-                                                            placeholder="Escribe para buscar"
+                                                            placeholder="Escribe el nombre de tu barrio"
+                                                            ayuda="Te sugerimos los barrios de Cali. Si el tuyo no aparece, escríbelo completo y sigue."
                                                             ancho="completo"
                                                         />
                                                     </Seccion>
