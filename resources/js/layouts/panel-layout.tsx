@@ -12,7 +12,12 @@ const enlaces = [
     { titulo: 'Importar datos', href: '/dashboard', icono: UploadCloud },
 ];
 
-export default function PanelLayout({ titulo, children }: { titulo: string; children: ReactNode }) {
+/**
+ * `completa`: en pantallas grandes la página ocupa exactamente el alto de la
+ * ventana y no se desplaza; cada panel interno se desplaza por su cuenta. En
+ * celular vuelve al flujo normal con scroll, porque ahí no cabe todo junto.
+ */
+export default function PanelLayout({ titulo, completa, children }: { titulo: string; completa?: boolean; children: ReactNode }) {
     const pagina = usePage<SharedData>();
     const { auth } = pagina.props;
 
@@ -70,7 +75,15 @@ export default function PanelLayout({ titulo, children }: { titulo: string; chil
                     </div>
                 </header>
 
-                <main className="mx-auto max-w-[1400px] px-4 py-8 md:px-8 print:max-w-none print:p-0">{children}</main>
+                <main
+                    className={cn(
+                        'mx-auto max-w-[1400px] px-4 py-8 md:px-8 print:max-w-none print:p-0',
+                        // 4rem del encabezado + 1px de su borde inferior.
+                        completa && 'lg:flex lg:h-[calc(100dvh-4rem-1px)] lg:flex-col lg:py-5',
+                    )}
+                >
+                    {children}
+                </main>
             </div>
         </>
     );
