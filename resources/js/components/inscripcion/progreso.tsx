@@ -1,6 +1,32 @@
 import { PASOS } from '@/lib/inscripcion';
 import { cn } from '@/lib/utils';
-import { Check, ShieldCheck } from 'lucide-react';
+import { Link } from '@inertiajs/react';
+import { ArrowLeft, Check, ShieldCheck } from 'lucide-react';
+
+/**
+ * Vuelve al inicio de sesión, de donde viene la familia. Si hay datos sin
+ * enviar, la página pregunta antes de salir (ver create.tsx). Sin `prefetch`:
+ * precargar al pasar el cursor dispararía esa pregunta sin hacer clic.
+ */
+function Volver({ compacto }: { compacto?: boolean }) {
+    return compacto ? (
+        <Link
+            href={route('login')}
+            aria-label="Volver al inicio de sesión"
+            className="flex size-10 shrink-0 items-center justify-center rounded-full text-[#1E3A7B] transition-colors hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none"
+        >
+            <ArrowLeft className="size-5" />
+        </Link>
+    ) : (
+        <Link
+            href={route('login')}
+            className="group inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/80 px-3.5 py-2 text-sm font-medium text-[#1E3A7B] shadow-[0_1px_2px_rgba(22,34,63,0.06)] transition-all hover:bg-white hover:shadow-[0_4px_12px_-4px_rgba(22,34,63,0.18)] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none"
+        >
+            <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" />
+            Volver
+        </Link>
+    );
+}
 
 /** Logo + nombre, igual que en el login. */
 export function Marca({ compacta }: { compacta?: boolean }) {
@@ -29,7 +55,10 @@ export function PanelLateral({ anio, actual, alcanzado, onIr }: ProgresoProps) {
 
     return (
         <aside className="sticky top-4 hidden h-[calc(100vh-2rem)] flex-col justify-between overflow-y-auto rounded-[32px] bg-gradient-to-b from-[#EEF2FB] to-[#DCE5F8] p-10 lg:flex xl:p-12">
-            <Marca />
+            <div className="flex items-center justify-between gap-3">
+                <Marca />
+                <Volver />
+            </div>
 
             {/* En pantallas bajas (laptops de 768 px) todo se compacta para no necesitar scroll. */}
             <div className="py-10 [@media(max-height:820px)]:py-6">
@@ -110,7 +139,10 @@ export function BarraMovil({ actual }: Pick<ProgresoProps, 'actual'>) {
     return (
         <div className="sticky top-0 z-10 -mx-4 -mt-4 border-b border-[#E3E9F6] bg-white/90 px-4 pt-4 pb-3 backdrop-blur-md lg:hidden">
             <div className="flex items-center justify-between gap-3">
-                <Marca compacta />
+                <div className="flex items-center gap-1.5">
+                    <Volver compacto />
+                    <Marca compacta />
+                </div>
                 {enPasos && (
                     <p className="text-[13px] font-medium text-[#56627F]">
                         {actual + 1} de {PASOS.length}

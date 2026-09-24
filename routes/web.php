@@ -11,7 +11,9 @@ Route::redirect('/', '/dashboard')->name('home');
 // Formulario público: lo llena el acudiente sin iniciar sesión.
 Route::get('inscripcion', [InscripcionController::class, 'create'])->name('inscripcion.create');
 Route::post('inscripcion', [InscripcionController::class, 'store'])
-    ->middleware('throttle:6,1')
+    // 30/min por IP: en una jornada de inscripción en la sala de sistemas todos
+    // los equipos salen por la misma IP; 6/min bloqueaba familias legítimas.
+    ->middleware('throttle:30,1')
     ->name('inscripcion.store');
 
 Route::middleware(['auth'])->group(function () {

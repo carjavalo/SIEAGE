@@ -73,6 +73,10 @@ class InscripcionTest extends TestCase
 
     public function test_el_formulario_es_publico_y_trae_los_catalogos()
     {
+        // En otro año del calendario: si la consulta del año activo fallara, el
+        // valor de respaldo date('Y') daría 2031 y la prueba lo notaría.
+        $this->travelTo('2031-03-01');
+
         $this->get('/inscripcion')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
@@ -151,24 +155,91 @@ class InscripcionTest extends TestCase
         $this->assertNull($solicitud->acudiente_parentesco_otro);
     }
 
-    public function test_no_acepta_otra_solicitud_pendiente_del_mismo_documento()
+    public function test_un_documento_repetido_se_guarda_y_no_revela_nada()
     {
+        // La familia real y un tercero envían el mismo documento de estudiante:
+        // se guardan los dos, para que la secretaría los compare, y ninguno
+        // queda bloqueado por el otro.
         $this->post('/inscripcion', $this->datos())->assertSessionHasNoErrors();
+        $this->post('/inscripcion', $this->datos(['acudiente_numero_documento' => '31999888']))->assertSessionHasNoErrors();
 
-        $this->post('/inscripcion', $this->datos())
-            ->assertSessionHasErrors(['numero_documento' => 'Ya recibimos una inscripción con este documento y está en revisión. La secretaría se comunicará contigo.']);
-
-        $this->assertSame(1, SolicitudInscripcion::count());
+        $this->assertSame(2, SolicitudInscripcion::where('numero_documento', '1109555001')->count());
     }
 
-    public function test_si_la_solicitud_fue_rechazada_puede_volver_a_inscribirse()
+    public function test_un_envio_incompleto_no_permite_averiguar_si_un_nino_tiene_solicitud()
     {
-        $this->post('/inscripcion', $this->datos())->assertSessionHasNoErrors();
-        SolicitudInscripcion::query()->update(['estado' => SolicitudInscripcion::RECHAZADA]);
+        // Sondeo: solo el documento del niño. La respuesta debe ser idéntica
+        // haya o no una solicitud en curso con ese documento.
+        $sondeo = ['numero_documento' => '1109555001', 'acudiente_numero_documento' => '12345'];
+
+        $sinSolicitud = $this->post('/inscripcion', $sondeo)->assertSessionHasErrors()->baseResponse->getSession()->get('errors')->keys();
 
         $this->post('/inscripcion', $this->datos())->assertSessionHasNoErrors();
+        $this->flushSession();
 
-        $this->assertSame(2, SolicitudInscripcion::count());
+        $conSolicitud = $this->post('/inscripcion', $sondeo)->assertSessionHasErrors()->baseResponse->getSession()->get('errors')->keys();
+
+        $this->assertSame($sinSolicitud, $conSolicitud);
+        $this->assertNotContains('numero_documento', $conSolicitud);
+    }
+
+    public function test_acepta_nombres_con_apostrofo_del_iphone_y_tildes_separadas()
+    {
+        $this->post('/inscripcion', $this->datos([
+            'primer_nombre' => "Jose\u{0301}",     // "José" pegado con la tilde separada (NFD)
+            'primer_apellido' => 'D’Costa',          // apóstrofo tipográfico del iPhone
+            'segundo_apellido' => 'D´Andreis',       // tilde aguda de teclados latinos
+        ]))->assertSessionHasNoErrors();
+
+        $solicitud = SolicitudInscripcion::sole();
+        $this->assertSame('José', $solicitud->primer_nombre);
+        $this->assertSame("D'Costa", $solicitud->primer_apellido);
+        $this->assertSame("D'Andreis", $solicitud->segundo_apellido);
+    }
+
+    public function test_un_nombre_sin_ninguna_letra_se_rechaza()
+    {
+        $this->post('/inscripcion', $this->datos(['primer_apellido' => '-']))
+            ->assertSessionHasErrors(['primer_apellido' => 'Usa solo letras.']);
+    }
+
+    public function test_el_texto_oculto_de_otro_no_bloquea_el_envio()
+    {
+        // Escribió un texto largo en "¿cuál?" y luego eligió otra opción: el
+        // campo queda oculto con el texto adentro y no debe dar un error invisible.
+        $this->post('/inscripcion', $this->datos([
+            'tipo_documento' => 'C.E.',
+            'tipo_documento_otro' => str_repeat('x', 50),
+        ]))->assertSessionHasNoErrors();
+
+        $this->assertNull(SolicitudInscripcion::sole()->tipo_documento_otro);
+
+        // Si la opción sí es "Otro", el largo se valida.
+        $this->post('/inscripcion', $this->datos([
+            'numero_documento' => '1109555002',
+            'tipo_documento' => 'Otro',
+            'tipo_documento_otro' => str_repeat('x', 50),
+        ]))->assertSessionHasErrors(['tipo_documento_otro']);
+    }
+
+    public function test_el_sisben_enviado_como_numero_se_rechaza()
+    {
+        // En MariaDB, el número 2 en un ENUM es la posición 2 y se guardaría '1'.
+        $this->postJson('/inscripcion', $this->datos(['sisben' => 2]))
+            ->assertJsonValidationErrors(['sisben']);
+
+        $this->assertSame(0, SolicitudInscripcion::count());
+    }
+
+    public function test_el_largo_del_correo_se_mide_ya_en_minusculas()
+    {
+        // 120 caracteres con una "İ" turca: en minúsculas pasa a 121, más que la
+        // columna. Debe ser un error de validación, no un fallo de la base.
+        $correo = 'İ'.str_repeat('a', 108).'@correo.com';
+        $this->assertSame(120, mb_strlen($correo));
+
+        $this->post('/inscripcion', $this->datos(['correo' => $correo]))
+            ->assertSessionHasErrors(['correo']);
     }
 
     public function test_el_campo_trampa_no_guarda_nada()
@@ -202,6 +273,14 @@ class InscripcionTest extends TestCase
 
     public function test_la_fecha_de_la_autorizacion_no_cambia_al_revisar_la_solicitud()
     {
+        // En SQLite una columna TIMESTAMP tampoco se actualiza sola, así que aquí
+        // esta prueba pasaría aunque alguien cambiara dateTime() por timestamp().
+        // Solo detecta ese error contra MariaDB:
+        //   DB_CONNECTION=mysql DB_DATABASE=<base_de_prueba> php artisan test --filter=InscripcionTest
+        if (DB::getDriverName() === 'sqlite') {
+            $this->markTestSkipped('Solo detecta la regresión TIMESTAMP en MariaDB/MySQL.');
+        }
+
         $this->travelTo('2026-09-23 10:00:00');
         $this->post('/inscripcion', $this->datos())->assertSessionHasNoErrors();
 

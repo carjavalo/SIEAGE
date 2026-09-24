@@ -31,7 +31,7 @@ import {
     validarPaso,
 } from '@/lib/inscripcion';
 import { cn } from '@/lib/utils';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, ArrowRight, Check, Clock, HeartPulse, IdCard, Pencil, UserPlus } from 'lucide-react';
 import { type FormEvent, type ReactNode, type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { sileo } from 'sileo';
@@ -74,6 +74,21 @@ function enfocarPrimerError(errs: Errores) {
     elemento.scrollIntoView({ behavior: sinMovimiento() ? 'auto' : 'smooth', block: 'center' });
 }
 
+/** Un envío que no llegó a validarse: se cayó la red (estado 0) o el servidor respondió 419, 429, 500… */
+class EnvioFallido extends Error {
+    constructor(public estado: number) {
+        super(`envío fallido (${estado || 'sin respuesta'})`);
+    }
+}
+
+/** Qué decirle a la familia según por qué falló el envío. En todos los casos lo escrito se conserva. */
+function mensajeDeError(e: unknown) {
+    if (!(e instanceof EnvioFallido)) return { title: 'Hay datos por corregir', description: 'Te llevamos al primero.' };
+    if (e.estado === 429) return { title: 'Hay muchos envíos en este momento', description: 'Espera un minuto y vuelve a enviar. Tus datos siguen aquí.' };
+    if (e.estado === 419) return { title: 'La página estuvo abierta mucho tiempo', description: 'Vuelve a enviar. Tus datos siguen aquí.' };
+    return { title: 'No pudimos enviarla', description: 'Revisa tu conexión y vuelve a enviar. Tus datos siguen aquí.' };
+}
+
 /** Los campos de texto del formulario (todos menos la casilla de autorización). */
 type CampoDeTexto = { [K in Campo]: DatosInscripcion[K] extends string ? K : never }[Campo];
 
@@ -90,6 +105,7 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
     const erroresPorEnfocar = useRef<Errores | null>(null);
     const montado = useRef(false);
     const aviso = useRef<string | null>(null);
+    const enviando = useRef(false);
 
     /** Retira el toast de "faltan datos" en cuanto deja de ser cierto. */
     const quitarAviso = () => {
@@ -157,6 +173,19 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
         return () => window.removeEventListener('beforeunload', avisar);
     }, [form.isDirty, paso]);
 
+    // El botón "Volver" navega sin recargar la página, así que "beforeunload"
+    // no se entera: se pregunta aquí antes de ir a otra página y perder lo escrito.
+    useEffect(() => {
+        if (!form.isDirty || paso === ENVIADO) return;
+        return router.on('before', (evento) => {
+            const { method, url } = evento.detail.visit;
+            if (method !== 'get' || url.pathname === window.location.pathname) return; // el envío o esta misma página
+            if (!window.confirm('Si sales ahora, se perderán los datos que escribiste. ¿Quieres salir de la inscripción?')) {
+                evento.preventDefault();
+            }
+        });
+    }, [form.isDirty, paso]);
+
     const marcarErrores = (errs: Errores) => {
         form.clearErrors(...PASOS[paso].campos);
         form.setError(errs as Record<Campo, string>);
@@ -181,38 +210,56 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
 
     // ------------------------------------------------------------- envío --
 
-    const enviar = () => {
+    const enviar = async () => {
+        // Un doble clic no debe dejar dos solicitudes (el servidor ya no rechaza
+        // documentos repetidos, para no revelar si un niño tiene una en curso).
+        if (enviando.current) return;
         const errs = validarPaso(REVISION, data);
         if (Object.keys(errs).length) return marcarErrores(errs);
         quitarAviso();
+        enviando.current = true;
 
-        const envio = new Promise<void>((resolver, rechazar) => {
-            let respondio = false;
-            form.post(route('inscripcion.store'), {
-                preserveScroll: true,
-                preserveState: true,
-                onSuccess: () => {
-                    respondio = true;
-                    resolver();
-                },
-                onError: (errores) => {
-                    respondio = true;
-                    rechazar(errores);
-                },
-                // Ni éxito ni errores de validación: se cayó la red o el servidor.
-                onFinish: () => {
-                    if (!respondio) rechazar(new Error('sin respuesta'));
-                },
+        const envio = (async () => {
+            // La familia pudo dejar la página abierta más de lo que dura la sesión
+            // (120 min) mientras buscaba documentos: Laravel respondería 419 y
+            // recargar borraría todo. Una visita rápida renueva la sesión y su
+            // cookie de seguridad justo antes de enviar.
+            await fetch(route('inscripcion.create'), { credentials: 'same-origin' }).catch(() => undefined);
+
+            return new Promise<void>((resolver, rechazar) => {
+                let respondio = false;
+                let estado = 0;
+                // Respuesta que no es de Inertia (419, 429, 500…): se cancela el
+                // modal de error de Laravel, que sale en inglés, y lo explica el toast.
+                const dejarDeEscuchar = router.on('invalid', (evento) => {
+                    evento.preventDefault();
+                    estado = evento.detail.response.status;
+                });
+                form.post(route('inscripcion.store'), {
+                    preserveScroll: true,
+                    preserveState: true,
+                    onSuccess: () => {
+                        respondio = true;
+                        resolver();
+                    },
+                    onError: (errores) => {
+                        respondio = true;
+                        rechazar(errores);
+                    },
+                    // Ni éxito ni errores de validación: se cayó la red o el servidor.
+                    onFinish: () => {
+                        dejarDeEscuchar();
+                        enviando.current = false;
+                        if (!respondio) rechazar(new EnvioFallido(estado));
+                    },
+                });
             });
-        });
+        })();
 
         sileo.promise(envio, {
             loading: { title: 'Enviando inscripción…' },
             success: { title: 'Inscripción enviada', description: 'La secretaría la revisará pronto.' },
-            error: (e) =>
-                e instanceof Error
-                    ? { title: 'No pudimos enviarla', description: 'Revisa tu conexión e inténtalo de nuevo.' }
-                    : { title: 'Hay datos por corregir', description: 'Te llevamos al primero.' },
+            error: mensajeDeError,
         });
 
         envio
@@ -254,7 +301,7 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
     const alEnviar = (e: FormEvent) => {
         e.preventDefault();
         if (paso >= 0 && paso < REVISION) avanzar();
-        else if (paso === REVISION) enviar();
+        else if (paso === REVISION) void enviar();
     };
 
     // ------------------------------------------------------------ pantalla --
