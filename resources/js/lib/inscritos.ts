@@ -71,6 +71,8 @@ export type InscritoFila = Nombres & {
     parentesco: string;
     acudiente_telefono_1: string;
     padres: Rol[];
+    /** El grupo en que quedó, si ya se matriculó. */
+    grupo_asignado: string | null;
 };
 
 /** Lo que llenó la familia en el formulario (InscritoController::ficha). */
@@ -78,6 +80,7 @@ export type Solicitud = Nombres & {
     id: number;
     estado: EstadoSolicitud;
     enviada: string;
+    grado_id: number;
     grado: string;
     sexo: 'F' | 'M';
     fecha_nacimiento: string;
@@ -113,7 +116,16 @@ export type Solicitud = Nombres & {
 
 export type PadreGuardado = { [K in keyof DatosPadre]: DatosPadre[K] | null };
 
-export type FichaInscrito = { solicitud: Solicitud; padres: Partial<Record<Rol, PadreGuardado>> };
+/** Dónde quedó matriculado, cuando ya se aprobó. */
+export type MatriculaInscrito = { estudiante_id: number; grado_id: number; grupo: string | null; anio: number };
+
+export type FichaInscrito = { solicitud: Solicitud; padres: Partial<Record<Rol, PadreGuardado>>; matricula: MatriculaInscrito | null };
+
+/** Ya se sabe algo de los dos (datos, fallecido o no registra): se puede matricular. */
+export const padresListos = (padres: FichaInscrito['padres']) => !!padres.madre && !!padres.padre;
+
+/** La ficha del estudiante en su grupo, en la página de Estudiantes. */
+export const enlaceEstudiante = (m: MatriculaInscrito) => `/estudiantes?anio=${m.anio}&grado=${m.grado_id}&ver=${m.estudiante_id}`;
 
 /** "Madre", o lo que escribió la familia si eligió "Otro". */
 export const parentescoAcudiente = (s: Pick<Solicitud, 'acudiente_parentesco' | 'acudiente_parentesco_otro'>) =>

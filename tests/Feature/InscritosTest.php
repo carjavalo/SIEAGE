@@ -160,4 +160,102 @@ class InscritosTest extends TestCase
 
         $this->assertDatabaseCount('padres', 0);
     }
+
+    /** Dos grupos de Séptimo (el grado que pidió la familia) y uno de Octavo, en el año activo. */
+    private function grupos(): array
+    {
+        foreach (['instituciones', 'sedes'] as $tabla) {
+            ['columnas' => $columnas, 'filas' => $filas] = json_decode(file_get_contents(DatosIniciales::archivo($tabla)), true);
+            DB::table($tabla)->insert(array_map(fn ($fila) => array_combine($columnas, $fila), $filas));
+        }
+        $anio = SolicitudInscripcion::anioLectivoActivoId();
+        $sede = DB::table('sedes')->value('id');
+        $grado = fn (int $numero) => DB::table('grados')->where('numero', $numero)->value('id');
+        $grupo = fn (int $numero, int $n) => DB::table('grupos')->insertGetId([
+            'anio_lectivo_id' => $anio, 'sede_id' => $sede, 'grado_id' => $grado($numero), 'numero' => $n,
+            'codigo' => "{$numero}-{$n}", 'jornada' => 'Mañana', 'cupos_proyectados' => 34,
+        ]);
+
+        return ['7-1' => $grupo(7, 1), '7-2' => $grupo(7, 2), '8-1' => $grupo(8, 1)];
+    }
+
+    public function test_guardar_los_padres_lleva_a_elegir_el_grupo()
+    {
+        $this->actingAs(User::factory()->create())
+            ->put("/inscritos/{$this->solicitud->id}/padres", $this->padres())
+            ->assertRedirect("/inscritos/{$this->solicitud->id}/grupo");
+    }
+
+    public function test_el_paso_del_grupo_muestra_los_grupos_del_grado_con_su_ocupacion()
+    {
+        $this->grupos();
+
+        $this->actingAs(User::factory()->create())
+            ->get("/inscritos/{$this->solicitud->id}/grupo")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('inscritos/grupo')
+                ->where('gradoNumero', 7)
+                ->has('grupos', 2)
+                ->where('grupos.0.codigo', '7-1')
+                ->where('grupos.0.cupos', 34)
+                ->where('matricula', null));
+    }
+
+    public function test_matricular_crea_el_estudiante_el_acudiente_y_la_matricula()
+    {
+        $grupos = $this->grupos();
+        $usuario = User::factory()->create();
+        $this->actingAs($usuario)->put("/inscritos/{$this->solicitud->id}/padres", $this->padres());
+
+        $this->actingAs($usuario)
+            ->post("/inscritos/{$this->solicitud->id}/matricular", ['grupo_id' => $grupos['7-2']])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect('/inscritos');
+
+        $estudiante = DB::table('estudiantes')->where('numero_documento', '1109555001')->first();
+        $this->assertSame('Gómez Rentería Sara', $estudiante->nombre_completo);
+        $this->assertSame('Emssanar', $estudiante->eps);
+
+        $matricula = DB::table('matriculas')->where('estudiante_id', $estudiante->id)->first();
+        $this->assertSame($grupos['7-2'], (int) $matricula->grupo_id);
+        $this->assertSame('nuevo', $matricula->condicion);
+        $this->assertSame('activo', $matricula->estado);
+
+        $acudiente = DB::table('acudientes')->where('numero_documento', '67038408')->first();
+        $this->assertSame('Martha Rentería Mier', $acudiente->nombre_completo);
+        $this->assertDatabaseHas('estudiante_acudiente', [
+            'estudiante_id' => $estudiante->id, 'acudiente_id' => $acudiente->id,
+            'parentesco_id' => DB::table('parentescos')->where('nombre', 'Madre')->value('id'), 'es_principal' => true,
+        ]);
+        $this->assertSame(2, DB::table('padres')->where('estudiante_id', $estudiante->id)->count());
+        $this->assertDatabaseHas('barrios', ['nombre' => 'Alfonso López']);
+
+        $solicitud = $this->solicitud->fresh();
+        $this->assertSame(SolicitudInscripcion::APROBADA, $solicitud->estado);
+        $this->assertSame($matricula->id, (int) $solicitud->matricula_id);
+        $this->assertSame($usuario->id, (int) $solicitud->revisada_por);
+
+        // La ficha del inscrito ya dice dónde quedó.
+        $this->actingAs($usuario)
+            ->get("/inscritos/{$this->solicitud->id}")
+            ->assertInertia(fn (Assert $page) => $page->where('matricula.grupo', '7-2'));
+    }
+
+    public function test_no_se_matricula_sin_padres_en_otro_grado_ni_dos_veces()
+    {
+        $grupos = $this->grupos();
+        $usuario = User::factory()->create();
+        $matricular = fn (int $grupo) => $this->actingAs($usuario)->post("/inscritos/{$this->solicitud->id}/matricular", ['grupo_id' => $grupo]);
+
+        $matricular($grupos['7-1'])->assertSessionHasErrors(['grupo_id' => 'Primero completa los datos de la madre y el padre.']);
+
+        $this->actingAs($usuario)->put("/inscritos/{$this->solicitud->id}/padres", $this->padres());
+        $matricular($grupos['8-1'])->assertSessionHasErrors(['grupo_id' => 'Ese grupo no es del grado que pidió la familia.']);
+        $this->assertDatabaseCount('matriculas', 0);
+
+        $matricular($grupos['7-1'])->assertSessionHasNoErrors();
+        $matricular($grupos['7-2'])->assertSessionHasErrors(['grupo_id' => 'Esta inscripción ya fue revisada.']);
+        $this->assertDatabaseCount('matriculas', 1);
+    }
 }

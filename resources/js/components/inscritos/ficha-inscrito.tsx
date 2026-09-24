@@ -5,14 +5,16 @@ import {
     type FichaInscrito as Ficha,
     type PadreGuardado,
     type Rol,
+    enlaceEstudiante,
     hace,
     inicialesInscrito,
     nombreAcudiente,
     nombreInscrito,
     nombrePadre,
+    padresListos,
     parentescoAcudiente,
 } from '@/lib/inscritos';
-import { MapPin, UserPen } from 'lucide-react';
+import { GraduationCap, MapPin, UserPen } from 'lucide-react';
 import { type ReactNode, type RefObject } from 'react';
 
 type Props = {
@@ -41,9 +43,8 @@ const ROLES: { clave: Rol; titulo: string; fallecido: string }[] = [
 ];
 
 function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel'> & { ficha: Ficha }) {
-    const { solicitud: s, padres } = ficha;
+    const { solicitud: s, padres, matricula } = ficha;
     const anios = edad(s.fecha_nacimiento);
-    const completos = ROLES.every((r) => padres[r.clave]);
     const documento = s.tipo_documento === 'Otro' ? s.tipo_documento_otro : s.tipo_documento;
 
     return (
@@ -59,12 +60,21 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
             }
             marcas={
                 <>
-                    <span className="font-semibold text-[#1E3A7B]">Ingresa a {s.grado}</span>
+                    <span className="font-semibold text-[#1E3A7B]">
+                        {matricula ? `${s.sexo === 'F' ? 'Matriculada' : 'Matriculado'} en ${matricula.grupo ?? s.grado}` : `Ingresa a ${s.grado}`}
+                    </span>
                     <Marca valor={s.estado} />
                     <span className="text-[#56627F]">Enviada {hace(s.enviada).toLowerCase()}</span>
                 </>
             }
-            accion={{ href: `/inscritos/${s.id}`, texto: completos ? 'Revisar madre y padre' : 'Completar madre y padre', icono: UserPen }}
+            accion={
+                // Cada etapa lleva a su paso: madre y padre → grupo → el estudiante ya matriculado.
+                matricula
+                    ? { href: enlaceEstudiante(matricula), texto: 'Verlo en Estudiantes', icono: GraduationCap }
+                    : padresListos(padres) && s.estado === 'pendiente'
+                      ? { href: `/inscritos/${s.id}/grupo`, texto: 'Elegir grupo y matricular', icono: GraduationCap }
+                      : { href: `/inscritos/${s.id}`, texto: 'Completar madre y padre', icono: UserPen }
+            }
         >
             <BloquesSolicitud solicitud={s} padres={padres} />
         </ContenidoFicha>

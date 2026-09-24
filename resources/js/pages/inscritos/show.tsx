@@ -1,9 +1,9 @@
 import { Desplegable } from '@/components/desplegable';
-import { Marca } from '@/components/estudiantes/etiquetas';
+import { EncabezadoInscrito } from '@/components/inscritos/encabezado';
 import { BloquesSolicitud } from '@/components/inscritos/ficha-inscrito';
+import { Pasos } from '@/components/inscritos/pasos';
 import { Lavado } from '@/components/lavado';
 import PanelLayout from '@/layouts/panel-layout';
-import { edad } from '@/lib/estudiantes';
 import {
     type DatosPadre,
     type FichaInscrito,
@@ -13,13 +13,13 @@ import {
     type Situacion,
     type Solicitud,
     hace,
-    inicialesInscrito,
     nombreInscrito,
+    padresListos,
     parentescoAcudiente,
 } from '@/lib/inscritos';
 import { cn } from '@/lib/utils';
 import { Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Check, LoaderCircle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, LoaderCircle } from 'lucide-react';
 import { type ChangeEvent, type FormEventHandler, type ReactNode } from 'react';
 import { sileo } from 'sileo';
 
@@ -95,14 +95,15 @@ function Campo({
 }
 
 /** Revisión de un inscrito y registro de los datos de la madre y el padre. */
-export default function Inscrito({ solicitud: s, padres }: FichaInscrito) {
+export default function Inscrito({ solicitud: s, padres, matricula }: FichaInscrito) {
     const form = useForm<Record<Rol, DatosPadre>>({
         madre: inicial(ROLES[0], s, padres.madre),
         padre: inicial(ROLES[1], s, padres.padre),
     });
     const errores = form.errors as Record<string, string>;
     const nombre = nombreInscrito(s);
-    const anios = edad(s.fecha_nacimiento);
+    // Mientras esté pendiente, guardar lleva al segundo paso: elegir el grupo.
+    const pendiente = s.estado === 'pendiente';
 
     const cambiar = (rol: Rol, cambios: Partial<DatosPadre>) => form.setData(rol, { ...form.data[rol], ...cambios });
 
@@ -122,7 +123,10 @@ export default function Inscrito({ solicitud: s, padres }: FichaInscrito) {
             preserveScroll: true,
             onSuccess: () => {
                 form.setDefaults();
-                sileo.success({ title: 'Datos guardados', description: 'La madre y el padre quedaron registrados.' });
+                sileo.success({
+                    title: 'Madre y padre guardados',
+                    description: pendiente ? 'Ahora elige el grupo en que queda.' : 'Los datos quedaron actualizados.',
+                });
             },
             onError: () => sileo.warning({ title: 'Revisa los datos', description: 'Marcamos en rojo lo que falta o está mal.' }),
         });
@@ -133,32 +137,18 @@ export default function Inscrito({ solicitud: s, padres }: FichaInscrito) {
             <Lavado />
 
             <div className="relative">
-                <Link
-                    href="/inscritos"
-                    className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white/75 pr-3 pl-2 text-[14px] font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-white focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none"
-                >
-                    <ArrowLeft className="size-4" />
-                    Inscritos
-                </Link>
-
-                {/* Encabezado, como el de la ficha: sin caja, sobre el degradado. */}
-                <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center">
-                    <span className="flex size-16 shrink-0 items-center justify-center rounded-[20px] bg-[#1E3A7B] text-[20px] font-semibold text-white shadow-[0_14px_28px_-14px_rgba(30,58,123,0.7)]">
-                        {inicialesInscrito(s)}
-                    </span>
-                    <div className="min-w-0">
-                        <h1 className="text-[28px] leading-8 font-semibold tracking-[-0.025em] text-balance">{nombre}</h1>
-                        <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] text-[#3E4A68]">
-                            <span className="tabular-nums">
-                                {s.tipo_documento === 'Otro' ? s.tipo_documento_otro : s.tipo_documento} {s.numero_documento}
-                                {anios !== null && ` · ${anios} años`}
-                            </span>
-                            <span className="font-semibold text-[#1E3A7B]">Ingresa a {s.grado}</span>
-                            <Marca valor={s.estado} />
-                            <span className="text-[#56627F]">Enviada {hace(s.enviada).toLowerCase()}</span>
-                        </p>
-                    </div>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <Link
+                        href="/inscritos"
+                        className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white/75 pr-3 pl-2 text-[14px] font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-white focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none"
+                    >
+                        <ArrowLeft className="size-4" />
+                        Inscritos
+                    </Link>
+                    <Pasos solicitudId={s.id} actual={1} padresListos={padresListos(padres)} matriculado={!!matricula} />
                 </div>
+
+                <EncabezadoInscrito solicitud={s} matricula={matricula} />
 
                 <div className="mt-7 grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
                     <form onSubmit={guardar} className="flex min-w-0 flex-col gap-4">
@@ -339,7 +329,8 @@ export default function Inscrito({ solicitud: s, padres }: FichaInscrito) {
                                 className="flex h-11 cursor-pointer items-center gap-2 rounded-[13px] bg-[#1E3A7B] px-5 text-[15px] font-semibold text-white shadow-[0_12px_24px_-12px_rgba(30,58,123,0.6)] transition hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.99] disabled:cursor-default disabled:opacity-70"
                             >
                                 {form.processing && <LoaderCircle className="size-4 animate-spin" />}
-                                Guardar madre y padre
+                                {pendiente ? 'Guardar y elegir grupo' : 'Guardar madre y padre'}
+                                {pendiente && !form.processing && <ArrowRight className="size-[18px]" />}
                             </button>
                         </div>
                     </form>

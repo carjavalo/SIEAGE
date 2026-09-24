@@ -211,7 +211,7 @@ const Fila = memo(function Fila({
             </td>
             <td className={celda}>
                 <span className="block truncate text-[#16223F]" title={i.grado}>
-                    <b className="mr-1.5 font-semibold tabular-nums">{gradoCorto({ numero: i.grado_numero })}</b>
+                    <b className="mr-1.5 font-semibold tabular-nums">{i.grupo_asignado ?? gradoCorto({ numero: i.grado_numero })}</b>
                     <span className="text-[13px] text-[#56627F]">{i.grado}</span>
                 </span>
             </td>
