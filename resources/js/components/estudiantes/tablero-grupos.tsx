@@ -12,12 +12,12 @@ type Props = {
 };
 
 const alto = '[@media(min-height:860px)]';
-const tarjetaBase = `group/t relative flex min-w-[150px] flex-1 basis-0 snap-start cursor-pointer flex-col rounded-[18px] px-3.5 pt-2 pb-2 text-left transition duration-200 @container focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:ring-offset-2 focus-visible:outline-none ${alto}:rounded-[20px] ${alto}:px-4 ${alto}:pt-2.5 ${alto}:pb-3`;
-const tonoElegido = 'bg-[#1E3A7B] text-white shadow-[0_18px_32px_-18px_rgba(30,58,123,0.9)]';
-const tonoNormal =
+export const tarjetaBase = `group/t relative flex min-w-[150px] flex-1 basis-0 snap-start cursor-pointer flex-col rounded-[18px] px-3.5 pt-2 pb-2 text-left transition duration-200 @container focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:ring-offset-2 focus-visible:outline-none ${alto}:rounded-[20px] ${alto}:px-4 ${alto}:pt-2.5 ${alto}:pb-3`;
+export const tonoElegido = 'bg-[#1E3A7B] text-white shadow-[0_18px_32px_-18px_rgba(30,58,123,0.9)]';
+export const tonoNormal =
     'bg-white text-[#16223F] shadow-[0_1px_2px_rgba(22,34,63,0.06),0_10px_24px_-18px_rgba(22,34,63,0.35)] ring-1 ring-[#E3E9F6] hover:-translate-y-0.5 hover:shadow-[0_1px_2px_rgba(22,34,63,0.06),0_16px_28px_-16px_rgba(22,34,63,0.35)] hover:ring-[#C4D2F1]';
-const rotuloBase = 'flex h-[18px] min-w-0 items-center gap-2 text-[13px] leading-[18px] whitespace-nowrap';
-const Regla = () => <span aria-hidden className="h-px min-w-3 flex-1 bg-[#C4D2F1]" />;
+export const rotuloBase = 'flex h-[18px] min-w-0 items-center gap-2 text-[13px] leading-[18px] whitespace-nowrap';
+export const Regla = () => <span aria-hidden className="h-px min-w-3 flex-1 bg-[#C4D2F1]" />;
 const Punto = () => (
     <span aria-hidden className="-mx-0.5 text-[#8C97B3]">
         ·

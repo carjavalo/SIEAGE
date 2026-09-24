@@ -28,6 +28,11 @@ type Props<T> = {
     etiqueta: string;
     claseBoton?: string;
     alinear?: 'izquierda' | 'derecha';
+    /** Como campo de formulario: texto cuando no hay nada elegido, id para su <label>, desactivado y con error. */
+    placeholder?: string;
+    id?: string;
+    desactivado?: boolean;
+    invalido?: boolean;
 };
 
 /**
@@ -35,13 +40,21 @@ type Props<T> = {
  * en el botón y la opción activa se anuncia con aria-activedescendant.
  * Las teclas que maneja no siguen hacia la página (allí ↑ ↓ recorren la lista).
  */
-export function Desplegable<T extends string | number>({ valor, opciones, onCambio, etiqueta, claseBoton, alinear = 'izquierda' }: Props<T>) {
+export function Desplegable<T extends string | number>({
+    valor,
+    opciones,
+    onCambio,
+    etiqueta,
+    claseBoton,
+    alinear = 'izquierda',
+    placeholder,
+    id: idBoton,
+    desactivado,
+    invalido,
+}: Props<T>) {
     const [abierto, setAbierto] = useState(false);
-    const elegida = Math.max(
-        opciones.findIndex((o) => o.valor === valor),
-        0,
-    );
-    const [activa, setActiva] = useState(elegida);
+    const elegida = opciones.findIndex((o) => o.valor === valor);
+    const [activa, setActiva] = useState(Math.max(elegida, 0));
     const contenedor = useRef<HTMLDivElement>(null);
     const lista = useRef<HTMLUListElement>(null);
     const id = useId();
@@ -54,7 +67,8 @@ export function Desplegable<T extends string | number>({ valor, opciones, onCamb
     }, [abierto, activa]);
 
     const abrir = () => {
-        setActiva(elegida);
+        if (desactivado) return;
+        setActiva(Math.max(elegida, 0));
         setAbierto(true);
     };
     const elegir = (i: number) => {
@@ -86,9 +100,12 @@ export function Desplegable<T extends string | number>({ valor, opciones, onCamb
     return (
         <div ref={contenedor} className="relative flex items-center">
             <button
+                id={idBoton}
                 type="button"
                 role="combobox"
-                aria-label={etiqueta}
+                disabled={desactivado}
+                aria-invalid={invalido || undefined}
+                aria-label={idBoton ? undefined : etiqueta}
                 aria-haspopup="listbox"
                 aria-expanded={abierto}
                 aria-controls={`${id}-lista`}
@@ -97,8 +114,8 @@ export function Desplegable<T extends string | number>({ valor, opciones, onCamb
                 onKeyDown={alTeclear}
                 className={cn('group flex cursor-pointer items-center gap-1 outline-none', claseBoton)}
             >
-                {opciones[elegida]?.etiqueta}
-                <ChevronDown aria-hidden className={cn('size-4 transition-transform duration-200', abierto && 'rotate-180')} />
+                {elegida >= 0 ? opciones[elegida].etiqueta : <span className="text-[#8C97B3]">{placeholder}</span>}
+                <ChevronDown aria-hidden className={cn('size-4 shrink-0 transition-transform duration-200', abierto && 'rotate-180')} />
             </button>
 
             {abierto && (

@@ -68,6 +68,10 @@ const situaciones: Record<string, { texto: string; color: string; punto: string 
     nuevo: { texto: 'Nuevo', color: 'text-[#2F56B0]', punto: 'bg-[#5B7BD0]' },
     activo: { texto: 'Activo', color: 'text-[#1C6B4A]', punto: 'bg-[#3BA67A]' },
     antiguo: { texto: 'Antiguo', color: 'text-[#4E566B]', punto: 'bg-[#AEB7CC]' },
+    // Solicitudes de inscripción.
+    pendiente: { texto: 'Pendiente', color: 'text-[#2F56B0]', punto: 'bg-[#5B7BD0]' },
+    aprobada: { texto: 'Aprobada', color: 'text-[#1C6B4A]', punto: 'bg-[#3BA67A]' },
+    rechazada: { texto: 'Rechazada', color: 'text-[#A12B2B]', punto: 'bg-[#D05454]' },
 };
 
 export const textoSituacion = (clave: string) => situaciones[clave]?.texto ?? clave;

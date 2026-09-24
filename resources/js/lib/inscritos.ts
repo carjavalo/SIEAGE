@@ -3,6 +3,9 @@
 type Nombres = { primer_nombre: string; segundo_nombre: string | null; primer_apellido: string; segundo_apellido: string | null };
 
 /** Como en el Excel: apellidos y luego nombres. */
+/** Primer apellido + primer nombre (el segundo apellido puede faltar). */
+export const inicialesInscrito = (i: Nombres) => `${i.primer_apellido[0] ?? ''}${i.primer_nombre[0] ?? ''}`.toUpperCase();
+
 export const nombreInscrito = (i: Nombres) => [i.primer_apellido, i.segundo_apellido, i.primer_nombre, i.segundo_nombre].filter(Boolean).join(' ');
 
 export function hace(fecha: string) {
@@ -11,7 +14,11 @@ export function hace(fecha: string) {
     if (dias <= 0) return 'Hoy';
     if (dias === 1) return 'Ayer';
     if (dias < 7) return `Hace ${dias} días`;
-    return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
+    // Corta ("15 sept"), para que quepa en la lista; el año solo si no es el actual.
+    return d
+        .toLocaleDateString('es-CO', { day: 'numeric', month: 'short', ...(d.getFullYear() !== new Date().getFullYear() && { year: 'numeric' }) })
+        .replace(/\./g, '')
+        .replace(/ de /g, ' ');
 }
 
 export type Situacion = 'registrado' | 'fallecido' | 'desconocido';
@@ -45,3 +52,74 @@ export const PADRE_VACIO: DatosPadre = {
     correo: '',
     ocupacion: '',
 };
+
+export type EstadoSolicitud = 'pendiente' | 'aprobada' | 'rechazada';
+export type Rol = 'madre' | 'padre';
+
+/** Una fila de la lista (InscritoController::index). */
+export type InscritoFila = Nombres & {
+    id: number;
+    estado: EstadoSolicitud;
+    created_at: string;
+    tipo_documento: string;
+    numero_documento: string;
+    grado_id: number;
+    grado_numero: number;
+    grado: string;
+    acudiente_primer_nombre: string;
+    acudiente_primer_apellido: string;
+    parentesco: string;
+    acudiente_telefono_1: string;
+    padres: Rol[];
+};
+
+/** Lo que llenó la familia en el formulario (InscritoController::ficha). */
+export type Solicitud = Nombres & {
+    id: number;
+    estado: EstadoSolicitud;
+    enviada: string;
+    grado: string;
+    sexo: 'F' | 'M';
+    fecha_nacimiento: string;
+    pais_nacimiento: string;
+    ciudad_nacimiento: string;
+    tipo_documento: string;
+    tipo_documento_otro: string | null;
+    numero_documento: string;
+    ciudad_expedicion: string;
+    tipo_sangre: string;
+    sisben: string;
+    eps: string;
+    grupo_etnico: string;
+    discapacidad: string | null;
+    direccion: string;
+    barrio: string;
+    telefono_1: string;
+    telefono_2: string;
+    correo: string;
+    acudiente_primer_nombre: string;
+    acudiente_segundo_nombre: string | null;
+    acudiente_primer_apellido: string;
+    acudiente_segundo_apellido: string | null;
+    acudiente_fecha_nacimiento: string;
+    acudiente_numero_documento: string;
+    acudiente_ciudad_expedicion: string;
+    acudiente_parentesco: string;
+    acudiente_parentesco_otro: string | null;
+    acudiente_telefono_1: string;
+    acudiente_telefono_2: string;
+    acudiente_correo: string | null;
+};
+
+export type PadreGuardado = { [K in keyof DatosPadre]: DatosPadre[K] | null };
+
+export type FichaInscrito = { solicitud: Solicitud; padres: Partial<Record<Rol, PadreGuardado>> };
+
+/** "Madre", o lo que escribió la familia si eligió "Otro". */
+export const parentescoAcudiente = (s: Pick<Solicitud, 'acudiente_parentesco' | 'acudiente_parentesco_otro'>) =>
+    s.acudiente_parentesco === 'Otro' ? (s.acudiente_parentesco_otro ?? 'Otro familiar') : s.acudiente_parentesco;
+
+export const nombreAcudiente = (s: Solicitud) =>
+    [s.acudiente_primer_nombre, s.acudiente_segundo_nombre, s.acudiente_primer_apellido, s.acudiente_segundo_apellido].filter(Boolean).join(' ');
+
+export const nombrePadre = (p: PadreGuardado) => [p.primer_nombre, p.segundo_nombre, p.primer_apellido, p.segundo_apellido].filter(Boolean).join(' ');

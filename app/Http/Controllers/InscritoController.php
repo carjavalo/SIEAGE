@@ -31,7 +31,7 @@ class InscritoController extends Controller
             ->get([
                 's.id', 's.estado', 's.created_at',
                 's.primer_nombre', 's.segundo_nombre', 's.primer_apellido', 's.segundo_apellido',
-                's.tipo_documento', 's.numero_documento', 'g.nombre as grado',
+                's.tipo_documento', 's.numero_documento', 's.grado_id', 'g.numero as grado_numero', 'g.nombre as grado',
                 's.acudiente_primer_nombre', 's.acudiente_primer_apellido', 'p.nombre as parentesco', 's.acudiente_telefono_1',
             ]);
 
@@ -47,12 +47,28 @@ class InscritoController extends Controller
                 ...(array) $i,
                 'padres' => $padres->get($i->id, collect())->pluck('parentesco')->values(),
             ]),
+            // Ficha del inscrito elegido (?ver=ID), que se muestra al lado de la
+            // lista sin salir de la página. Solo se consulta si hay uno.
+            'detalle' => fn () => $request->filled('ver') && ($elegida = SolicitudInscripcion::find((int) $request->query('ver')))
+                ? $this->ficha($elegida)
+                : null,
         ]);
     }
 
     public function show(SolicitudInscripcion $solicitud): Response
     {
-        return Inertia::render('inscritos/show', [
+        return Inertia::render('inscritos/show', $this->ficha($solicitud));
+    }
+
+    /**
+     * Lo que llenó la familia en el formulario y lo registrado de la madre y
+     * el padre. Lo usan la página del inscrito y la ficha lateral de la lista.
+     *
+     * @return array<string, mixed>
+     */
+    private function ficha(SolicitudInscripcion $solicitud): array
+    {
+        return [
             'solicitud' => [
                 ...$solicitud->only([
                     'id', 'estado', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'sexo',
@@ -70,7 +86,7 @@ class InscritoController extends Controller
                 'acudiente_parentesco' => DB::table('parentescos')->where('id', $solicitud->acudiente_parentesco_id)->value('nombre'),
             ],
             'padres' => $solicitud->padres()->get()->keyBy('parentesco'),
-        ]);
+        ];
     }
 
     public function guardarPadres(Request $request, SolicitudInscripcion $solicitud): RedirectResponse
