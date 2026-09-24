@@ -9,13 +9,20 @@ use Illuminate\Support\Facades\Schema;
 
 class ExportarDatos extends Command
 {
-    protected $signature = 'sieage:exportar-datos';
+    protected $signature = 'sieage:exportar-datos {--tabla=* : Solo estas tablas (p. ej. --tabla=users)}';
 
     protected $description = 'Guarda los datos actuales de la BD en database/data/*.json para que db:seed los recree en otro equipo';
 
     public function handle(): int
     {
-        foreach (DatosIniciales::TABLAS as $tabla) {
+        $tablas = $this->option('tabla') ?: DatosIniciales::TABLAS;
+        if ($desconocidas = array_diff($tablas, DatosIniciales::TABLAS)) {
+            $this->error('No se exportan estas tablas: '.implode(', ', $desconocidas));
+
+            return self::FAILURE;
+        }
+
+        foreach ($tablas as $tabla) {
             $columnas = Schema::getColumnListing($tabla);
             $orden = in_array('id', $columnas) ? ['id'] : array_slice($columnas, 0, 2);
 

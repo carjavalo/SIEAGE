@@ -45,6 +45,8 @@ class HandleInertiaRequests extends Middleware
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
                 'user' => $request->user(),
+                // Para mostrar el menú "Usuarios" solo a quien puede usarlo.
+                'puedeGestionarUsuarios' => fn () => (bool) $request->user()?->can('gestionar-usuarios'),
             ],
             // Para el aviso del menú "Inscritos": solo con sesión iniciada.
             'inscritosPendientes' => fn () => $request->user()

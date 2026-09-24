@@ -4,6 +4,7 @@ use App\Http\Controllers\EstudianteController;
 use App\Http\Controllers\ImportacionController;
 use App\Http\Controllers\InscripcionController;
 use App\Http\Controllers\InscritoController;
+use App\Http\Controllers\UsuarioController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -32,6 +33,13 @@ Route::middleware(['auth'])->group(function () {
     Route::put('inscritos/{solicitud}/padres', [InscritoController::class, 'guardarPadres'])->whereNumber('solicitud')->name('inscritos.padres');
     Route::get('inscritos/{solicitud}/grupo', [InscritoController::class, 'grupo'])->whereNumber('solicitud')->name('inscritos.grupo');
     Route::post('inscritos/{solicitud}/matricular', [InscritoController::class, 'matricular'])->whereNumber('solicitud')->name('inscritos.matricular');
+
+    Route::middleware('can:gestionar-usuarios')->group(function () {
+        Route::get('usuarios', [UsuarioController::class, 'index'])->name('usuarios.index');
+        Route::post('usuarios', [UsuarioController::class, 'store'])->name('usuarios.store');
+        Route::put('usuarios/{usuario}', [UsuarioController::class, 'update'])->whereNumber('usuario')->name('usuarios.update');
+        Route::put('usuarios/{usuario}/clave', [UsuarioController::class, 'clave'])->whereNumber('usuario')->name('usuarios.clave');
+    });
 });
 
 require __DIR__.'/settings.php';

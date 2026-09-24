@@ -2,13 +2,14 @@ import { MenuUsuario } from '@/components/menu-usuario';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ClipboardList, GraduationCap, UploadCloud } from 'lucide-react';
+import { ClipboardList, GraduationCap, UploadCloud, UserCog } from 'lucide-react';
 import { type ReactNode } from 'react';
 
 const enlaces = [
     { titulo: 'Estudiantes', href: '/estudiantes', icono: GraduationCap },
     { titulo: 'Inscritos', href: '/inscritos', icono: ClipboardList },
     { titulo: 'Importar datos', href: '/dashboard', icono: UploadCloud },
+    { titulo: 'Usuarios', href: '/usuarios', icono: UserCog, soloAdministrador: true },
 ];
 
 /**
@@ -20,6 +21,7 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
     const pagina = usePage<SharedData>();
     const { auth } = pagina.props;
     const pendientes = Number(pagina.props.inscritosPendientes ?? 0);
+    const esAdministrador = !!(auth as { puedeGestionarUsuarios?: boolean }).puedeGestionarUsuarios;
 
     return (
         <>
@@ -40,30 +42,32 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
                         </Link>
 
                         <nav className="flex items-center gap-1 rounded-full bg-[#EEF2FB] p-1">
-                            {enlaces.map(({ titulo: t, href, icono: Icono }) => {
-                                const activo = pagina.url.startsWith(href);
-                                return (
-                                    <Link
-                                        key={href}
-                                        href={href}
-                                        className={cn(
-                                            'flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition',
-                                            activo ? 'bg-white text-[#1E3A7B] shadow-sm' : 'text-[#56627F] hover:text-[#1E3A7B]',
-                                        )}
-                                    >
-                                        <Icono className="size-4" />
-                                        <span className="hidden md:inline">{t}</span>
-                                        {href === '/inscritos' && pendientes > 0 && (
-                                            <span
-                                                aria-label={`${pendientes} pendientes`}
-                                                className="min-w-5 rounded-full bg-[#1E3A7B] px-1.5 text-center text-[11px] leading-5 font-semibold text-white tabular-nums"
-                                            >
-                                                {pendientes}
-                                            </span>
-                                        )}
-                                    </Link>
-                                );
-                            })}
+                            {enlaces
+                                .filter((e) => !e.soloAdministrador || esAdministrador)
+                                .map(({ titulo: t, href, icono: Icono }) => {
+                                    const activo = pagina.url.startsWith(href);
+                                    return (
+                                        <Link
+                                            key={href}
+                                            href={href}
+                                            className={cn(
+                                                'flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition',
+                                                activo ? 'bg-white text-[#1E3A7B] shadow-sm' : 'text-[#56627F] hover:text-[#1E3A7B]',
+                                            )}
+                                        >
+                                            <Icono className="size-4" />
+                                            <span className="hidden md:inline">{t}</span>
+                                            {href === '/inscritos' && pendientes > 0 && (
+                                                <span
+                                                    aria-label={`${pendientes} pendientes`}
+                                                    className="min-w-5 rounded-full bg-[#1E3A7B] px-1.5 text-center text-[11px] leading-5 font-semibold text-white tabular-nums"
+                                                >
+                                                    {pendientes}
+                                                </span>
+                                            )}
+                                        </Link>
+                                    );
+                                })}
                         </nav>
 
                         <div className="ml-auto">{auth.user && <MenuUsuario user={auth.user} />}</div>
