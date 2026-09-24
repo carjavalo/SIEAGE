@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Grupos;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -47,22 +48,7 @@ class EstudianteController extends Controller
             ")
             ->first();
 
-        $grupos = DB::table('grupos as g')
-            ->join('sedes as s', 's.id', '=', 'g.sede_id')
-            ->leftJoin('docentes as d', 'd.id', '=', 'g.director_id')
-            ->leftJoin('matriculas as m', 'm.grupo_id', '=', 'g.id')
-            ->where('g.anio_lectivo_id', $anio?->id)
-            ->where('g.grado_id', $gradoId)
-            ->groupBy('g.id', 'g.codigo', 'g.numero', 'g.jornada', 'g.cupos_proyectados', 's.nombre', 's.codigo', 'd.nombre_completo')
-            ->orderBy('g.numero')
-            ->orderBy('s.codigo')
-            ->selectRaw("
-                g.id, g.codigo, g.jornada, g.cupos_proyectados as cupos,
-                s.nombre as sede, s.codigo as sede_codigo, d.nombre_completo as director,
-                coalesce(sum(m.estado = 'activo'), 0) as activos,
-                coalesce(sum(m.estado = 'activo' and m.condicion = 'nuevo'), 0) as nuevos
-            ")
-            ->get();
+        $grupos = Grupos::conOcupacion($anio?->id, $gradoId);
 
         $estudiantes = DB::table('matriculas as m')
             ->join('estudiantes as e', 'e.id', '=', 'm.estudiante_id')

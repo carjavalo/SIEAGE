@@ -228,7 +228,7 @@ function Tarjeta({
 }
 
 /** Ocupación: tramo fuerte = antiguos y repitentes; tramo claro = nuevos (si no son todos nuevos). */
-function Barra({ grupo: g, elegido }: { grupo: Grupo; elegido: boolean }) {
+export function Barra({ grupo: g, elegido, className }: { grupo: Grupo; elegido: boolean; className?: string }) {
     const exceso = g.activos > g.cupos;
     const total = Math.max(g.cupos, g.activos, 1);
     const partir = g.nuevos > 0 && g.nuevos < g.activos && !exceso;
@@ -238,7 +238,11 @@ function Barra({ grupo: g, elegido }: { grupo: Grupo; elegido: boolean }) {
     return (
         <div
             aria-hidden
-            className={cn(`mt-1 flex h-[5px] overflow-hidden rounded-full ${alto}:mt-2 ${alto}:h-1.5`, elegido ? 'bg-white/15' : 'bg-[#E9EEF8]')}
+            className={cn(
+                `mt-1 flex h-[5px] overflow-hidden rounded-full ${alto}:mt-2 ${alto}:h-1.5`,
+                elegido ? 'bg-white/15' : 'bg-[#E9EEF8]',
+                className,
+            )}
         >
             <div
                 className={cn('h-full', exceso ? (elegido ? 'bg-[#FF9C9C]' : 'bg-[#D05454]') : elegido ? 'bg-white' : 'bg-[#4F6FC6]')}
