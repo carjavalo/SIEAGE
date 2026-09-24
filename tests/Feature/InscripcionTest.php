@@ -6,6 +6,7 @@ use App\Models\SolicitudInscripcion;
 use Carbon\Carbon;
 use Database\Seeders\DatosIniciales;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -68,7 +69,6 @@ class InscripcionTest extends TestCase
             'acudiente_telefono_2' => '3852436',
             'acudiente_correo' => '',
             'autorizacion_datos' => true,
-            'sitio_web' => '',
         ], $cambios);
     }
 
@@ -243,13 +243,30 @@ class InscripcionTest extends TestCase
             ->assertSessionHasErrors(['correo']);
     }
 
-    public function test_el_campo_trampa_no_guarda_nada()
+    public function test_un_robot_que_envia_enseguida_no_guarda_nada()
     {
-        $this->post('/inscripcion', $this->datos(['sitio_web' => 'https://spam.example']))
-            ->assertRedirect()
-            ->assertSessionHasNoErrors();
+        $sello = fn () => Crypt::encryptString((string) now()->getTimestamp());
 
+        // En el mismo segundo en que se abrió la página: un robot. Se le responde como si nada.
+        $this->post('/inscripcion', $this->datos(['sello' => $sello()]))->assertRedirect()->assertSessionHasNoErrors();
+        // Un sello inventado, también.
+        $this->post('/inscripcion', $this->datos(['sello' => 'inventado']))->assertRedirect()->assertSessionHasNoErrors();
         $this->assertSame(0, SolicitudInscripcion::count());
+
+        // Una persona tarda minutos. El autocompletado del navegador ya no puede
+        // hacer que se pierda: no hay ningún campo escondido que llenar.
+        $abierto = $sello();
+        $this->travel(4)->minutes();
+        $this->post('/inscripcion', $this->datos(['sello' => $abierto, 'sitio_web' => 'Calle 73 # 7M-18']))->assertSessionHasNoErrors();
+        $this->assertSame(1, SolicitudInscripcion::count());
+    }
+
+    public function test_sin_sello_se_guarda_para_no_perder_inscripciones()
+    {
+        // Una pestaña abierta antes de que existiera el sello.
+        $this->post('/inscripcion', $this->datos())->assertSessionHasNoErrors();
+
+        $this->assertSame(1, SolicitudInscripcion::count());
     }
 
     public function test_nadie_puede_enviar_una_solicitud_ya_aprobada()
