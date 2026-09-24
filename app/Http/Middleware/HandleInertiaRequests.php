@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -45,6 +46,10 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            // Para el aviso del menú "Inscritos": solo con sesión iniciada.
+            'inscritosPendientes' => fn () => $request->user()
+                ? DB::table('solicitudes_inscripcion')->where('estado', 'pendiente')->count()
+                : 0,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
             ],

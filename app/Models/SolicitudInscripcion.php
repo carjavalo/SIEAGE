@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -84,6 +85,12 @@ class SolicitudInscripcion extends Model
             'acudiente_fecha_nacimiento' => 'date',
             'autorizo_datos_en' => 'datetime',
         ];
+    }
+
+    /** Madre y padre que registra la secretaría al revisar la inscripción. */
+    public function padres(): HasMany
+    {
+        return $this->hasMany(Padre::class, 'solicitud_inscripcion_id');
     }
 
     /** Id del año lectivo marcado como 'activo', o null si no hay ninguno. */

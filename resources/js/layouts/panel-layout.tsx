@@ -2,11 +2,12 @@ import { MenuUsuario } from '@/components/menu-usuario';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { GraduationCap, UploadCloud } from 'lucide-react';
+import { ClipboardList, GraduationCap, UploadCloud } from 'lucide-react';
 import { type ReactNode } from 'react';
 
 const enlaces = [
     { titulo: 'Estudiantes', href: '/estudiantes', icono: GraduationCap },
+    { titulo: 'Inscritos', href: '/inscritos', icono: ClipboardList },
     { titulo: 'Importar datos', href: '/dashboard', icono: UploadCloud },
 ];
 
@@ -18,6 +19,7 @@ const enlaces = [
 export default function PanelLayout({ titulo, completa, children }: { titulo: string; completa?: boolean; children: ReactNode }) {
     const pagina = usePage<SharedData>();
     const { auth } = pagina.props;
+    const pendientes = Number(pagina.props.inscritosPendientes ?? 0);
 
     return (
         <>
@@ -51,6 +53,14 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
                                     >
                                         <Icono className="size-4" />
                                         <span className="hidden md:inline">{t}</span>
+                                        {href === '/inscritos' && pendientes > 0 && (
+                                            <span
+                                                aria-label={`${pendientes} pendientes`}
+                                                className="min-w-5 rounded-full bg-[#1E3A7B] px-1.5 text-center text-[11px] leading-5 font-semibold text-white tabular-nums"
+                                            >
+                                                {pendientes}
+                                            </span>
+                                        )}
                                     </Link>
                                 );
                             })}
