@@ -57,6 +57,11 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            // Hora de Colombia también para lo que fecha la base (NOW(),
+            // CURRENT_TIMESTAMP), igual que config/app.php. Desfase fijo y no
+            // 'America/Bogota' porque XAMPP no trae las tablas de zonas de
+            // MariaDB; Colombia no tiene horario de verano, así que no varía.
+            'timezone' => '-05:00',
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
@@ -77,6 +82,7 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            'timezone' => '-05:00', // hora de Colombia: ver la conexión 'mysql'
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],

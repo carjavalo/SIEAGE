@@ -65,7 +65,12 @@ return [
     |
     */
 
-    'timezone' => env('APP_TIMEZONE', 'UTC'),
+    // Hora de Colombia, fija a propósito y no desde el .env: es una regla del
+    // colegio, no de la máquina. Así una inscripción de las 11 p. m. queda con
+    // su fecha real (en UTC quedaba al día siguiente) y todas las máquinas
+    // registran igual, aunque alguna conserve un APP_TIMEZONE=UTC viejo.
+    // La base usa la misma hora: ver 'timezone' en config/database.php.
+    'timezone' => 'America/Bogota',
 
     /*
     |--------------------------------------------------------------------------

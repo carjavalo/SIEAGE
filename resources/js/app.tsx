@@ -22,7 +22,10 @@ createInertiaApp({
         root.render(
             <>
                 <App {...props} />
-                <Toaster position="top-center" theme="light" options={{ fill: '#FFFFFF' }} />
+                {/* En Sileo, `theme` es el tema de la PÁGINA, no del toast: "dark" pinta
+                    texto oscuro para una píldora clara. Con "light" la descripción sale
+                    blanca y, sobre el relleno blanco, no se ve. Colores y sombra: app.css. */}
+                <Toaster position="top-center" theme="dark" options={{ fill: '#FFFFFF' }} />
             </>,
         );
     },
