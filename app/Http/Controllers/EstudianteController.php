@@ -93,6 +93,9 @@ class EstudianteController extends Controller
             'grupos' => $grupos,
             'estudiantes' => $estudiantes,
             'busqueda' => Inertia::optional(fn () => $this->buscar((string) $request->query('q'), $anio?->id)),
+            // Ficha del estudiante seleccionado (?ver=ID), que se muestra al lado
+            // de la lista sin salir de la página. Solo se consulta si hay uno.
+            'detalle' => fn () => $request->filled('ver') ? $this->ficha((int) $request->query('ver')) : null,
         ]);
     }
 
@@ -101,8 +104,28 @@ class EstudianteController extends Controller
      */
     public function show(int $estudiante): Response
     {
+        $ficha = $this->ficha($estudiante);
+        abort_if(! $ficha, 404);
+
+        return Inertia::render('estudiantes/ficha', [
+            ...$ficha,
+            'institucion' => DB::table('instituciones')->first(),
+        ]);
+    }
+
+    /**
+     * Datos de la ficha: el estudiante, su historia de matrículas, sus
+     * acudientes y los boletines de la matrícula actual. La usan la página de
+     * ficha completa y el panel lateral del listado.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function ficha(int $estudiante): ?array
+    {
         $alumno = DB::table('estudiantes')->whereNull('deleted_at')->where('id', $estudiante)->first();
-        abort_if(! $alumno, 404);
+        if (! $alumno) {
+            return null;
+        }
 
         $historia = DB::table('matriculas as m')
             ->join('anios_lectivos as al', 'al.id', '=', 'm.anio_lectivo_id')
@@ -136,14 +159,13 @@ class EstudianteController extends Controller
             ? DB::table('boletines_excel')->where('matricula_id', $actual->id)->orderBy('numero')->get(['numero', 'valor'])
             : collect();
 
-        return Inertia::render('estudiantes/ficha', [
+        return [
             'estudiante' => $alumno,
             'actual' => $actual,
             'historia' => $historia,
             'acudientes' => $acudientes,
             'boletines' => $boletines,
-            'institucion' => DB::table('instituciones')->first(),
-        ]);
+        ];
     }
 
     /**
@@ -166,7 +188,7 @@ class EstudianteController extends Controller
             ->where(fn ($q) => $q->where('e.nombre_completo', 'like', "%{$texto}%")->orWhere('e.numero_documento', 'like', "{$texto}%"))
             ->orderBy('e.nombre_completo')
             ->limit(12)
-            ->get(['e.id', 'e.nombre_completo as nombre', 'e.numero_documento', 'g.codigo as grupo', 's.nombre as sede', 's.codigo as sede_codigo', 'm.estado'])
+            ->get(['e.id', 'e.nombre_completo as nombre', 'e.numero_documento', 'm.grado_id', 'g.codigo as grupo', 's.nombre as sede', 's.codigo as sede_codigo', 'm.estado'])
             ->all();
     }
 }
