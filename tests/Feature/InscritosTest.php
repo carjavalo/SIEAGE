@@ -81,6 +81,25 @@ class InscritosTest extends TestCase
                 ->where('inscritos.0.padres', []));
     }
 
+    public function test_la_lista_trae_la_ficha_lateral_del_elegido()
+    {
+        $usuario = User::factory()->create();
+
+        // Sin ?ver= no hay ficha; con ?ver= llega la misma que en la página del inscrito.
+        $this->actingAs($usuario)
+            ->get('/inscritos')
+            ->assertInertia(fn (Assert $page) => $page->where('detalle', null)->where('inscritos.0.grado_numero', 7));
+
+        $this->actingAs($usuario)
+            ->get("/inscritos?ver={$this->solicitud->id}")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('inscritos/index')
+                ->where('detalle.solicitud.id', $this->solicitud->id)
+                ->where('detalle.solicitud.acudiente_parentesco', 'Madre')
+                ->where('detalle.padres', []));
+    }
+
     public function test_la_ficha_trae_los_datos_del_formulario()
     {
         $this->actingAs(User::factory()->create())

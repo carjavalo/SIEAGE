@@ -234,7 +234,7 @@ function Alcance({
     );
 }
 
-const Tecla = ({ children, className }: { children: ReactNode; className?: string }) => (
+export const Tecla = ({ children, className }: { children: ReactNode; className?: string }) => (
     <kbd
         className={cn(
             'flex h-5 min-w-5 items-center justify-center rounded-[5px] border border-[#E3E9F6] bg-[#F5F7FC] font-sans text-[12px] text-[#3E4A68]',
@@ -368,8 +368,8 @@ function armarColumnas(c: Columnas): Columna[] {
     return columnas.filter((x): x is Columna => x !== false);
 }
 
-const th = `sticky top-0 z-10 h-[30px] border-b border-[#E3E9F6] bg-white/95 px-3 text-left align-middle text-[12px] font-semibold tracking-[0.06em] text-[#56627F] uppercase backdrop-blur ${alto}:h-9`;
-const td = `h-9 border-b border-[#EEF2F9] px-3 align-middle ${alto}:h-10`;
+export const th = `sticky top-0 z-10 h-[30px] border-b border-[#E3E9F6] bg-white/95 px-3 text-left align-middle text-[12px] font-semibold tracking-[0.06em] text-[#56627F] uppercase backdrop-blur ${alto}:h-9`;
+export const td = `h-9 border-b border-[#EEF2F9] px-3 align-middle ${alto}:h-10`;
 
 function Tabla({
     filas,
@@ -456,7 +456,7 @@ const Fila = memo(function Fila({
     );
 });
 
-function Vacio({ titulo, texto, onQuitar }: { titulo: string; texto?: string; onQuitar?: () => void }) {
+export function Vacio({ titulo, texto, onQuitar }: { titulo: string; texto?: string; onQuitar?: () => void }) {
     return (
         <div className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center">
             <p className="text-[15px] font-semibold">{titulo}</p>
