@@ -93,7 +93,7 @@ type CampoTextoProps = {
     numerico?: boolean;
 } & Omit<InputHTMLAttributes<HTMLInputElement>, 'id' | 'value' | 'onChange'>;
 
-export function CampoTexto({ id, etiqueta, valor, onCambio, error, ayuda, opcional, ancho = 'medio', numerico, ...resto }: CampoTextoProps) {
+export function CampoTexto({ id, etiqueta, valor, onCambio, error, ayuda, opcional, ancho = 'medio', numerico, maxLength, ...resto }: CampoTextoProps) {
     return (
         <div className={cn('flex flex-col gap-2', ancho === 'completo' && 'sm:col-span-2')}>
             <Etiqueta htmlFor={id} opcional={opcional}>
@@ -101,6 +101,11 @@ export function CampoTexto({ id, etiqueta, valor, onCambio, error, ayuda, opcion
             </Etiqueta>
             <input
                 {...resto}
+                // En un campo numérico el límite nativo cortaría lo pegado ANTES
+                // de quitar espacios: "318 718 4003" quedaba en "31871840", un
+                // número válido pero equivocado. Se pega completo y, si sobran
+                // dígitos, la validación lo dice.
+                maxLength={numerico ? undefined : maxLength}
                 id={id}
                 name={id}
                 value={valor}

@@ -248,11 +248,14 @@ export function pasoDelCampo(campo: string): number {
 // -------------------------------------------------------------- validación --
 
 const OBLIGATORIO = 'Este campo es obligatorio.';
-const SOLO_LETRAS = /^[\p{L}\s'.-]+$/u;
+// Letras (con sus tildes), espacios, apóstrofo, punto y guion, con al menos una letra.
+const SOLO_LETRAS = /^(?=.*\p{L})[\p{L}\p{M}\s'.-]+$/u;
 const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function nombre(valor: string, obligatorio: boolean): string | undefined {
-    const v = valor.trim();
+    // Igual que el servidor: el ’ del iPhone y el ´ cuentan como apóstrofo, y
+    // una tilde pegada por separado (e + ◌́) se une a su letra.
+    const v = valor.trim().normalize('NFC').replace(/[’‘´`]/g, "'");
     if (!v) return obligatorio ? OBLIGATORIO : undefined;
     if (!SOLO_LETRAS.test(v)) return 'Usa solo letras.';
     if (v.length > 40) return 'Es demasiado largo: máximo 40 caracteres.';
@@ -283,14 +286,18 @@ function correo(valor: string, obligatorio: boolean): string | undefined {
     const v = valor.trim();
     if (!v) return obligatorio ? OBLIGATORIO : undefined;
     if (!CORREO.test(v)) return 'Escribe un correo válido, por ejemplo nombre@correo.com.';
+    if (v.length > 120) return 'Es demasiado largo: máximo 120 caracteres.';
 }
 
 function elegido(valor: string): string | undefined {
     if (!valor) return 'Elige una de las opciones.';
 }
 
-function cual(principal: string, otro: string): string | undefined {
-    if (principal === 'Otro' && !otro.trim()) return 'Cuéntanos cuál.';
+/** El "¿cuál?" de una opción "Otro". Si la opción ya no es "Otro", no se valida. */
+function cual(principal: string, otro: string, max: number): string | undefined {
+    if (principal !== 'Otro') return;
+    if (!otro.trim()) return 'Cuéntanos cuál.';
+    if (otro.trim().length > max) return `Es demasiado largo: máximo ${max} caracteres.`;
 }
 
 export function validarPaso(paso: number, d: DatosInscripcion): Errores {
@@ -306,11 +313,11 @@ export function validarPaso(paso: number, d: DatosInscripcion): Errores {
         poner('segundo_apellido', nombre(d.segundo_apellido, false));
         poner('sexo', elegido(d.sexo));
         poner('pais_nacimiento', elegido(d.pais_nacimiento));
-        poner('pais_nacimiento_otro', cual(d.pais_nacimiento, d.pais_nacimiento_otro));
+        poner('pais_nacimiento_otro', cual(d.pais_nacimiento, d.pais_nacimiento_otro, 60));
         poner('ciudad_nacimiento', texto(d.ciudad_nacimiento, 80));
         poner('fecha_nacimiento', fechaPasada(d.fecha_nacimiento));
         poner('tipo_documento', elegido(d.tipo_documento));
-        poner('tipo_documento_otro', cual(d.tipo_documento, d.tipo_documento_otro));
+        poner('tipo_documento_otro', cual(d.tipo_documento, d.tipo_documento_otro, 40));
         poner('numero_documento', digitos(d.numero_documento, 5, 15));
         poner('ciudad_expedicion', texto(d.ciudad_expedicion, 80));
     }
@@ -321,7 +328,7 @@ export function validarPaso(paso: number, d: DatosInscripcion): Errores {
         poner('sisben', elegido(d.sisben));
         poner('eps', texto(d.eps, 80));
         poner('grupo_etnico', elegido(d.grupo_etnico));
-        poner('grupo_etnico_otro', cual(d.grupo_etnico, d.grupo_etnico_otro));
+        poner('grupo_etnico_otro', cual(d.grupo_etnico, d.grupo_etnico_otro, 60));
         poner('discapacidad', texto(d.discapacidad, 300, false));
     }
 
@@ -345,7 +352,7 @@ export function validarPaso(paso: number, d: DatosInscripcion): Errores {
         }
         poner('acudiente_ciudad_expedicion', texto(d.acudiente_ciudad_expedicion, 80));
         poner('acudiente_parentesco', elegido(d.acudiente_parentesco));
-        poner('acudiente_parentesco_otro', cual(d.acudiente_parentesco, d.acudiente_parentesco_otro));
+        poner('acudiente_parentesco_otro', cual(d.acudiente_parentesco, d.acudiente_parentesco_otro, 40));
         poner('acudiente_telefono_1', digitos(d.acudiente_telefono_1, 7, 10));
         poner('acudiente_telefono_2', digitos(d.acudiente_telefono_2, 7, 10));
         poner('acudiente_correo', correo(d.acudiente_correo, false));
