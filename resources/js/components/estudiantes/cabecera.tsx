@@ -1,8 +1,9 @@
+import { Desplegable } from '@/components/desplegable';
 import { Marca, Resaltado, iniciales } from '@/components/estudiantes/etiquetas';
 import { type Grado, type Resultado, gradoCorto, numero, palabras } from '@/lib/estudiantes';
 import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
-import { ChevronDown, Search, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { Fragment, type RefObject, useEffect, useState } from 'react';
 
 type Props = {
@@ -30,21 +31,17 @@ export function Cabecera({ anios, anio, grados, gradoId, totales, busqueda, entr
                     <h1 className={`text-[24px] leading-[26px] font-semibold tracking-[-0.025em] ${alto}:text-[28px] ${alto}:leading-8`}>
                         Estudiantes
                     </h1>
-                    <label className="relative flex items-center" title="Año lectivo">
-                        <span className="sr-only">Año lectivo</span>
-                        <select
-                            value={anio}
-                            onChange={(e) => ir({ anio: Number(e.target.value) })}
-                            className={`h-[26px] cursor-pointer appearance-none rounded-full bg-white/75 pr-7 pl-2.5 text-[15px] font-semibold text-[#1E3A7B] tabular-nums ring-1 ring-[#D3DDF3] transition outline-none hover:bg-white focus-visible:ring-2 focus-visible:ring-[#6E8BD6] ${alto}:h-8 ${alto}:text-[16px]`}
-                        >
-                            {anios.map((a) => (
-                                <option key={a.id} value={a.anio}>
-                                    {a.anio}
-                                </option>
-                            ))}
-                        </select>
-                        <ChevronDown className="pointer-events-none absolute right-2 size-4 text-[#1E3A7B]" />
-                    </label>
+                    <Desplegable
+                        etiqueta="Año lectivo"
+                        valor={anio}
+                        opciones={anios.map((a) => ({
+                            valor: a.anio,
+                            etiqueta: String(a.anio),
+                            detalle: a.estado === 'activo' ? 'en curso' : undefined,
+                        }))}
+                        onCambio={(valor) => ir({ anio: valor })}
+                        claseBoton={`h-[26px] rounded-full bg-white/75 pr-2 pl-2.5 text-[15px] font-semibold text-[#1E3A7B] tabular-nums ring-1 ring-[#D3DDF3] transition hover:bg-white focus-visible:ring-2 focus-visible:ring-[#6E8BD6] aria-expanded:bg-white aria-expanded:ring-[#6E8BD6] ${alto}:h-8 ${alto}:text-[16px]`}
+                    />
                 </div>
                 <dl
                     className={`mt-0.5 flex items-baseline gap-1.5 text-[13px] leading-4 whitespace-nowrap text-[#56627F] ${alto}:mt-1 ${alto}:text-[14px] ${alto}:leading-5`}
@@ -215,7 +212,7 @@ function BusquedaGlobal({
                                 id="resultados-busqueda"
                                 role="listbox"
                                 aria-label="Resultados de la búsqueda"
-                                className="max-h-[360px] overflow-y-auto p-1.5"
+                                className="max-h-[360px] overflow-y-auto overscroll-contain p-1.5 [scrollbar-color:#C4D2F1_transparent] [scrollbar-width:thin]"
                             >
                                 {resultados.map((r, i) => (
                                     <li
