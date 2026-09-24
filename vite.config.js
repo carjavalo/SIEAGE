@@ -5,6 +5,8 @@ import {
 } from 'vite';
 import tailwindcss from "@tailwindcss/vite";
 
+const devHost = process.env.VITE_DEV_HOST || '192.168.2.200';
+
 export default defineConfig({
     plugins: [
         laravel({
@@ -17,5 +19,12 @@ export default defineConfig({
     ],
     esbuild: {
         jsx: 'automatic',
+    },
+    server: {
+        host: '0.0.0.0',
+        cors: true,
+        hmr: {
+            host: devHost,
+        },
     },
 });
