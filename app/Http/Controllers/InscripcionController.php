@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\InscripcionRequest;
+use App\Models\SolicitudInscripcion;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -25,21 +26,20 @@ class InscripcionController extends Controller
     }
 
     /**
-     * Recibe la inscripción ya validada.
-     *
-     * PENDIENTE: todavía no se guarda. Varios campos del formulario (EPS,
-     * SISBÉN, tipo de sangre, grupo étnico, lugar de nacimiento, ciudad de
-     * expedición, contacto del estudiante) no tienen columna en la base, y
-     * falta decidir si una inscripción entra directo como matrícula o como
-     * solicitud que la secretaría aprueba.
+     * Guarda la inscripción como solicitud pendiente. No toca las tablas
+     * oficiales: el estudiante, el acudiente y la matrícula se crean cuando
+     * la secretaría la apruebe.
      */
     public function store(InscripcionRequest $request): RedirectResponse
     {
         // Campo trampa invisible: un humano nunca lo llena. Al bot se le
-        // responde igual que a un envío correcto para no darle pistas.
+        // responde igual que a un envío correcto para no darle pistas, pero
+        // no se guarda nada.
         if ($request->filled('sitio_web')) {
             return back();
         }
+
+        SolicitudInscripcion::create($request->datosParaGuardar());
 
         return back();
     }

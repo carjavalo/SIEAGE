@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Models\SolicitudInscripcion;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class InscripcionRequest extends FormRequest
@@ -43,7 +45,8 @@ class InscripcionRequest extends FormRequest
         $nombre = ['string', 'max:40', 'regex:/^[\pL\s\'.-]+$/u'];
         $documento = ['required', 'digits_between:5,15'];
         $telefono = ['required', 'digits_between:7,10'];
-        $fechaPasada = ['required', 'date', 'before:today', 'after:1900-01-01'];
+        // El campo de fecha del navegador siempre envía AAAA-MM-DD; se exige ese formato.
+        $fechaPasada = ['required', 'date_format:Y-m-d', 'before:today', 'after:1900-01-01'];
 
         return [
             // 1. Estudiante
@@ -58,7 +61,15 @@ class InscripcionRequest extends FormRequest
             'fecha_nacimiento' => $fechaPasada,
             'tipo_documento' => ['required', Rule::in(['R.C.', 'T.I.', 'C.C.', 'C.E.', 'P.P.T.', 'Otro'])],
             'tipo_documento_otro' => ['required_if:tipo_documento,Otro', 'nullable', 'string', 'max:40'],
-            'numero_documento' => [...$documento, 'different:acudiente_numero_documento'],
+            'numero_documento' => [
+                ...$documento,
+                'different:acudiente_numero_documento',
+                // Un doble clic, o un padre que vuelve a llenar el formulario,
+                // no debe dejar dos solicitudes del mismo estudiante en revisión.
+                Rule::unique('solicitudes_inscripcion', 'numero_documento')
+                    ->where('estado', SolicitudInscripcion::PENDIENTE)
+                    ->where('anio_lectivo_id', SolicitudInscripcion::anioLectivoActivoId()),
+            ],
             'ciudad_expedicion' => ['required', 'string', 'max:80'],
 
             // 2. Grado y salud
@@ -120,6 +131,71 @@ class InscripcionRequest extends FormRequest
             'email' => 'Escribe un correo válido, por ejemplo nombre@correo.com.',
             'different' => 'El documento del estudiante no puede ser el mismo del acudiente.',
             'accepted' => 'Necesitamos tu autorización para procesar la inscripción.',
+            'date_format' => 'Escribe una fecha válida.',
+            'numero_documento.unique' => 'Ya recibimos una inscripción con este documento y está en revisión. La secretaría se comunicará contigo.',
+        ];
+    }
+
+    /**
+     * Traduce lo que envía el formulario a las columnas de
+     * solicitudes_inscripcion: resuelve las opciones "Otro", pasa el
+     * parentesco de nombre a id y deja constancia de la autorización.
+     *
+     * @return array<string, mixed>
+     */
+    public function datosParaGuardar(): array
+    {
+        $d = $this->validated();
+
+        // Texto escrito en "¿cuál?" cuando se eligió "Otro"; null en cualquier otro caso.
+        $cual = fn (string $campo) => ($d[$campo] ?? null) === 'Otro' ? ($d["{$campo}_otro"] ?? null) : null;
+        $minusculas = fn (?string $correo) => $correo === null ? null : Str::lower($correo);
+
+        return [
+            'anio_lectivo_id' => SolicitudInscripcion::anioLectivoActivoId(),
+
+            'primer_nombre' => $d['primer_nombre'],
+            'segundo_nombre' => $d['segundo_nombre'] ?? null,
+            'primer_apellido' => $d['primer_apellido'],
+            'segundo_apellido' => $d['segundo_apellido'] ?? null,
+            'sexo' => $d['sexo'],
+            'pais_nacimiento' => $cual('pais_nacimiento') ?? $d['pais_nacimiento'],
+            'ciudad_nacimiento' => $d['ciudad_nacimiento'],
+            'fecha_nacimiento' => $d['fecha_nacimiento'],
+            'tipo_documento' => $d['tipo_documento'],
+            'tipo_documento_otro' => $cual('tipo_documento'),
+            'numero_documento' => $d['numero_documento'],
+            'ciudad_expedicion' => $d['ciudad_expedicion'],
+
+            'grado_id' => (int) $d['grado_id'],
+            'tipo_sangre' => $d['tipo_sangre'],
+            'sisben' => $d['sisben'],
+            'eps' => $d['eps'],
+            'grupo_etnico' => $cual('grupo_etnico') ?? $d['grupo_etnico'],
+            'discapacidad' => $d['discapacidad'] ?? null,
+
+            'direccion' => $d['direccion'],
+            'barrio' => $d['barrio'],
+            'telefono_1' => $d['telefono_1'],
+            'telefono_2' => $d['telefono_2'],
+            'correo' => $minusculas($d['correo']),
+
+            'acudiente_primer_nombre' => $d['acudiente_primer_nombre'],
+            'acudiente_segundo_nombre' => $d['acudiente_segundo_nombre'] ?? null,
+            'acudiente_primer_apellido' => $d['acudiente_primer_apellido'],
+            'acudiente_segundo_apellido' => $d['acudiente_segundo_apellido'] ?? null,
+            'acudiente_fecha_nacimiento' => $d['acudiente_fecha_nacimiento'],
+            'acudiente_numero_documento' => $d['acudiente_numero_documento'],
+            'acudiente_ciudad_expedicion' => $d['acudiente_ciudad_expedicion'],
+            'acudiente_parentesco_id' => DB::table('parentescos')->where('nombre', $d['acudiente_parentesco'])->value('id'),
+            'acudiente_parentesco_otro' => $cual('acudiente_parentesco'),
+            'acudiente_telefono_1' => $d['acudiente_telefono_1'],
+            'acudiente_telefono_2' => $d['acudiente_telefono_2'],
+            'acudiente_correo' => $minusculas($d['acudiente_correo'] ?? null),
+
+            'autorizo_datos_en' => now(),
+            'ip' => $this->ip(),
+            'navegador' => $this->userAgent() ? Str::limit($this->userAgent(), 255, '') : null,
         ];
     }
 }
