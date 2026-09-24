@@ -160,8 +160,8 @@ export default function Estudiantes({ anios, anio, grados, gradoId, totales, gru
     // la ficha, "/" lleva a la búsqueda y Esc cierra por capas (ficha → filtro).
     useEffect(() => {
         const alTeclear = (ev: KeyboardEvent) => {
-            const t = ev.target as HTMLElement;
-            if (ev.ctrlKey || ev.metaKey || ev.altKey || t === campoBusqueda.current) return;
+            const t = ev.target;
+            if (!(t instanceof HTMLElement) || ev.ctrlKey || ev.metaKey || ev.altKey || t === campoBusqueda.current) return;
             const enCampo = t.matches('input, select, textarea');
             const enFiltro = t === campoFiltro.current;
 
@@ -192,8 +192,9 @@ export default function Estudiantes({ anios, anio, grados, gradoId, totales, gru
     useEffect(() => {
         if (!abierta) return;
         const alPulsar = (ev: MouseEvent) => {
-            const t = ev.target as Element;
-            if (esAncha() || panel.current?.contains(t) || t.closest('[data-fila], header, [data-busqueda], [role=menu]')) return;
+            const t = ev.target;
+            if (!(t instanceof Element) || esAncha() || panel.current?.contains(t) || t.closest('[data-fila], header, [data-busqueda], [role=menu]'))
+                return;
             setAbierta(false);
         };
         document.addEventListener('mousedown', alPulsar);

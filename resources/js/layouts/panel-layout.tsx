@@ -1,6 +1,4 @@
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { UserInfo } from '@/components/user-info';
-import { UserMenuContent } from '@/components/user-menu-content';
+import { MenuUsuario } from '@/components/menu-usuario';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
@@ -58,20 +56,7 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
                             })}
                         </nav>
 
-                        <div className="ml-auto">
-                            {auth.user && (
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <button className="flex items-center gap-2 rounded-full p-1 pr-3 text-sm transition-colors hover:bg-[#EEF2FB]">
-                                            <UserInfo user={auth.user} />
-                                        </button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent className="w-56" align="end">
-                                        <UserMenuContent user={auth.user} />
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            )}
-                        </div>
+                        <div className="ml-auto">{auth.user && <MenuUsuario user={auth.user} />}</div>
                     </div>
                 </header>
 

@@ -1,7 +1,5 @@
+import { MenuUsuario } from '@/components/menu-usuario';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { UserInfo } from '@/components/user-info';
-import { UserMenuContent } from '@/components/user-menu-content';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
@@ -88,18 +86,7 @@ export default function Dashboard() {
                         <GraduationCap className="size-4" />
                         Estudiantes
                     </Link>
-                    {auth.user && (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <button className="hover:bg-accent flex items-center gap-2 rounded-full p-1 pr-3 text-sm transition-colors">
-                                    <UserInfo user={auth.user} />
-                                </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56" align="end">
-                                <UserMenuContent user={auth.user} />
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    )}
+                    {auth.user && <MenuUsuario user={auth.user} />}
                 </header>
 
                 <main className="flex flex-1 items-center justify-center px-6 pb-24">
