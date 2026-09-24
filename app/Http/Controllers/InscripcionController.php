@@ -21,7 +21,10 @@ class InscripcionController extends Controller
             'anioLectivo' => DB::table('anios_lectivos')->where('estado', 'activo')->value('anio') ?? (int) date('Y'),
             'grados' => DB::table('grados')->orderBy('numero')->get(['id', 'numero', 'nombre']),
             'parentescos' => DB::table('parentescos')->orderBy('id')->pluck('nombre'),
-            'barrios' => DB::table('barrios')->orderBy('nombre')->pluck('nombre'),
+            // Solo los barrios verificados (la lista oficial de Cali y algunos
+            // lugares vecinos); los nombres mal escritos del Excel no se sugieren.
+            'barrios' => DB::table('barrios')->whereNotNull('tipo')->orderBy('nombre')->get(['nombre', 'municipio'])
+                ->map(fn ($b) => $b->municipio ? "{$b->nombre} ({$b->municipio})" : $b->nombre),
         ]);
     }
 
