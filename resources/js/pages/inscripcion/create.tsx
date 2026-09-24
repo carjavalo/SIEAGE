@@ -84,7 +84,8 @@ class EnvioFallido extends Error {
 /** Qué decirle a la familia según por qué falló el envío. En todos los casos lo escrito se conserva. */
 function mensajeDeError(e: unknown) {
     if (!(e instanceof EnvioFallido)) return { title: 'Hay datos por corregir', description: 'Te llevamos al primero.' };
-    if (e.estado === 429) return { title: 'Hay muchos envíos en este momento', description: 'Espera un minuto y vuelve a enviar. Tus datos siguen aquí.' };
+    if (e.estado === 429)
+        return { title: 'Hay muchos envíos en este momento', description: 'Espera un minuto y vuelve a enviar. Tus datos siguen aquí.' };
     if (e.estado === 419) return { title: 'La página estuvo abierta mucho tiempo', description: 'Vuelve a enviar. Tus datos siguen aquí.' };
     return { title: 'No pudimos enviarla', description: 'Revisa tu conexión y vuelve a enviar. Tus datos siguen aquí.' };
 }
@@ -322,20 +323,30 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
                     <BarraMovil actual={paso} />
 
                     <div className={cn('flex flex-1 justify-center px-1 py-10 sm:px-8 lg:py-16', !enPasos && 'lg:items-center')}>
+                        {/*
+                          Campo trampa: invisible para personas y lectores de pantalla; los bots lo llenan.
+                          Va FUERA del <form>: el autocompletado del navegador llena los campos del mismo
+                          formulario (e ignora autocomplete="off"), y si lo llenara, el servidor descartaría
+                          una inscripción real mostrando "enviada". Las marcas data-* son para los gestores
+                          de contraseñas (1Password, LastPass, Bitwarden, Dashlane).
+                        */}
+                        <div aria-hidden className="absolute -left-[10000px] size-px overflow-hidden">
+                            <label>
+                                No llenar
+                                <input
+                                    type="text"
+                                    tabIndex={-1}
+                                    autoComplete="sin-autocompletar"
+                                    data-1p-ignore
+                                    data-lpignore="true"
+                                    data-bwignore
+                                    data-form-type="other"
+                                    value={data.sitio_web}
+                                    onChange={(e) => form.setData('sitio_web', e.target.value)}
+                                />
+                            </label>
+                        </div>
                         <form noValidate onSubmit={alEnviar} className="relative w-full max-w-[620px]">
-                            {/* Campo trampa: invisible para personas y lectores de pantalla; los bots lo llenan. */}
-                            <div aria-hidden className="absolute -left-[10000px] size-px overflow-hidden">
-                                <label>
-                                    No llenar
-                                    <input
-                                        tabIndex={-1}
-                                        autoComplete="off"
-                                        value={data.sitio_web}
-                                        onChange={(e) => form.setData('sitio_web', e.target.value)}
-                                    />
-                                </label>
-                            </div>
-
                             <div
                                 key={paso}
                                 className={cn(
