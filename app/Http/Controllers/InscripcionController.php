@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\InscripcionRequest;
 use App\Models\SolicitudInscripcion;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -23,6 +26,8 @@ class InscripcionController extends Controller
             'grados' => DB::table('grados')->orderBy('numero')->get(['id', 'numero', 'nombre']),
             'parentescos' => DB::table('parentescos')->orderBy('id')->pluck('nombre'),
             'barrios' => DB::table('barrios')->orderBy('nombre')->pluck('nombre'),
+            // Hora en que se abrió el formulario, cifrada: ver esRobot().
+            'sello' => Crypt::encryptString((string) now()->getTimestamp()),
         ]);
     }
 
@@ -33,17 +38,10 @@ class InscripcionController extends Controller
      */
     public function store(InscripcionRequest $request): RedirectResponse
     {
-        // Campo trampa invisible: un humano nunca lo llena. Al bot se le
-        // responde igual que a un envío correcto para no darle pistas, pero
-        // no se guarda nada.
-        if ($request->filled('sitio_web')) {
-            // Queda anotado (sin los datos): si alguna vez lo activa una persona,
-            // por ejemplo con el autocompletado del navegador, no se pierde sin rastro.
-            Log::warning('Inscripción descartada por el campo trampa', [
-                'ip' => $request->ip(),
-                'navegador' => $request->userAgent(),
-                'largo' => mb_strlen((string) $request->input('sitio_web')),
-            ]);
+        // Al robot se le responde igual que a un envío correcto para no darle
+        // pistas, pero no se guarda nada. Queda anotado (sin los datos).
+        if ($this->esRobot($request)) {
+            Log::warning('Inscripción descartada: la envió un robot', ['ip' => $request->ip(), 'navegador' => $request->userAgent()]);
 
             return back();
         }
@@ -51,5 +49,31 @@ class InscripcionController extends Controller
         SolicitudInscripcion::create($request->datosParaGuardar());
 
         return back();
+    }
+
+    /**
+     * Un robot envía segundos después de abrir la página; una familia tarda
+     * minutos en llenar los cuatro pasos. El sello es la hora de apertura
+     * cifrada por el servidor, así que no se puede inventar.
+     *
+     * Antes había un campo invisible que "solo llenaban los robots", pero el
+     * autocompletado de Chrome también lo llenaba y se perdían inscripciones
+     * reales mostrando "enviada". Por eso, ante la duda, se guarda: sin sello
+     * (una pestaña abierta antes de este cambio) la inscripción sí se guarda.
+     */
+    private function esRobot(Request $request): bool
+    {
+        $sello = $request->input('sello');
+        if (! is_string($sello) || $sello === '') {
+            return false;
+        }
+
+        try {
+            $abierto = (int) Crypt::decryptString($sello);
+        } catch (DecryptException) {
+            return true; // alterado: solo lo haría un robot
+        }
+
+        return now()->getTimestamp() - $abierto < 3;
     }
 }

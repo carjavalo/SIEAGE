@@ -41,6 +41,8 @@ type Props = {
     grados: Grado[];
     parentescos: string[];
     barrios: string[];
+    /** Hora de apertura cifrada por el servidor: ver InscripcionController::esRobot(). */
+    sello: string;
 };
 
 const BIENVENIDA = -1;
@@ -93,8 +95,8 @@ function mensajeDeError(e: unknown) {
 /** Los campos de texto del formulario (todos menos la casilla de autorización). */
 type CampoDeTexto = { [K in Campo]: DatosInscripcion[K] extends string ? K : never }[Campo];
 
-export default function Inscripcion({ anioLectivo, grados, parentescos, barrios }: Props) {
-    const form = useForm<DatosInscripcion>(DATOS_VACIOS);
+export default function Inscripcion({ anioLectivo, grados, parentescos, barrios, sello }: Props) {
+    const form = useForm<DatosInscripcion>({ ...DATOS_VACIOS, sello });
     const { data, errors, processing } = form;
 
     const [paso, setPaso] = useState(BIENVENIDA);
@@ -288,7 +290,7 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
 
     /** Otro estudiante de la misma familia: se conservan acudiente y residencia. */
     const empezarDeNuevo = (conservarFamilia: boolean) => {
-        const base = { ...DATOS_VACIOS };
+        const base = { ...DATOS_VACIOS, sello };
         if (conservarFamilia) {
             for (const c of CAMPOS_COMPARTIDOS_ENTRE_HERMANOS) (base as Record<Campo, unknown>)[c] = data[c];
         }
@@ -323,29 +325,6 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
                     <BarraMovil actual={paso} />
 
                     <div className={cn('flex flex-1 justify-center px-1 py-10 sm:px-8 lg:py-16', !enPasos && 'lg:items-center')}>
-                        {/*
-                          Campo trampa: invisible para personas y lectores de pantalla; los bots lo llenan.
-                          Va FUERA del <form>: el autocompletado del navegador llena los campos del mismo
-                          formulario (e ignora autocomplete="off"), y si lo llenara, el servidor descartaría
-                          una inscripción real mostrando "enviada". Las marcas data-* son para los gestores
-                          de contraseñas (1Password, LastPass, Bitwarden, Dashlane).
-                        */}
-                        <div aria-hidden className="absolute -left-[10000px] size-px overflow-hidden">
-                            <label>
-                                No llenar
-                                <input
-                                    type="text"
-                                    tabIndex={-1}
-                                    autoComplete="sin-autocompletar"
-                                    data-1p-ignore
-                                    data-lpignore="true"
-                                    data-bwignore
-                                    data-form-type="other"
-                                    value={data.sitio_web}
-                                    onChange={(e) => form.setData('sitio_web', e.target.value)}
-                                />
-                            </label>
-                        </div>
                         <form noValidate onSubmit={alEnviar} className="relative w-full max-w-[620px]">
                             <div
                                 key={paso}

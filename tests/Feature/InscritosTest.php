@@ -37,7 +37,7 @@ class InscritosTest extends TestCase
             'acudiente_primer_nombre' => 'Martha', 'acudiente_segundo_nombre' => '', 'acudiente_primer_apellido' => 'Rentería',
             'acudiente_segundo_apellido' => 'Mier', 'acudiente_fecha_nacimiento' => '1986-07-02', 'acudiente_numero_documento' => '67038408',
             'acudiente_ciudad_expedicion' => 'Cali', 'acudiente_parentesco' => 'Madre', 'acudiente_telefono_1' => '3187184003',
-            'acudiente_telefono_2' => '3852436', 'acudiente_correo' => '', 'autorizacion_datos' => true, 'sitio_web' => '',
+            'acudiente_telefono_2' => '3852436', 'acudiente_correo' => '', 'autorizacion_datos' => true,
         ])->assertSessionHasNoErrors();
 
         $this->solicitud = SolicitudInscripcion::firstOrFail();

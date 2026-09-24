@@ -50,7 +50,8 @@ export type DatosInscripcion = {
     acudiente_correo: string;
     // 5. Revisión
     autorizacion_datos: boolean;
-    sitio_web: string; // campo trampa para bots, invisible para las personas
+    /** Hora en que se abrió el formulario, cifrada por el servidor (contra robots). */
+    sello: string;
 };
 
 export type Campo = keyof DatosInscripcion;
@@ -97,7 +98,7 @@ export const DATOS_VACIOS: DatosInscripcion = {
     acudiente_telefono_2: '',
     acudiente_correo: '',
     autorizacion_datos: false,
-    sitio_web: '',
+    sello: '',
 };
 
 /** Al inscribir a un hermano se conservan el acudiente y el hogar. */
@@ -255,7 +256,10 @@ const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function nombre(valor: string, obligatorio: boolean): string | undefined {
     // Igual que el servidor: el ’ del iPhone y el ´ cuentan como apóstrofo, y
     // una tilde pegada por separado (e + ◌́) se une a su letra.
-    const v = valor.trim().normalize('NFC').replace(/[’‘´`]/g, "'");
+    const v = valor
+        .trim()
+        .normalize('NFC')
+        .replace(/[’‘´`]/g, "'");
     if (!v) return obligatorio ? OBLIGATORIO : undefined;
     if (!SOLO_LETRAS.test(v)) return 'Usa solo letras.';
     if (v.length > 40) return 'Es demasiado largo: máximo 40 caracteres.';
