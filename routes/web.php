@@ -3,6 +3,7 @@
 use App\Http\Controllers\EstudianteController;
 use App\Http\Controllers\ImportacionController;
 use App\Http\Controllers\InscripcionController;
+use App\Http\Controllers\InscritoController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -25,6 +26,10 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('estudiantes', [EstudianteController::class, 'index'])->name('estudiantes.index');
     Route::get('estudiantes/{estudiante}', [EstudianteController::class, 'show'])->whereNumber('estudiante')->name('estudiantes.show');
+
+    Route::get('inscritos', [InscritoController::class, 'index'])->name('inscritos.index');
+    Route::get('inscritos/{solicitud}', [InscritoController::class, 'show'])->whereNumber('solicitud')->name('inscritos.show');
+    Route::put('inscritos/{solicitud}/padres', [InscritoController::class, 'guardarPadres'])->whereNumber('solicitud')->name('inscritos.padres');
 });
 
 require __DIR__.'/settings.php';
