@@ -41,6 +41,8 @@ type Props = {
     grados: Grado[];
     parentescos: string[];
     barrios: string[];
+    /** Hora de apertura cifrada por el servidor: ver InscripcionController::esRobot(). */
+    sello: string;
 };
 
 const BIENVENIDA = -1;
@@ -84,7 +86,8 @@ class EnvioFallido extends Error {
 /** Qué decirle a la familia según por qué falló el envío. En todos los casos lo escrito se conserva. */
 function mensajeDeError(e: unknown) {
     if (!(e instanceof EnvioFallido)) return { title: 'Hay datos por corregir', description: 'Te llevamos al primero.' };
-    if (e.estado === 429) return { title: 'Hay muchos envíos en este momento', description: 'Espera un minuto y vuelve a enviar. Tus datos siguen aquí.' };
+    if (e.estado === 429)
+        return { title: 'Hay muchos envíos en este momento', description: 'Espera un minuto y vuelve a enviar. Tus datos siguen aquí.' };
     if (e.estado === 419) return { title: 'La página estuvo abierta mucho tiempo', description: 'Vuelve a enviar. Tus datos siguen aquí.' };
     return { title: 'No pudimos enviarla', description: 'Revisa tu conexión y vuelve a enviar. Tus datos siguen aquí.' };
 }
@@ -92,8 +95,8 @@ function mensajeDeError(e: unknown) {
 /** Los campos de texto del formulario (todos menos la casilla de autorización). */
 type CampoDeTexto = { [K in Campo]: DatosInscripcion[K] extends string ? K : never }[Campo];
 
-export default function Inscripcion({ anioLectivo, grados, parentescos, barrios }: Props) {
-    const form = useForm<DatosInscripcion>(DATOS_VACIOS);
+export default function Inscripcion({ anioLectivo, grados, parentescos, barrios, sello }: Props) {
+    const form = useForm<DatosInscripcion>({ ...DATOS_VACIOS, sello });
     const { data, errors, processing } = form;
 
     const [paso, setPaso] = useState(BIENVENIDA);
@@ -287,7 +290,7 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
 
     /** Otro estudiante de la misma familia: se conservan acudiente y residencia. */
     const empezarDeNuevo = (conservarFamilia: boolean) => {
-        const base = { ...DATOS_VACIOS };
+        const base = { ...DATOS_VACIOS, sello };
         if (conservarFamilia) {
             for (const c of CAMPOS_COMPARTIDOS_ENTRE_HERMANOS) (base as Record<Campo, unknown>)[c] = data[c];
         }
@@ -323,19 +326,6 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios 
 
                     <div className={cn('flex flex-1 justify-center px-1 py-10 sm:px-8 lg:py-16', !enPasos && 'lg:items-center')}>
                         <form noValidate onSubmit={alEnviar} className="relative w-full max-w-[620px]">
-                            {/* Campo trampa: invisible para personas y lectores de pantalla; los bots lo llenan. */}
-                            <div aria-hidden className="absolute -left-[10000px] size-px overflow-hidden">
-                                <label>
-                                    No llenar
-                                    <input
-                                        tabIndex={-1}
-                                        autoComplete="off"
-                                        value={data.sitio_web}
-                                        onChange={(e) => form.setData('sitio_web', e.target.value)}
-                                    />
-                                </label>
-                            </div>
-
                             <div
                                 key={paso}
                                 className={cn(
