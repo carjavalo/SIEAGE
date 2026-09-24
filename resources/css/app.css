@@ -186,6 +186,13 @@
     color: #56627f;
 }
 
+/* El cuerpo del toast mide siempre 350px y Sileo alinea la descripción a la
+   izquierda: con la píldora centrada, un texto corto dejaba un hueco a la
+   derecha. Se centra solo cuando la píldora está al centro. */
+[data-sileo-toast][data-position='center'] [data-sileo-description] {
+    text-align: center;
+}
+
 /* Sileo pone los títulos en "Capitalize" (pensado para títulos cortos en
    inglés) y en español deja "Hay Datos Por Corregir". Los títulos se
    escriben en tipo oración en cada llamada a sileo. */
