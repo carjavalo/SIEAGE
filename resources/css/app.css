@@ -157,13 +157,40 @@
     }
 }
 
-/* Toasts (Sileo). Sileo inyecta su propio <style> en tiempo de ejecución,
-   después de este archivo: por eso los ajustes cuelgan de [data-sileo-viewport],
-   que tiene más especificidad y gana sin importar el orden de carga. */
+/* Toasts (Sileo): píldora blanca con los colores de la marca.
+   Sileo inyecta su propio <style> en tiempo de ejecución, después de este
+   archivo: por eso los ajustes cuelgan de [data-sileo-viewport] (o llevan
+   :root delante) y ganan por especificidad, no por orden de carga.
+   El Toaster va con theme="dark" en app.tsx: ver el comentario allí. */
 [data-sileo-viewport] {
-    /* Verde de éxito alineado con la marca #1F7A5C, más luminoso para que
-       contraste sobre la píldora oscura del tema claro. */
-    --sileo-state-success: #3dbe8b;
+    /* Color del título, el ícono y el botón de cada estado. Tonos oscuros
+       porque la píldora es blanca: todos contrastan al menos 4.5:1. */
+    --sileo-state-success: #1f7a5c;
+    --sileo-state-warning: #b45309;
+    --sileo-state-error: #b42318;
+    --sileo-state-info: #1e3a7b;
+    --sileo-state-action: #1e3a7b;
+    --sileo-state-loading: #56627f;
+}
+
+/* Blanco sobre página blanca: sin sombra la píldora no tiene borde y el texto
+   parece flotar. drop-shadow sigue la forma redondeada (box-shadow sería un
+   rectángulo). El lienzo interno no se toca: lleva el filtro "gelatina". */
+[data-sileo-viewport] [data-sileo-toast] {
+    filter: drop-shadow(0 10px 24px rgba(22, 34, 63, 0.14)) drop-shadow(0 1px 2px rgba(22, 34, 63, 0.12));
+}
+
+/* La descripción en el gris de la marca: el negro al 50% de Sileo se queda
+   en 3.9:1 sobre blanco, por debajo de lo legible (4.5:1). */
+:root [data-sileo-viewport][data-theme] [data-sileo-description] {
+    color: #56627f;
+}
+
+/* El cuerpo del toast mide siempre 350px y Sileo alinea la descripción a la
+   izquierda: con la píldora centrada, un texto corto dejaba un hueco a la
+   derecha. Se centra solo cuando la píldora está al centro. */
+[data-sileo-toast][data-position='center'] [data-sileo-description] {
+    text-align: center;
 }
 
 /* Sileo pone los títulos en "Capitalize" (pensado para títulos cortos en
