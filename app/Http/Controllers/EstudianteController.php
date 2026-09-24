@@ -188,7 +188,7 @@ class EstudianteController extends Controller
             ->where(fn ($q) => $q->where('e.nombre_completo', 'like', "%{$texto}%")->orWhere('e.numero_documento', 'like', "{$texto}%"))
             ->orderBy('e.nombre_completo')
             ->limit(12)
-            ->get(['e.id', 'e.nombre_completo as nombre', 'e.numero_documento', 'm.grado_id', 'g.codigo as grupo', 's.nombre as sede', 's.codigo as sede_codigo', 'm.estado'])
+            ->get(['e.id', 'e.nombre_completo as nombre', 'e.tipo_documento', 'e.numero_documento', 'm.grado_id', 'g.codigo as grupo', 's.nombre as sede', 's.codigo as sede_codigo', 'm.estado'])
             ->all();
     }
 }

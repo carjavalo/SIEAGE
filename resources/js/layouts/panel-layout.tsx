@@ -30,7 +30,7 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
 
             <div className="min-h-screen bg-[#F5F7FC] font-['Outfit',ui-sans-serif,system-ui,sans-serif] text-[#16223F] print:bg-white">
                 <header className="sticky top-0 z-30 border-b border-[#E3E9F6] bg-white/90 backdrop-blur print:hidden">
-                    <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-6 px-4 md:px-8">
+                    <div className={cn('mx-auto flex h-16 max-w-[1400px] items-center gap-6 px-4 md:px-8', completa && '2xl:max-w-[1760px]')}>
                         <Link href="/estudiantes" className="flex shrink-0 items-center gap-3">
                             <img src="/sieage-logo.png" alt="SIEAGE" className="h-10 w-auto rounded-md object-contain" />
                             <div className="hidden leading-tight sm:block">
@@ -77,9 +77,12 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
 
                 <main
                     className={cn(
-                        'mx-auto max-w-[1400px] px-4 py-8 md:px-8 print:max-w-none print:p-0',
-                        // 4rem del encabezado + 1px de su borde inferior.
-                        completa && 'lg:flex lg:h-[calc(100dvh-4rem-1px)] lg:flex-col lg:py-5',
+                        'mx-auto max-w-[1400px] px-4 md:px-8 print:max-w-none print:p-0',
+                        // 4rem del encabezado + 1px de su borde inferior. En pantallas bajas
+                        // (portátiles) el margen vertical se recorta para que quepa más lista.
+                        completa
+                            ? 'pt-1.5 pb-2 lg:flex lg:h-[calc(100dvh-4rem-1px)] lg:flex-col 2xl:max-w-[1760px] [@media(min-height:860px)]:pt-4 [@media(min-height:860px)]:pb-4'
+                            : 'py-8',
                     )}
                 >
                     {children}
