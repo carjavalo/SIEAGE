@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+{{-- Toda la interfaz está en español: sin esto, Chrome cree que la página está en inglés (APP_LOCALE=en) y ofrece traducirla. --}}
+<html lang="es-CO">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
