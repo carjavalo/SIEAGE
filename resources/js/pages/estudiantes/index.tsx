@@ -2,7 +2,7 @@ import { Condicion, Estado, Sede, iniciales } from '@/components/estudiantes/eti
 import PanelLayout from '@/layouts/panel-layout';
 import { cn } from '@/lib/utils';
 import { Link, router } from '@inertiajs/react';
-import { ChevronRight, Phone, Search, UserCheck, UserMinus, UserPlus, Users, X } from 'lucide-react';
+import { ChevronRight, Phone, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 type Grado = { id: number; numero: number; nombre: string; nivel: string; activos: number; grupos: number };
@@ -55,12 +55,34 @@ type Props = {
     busqueda?: Resultado[];
 };
 
-const niveles: { clave: string; nombre: string }[] = [
-    { clave: 'preescolar', nombre: 'Preescolar' },
-    { clave: 'primaria', nombre: 'Primaria' },
-    { clave: 'secundaria', nombre: 'Secundaria' },
-    { clave: 'media', nombre: 'Media técnica' },
-];
+/** Un cuadro por cupo del grupo: relleno = estudiante activo; los que exceden el cupo, en rojo. */
+function Asientos({ activos, cupos }: { activos: number; cupos: number }) {
+    const total = Math.max(activos, cupos);
+    return (
+        <span role="img" aria-label={`${activos} de ${cupos} cupos ocupados`} className="grid grid-cols-[repeat(9,10px)] gap-1">
+            {Array.from({ length: total }, (_, i) => (
+                <span key={i} className={cn('size-2.5 rounded-[3px]', i >= cupos ? 'bg-[#D05454]' : i < activos ? 'bg-[#5B7BD0]' : 'bg-[#EEF2FB]')} />
+            ))}
+        </span>
+    );
+}
+
+/** Cómo se reparte el grado: por modalidad en media técnica; si no, por sede o por jornada. */
+function repartir(activos: Estudiante[]) {
+    const contar = (clave: (e: Estudiante) => string | null) => {
+        const conteo = new Map<string, number>();
+        for (const e of activos) {
+            const k = clave(e);
+            if (k) conteo.set(k, (conteo.get(k) ?? 0) + 1);
+        }
+        return [...conteo.entries()].sort((a, b) => b[1] - a[1]);
+    };
+    const modalidades = contar((e) => e.modalidad);
+    if (modalidades.length) return { titulo: 'Modalidades', filas: modalidades };
+    const sedes = contar((e) => e.sede);
+    if (sedes.length > 1) return { titulo: 'Por sede', filas: sedes };
+    return { titulo: 'Por jornada', filas: contar((e) => e.jornada) };
+}
 
 const filtrosEstado = [
     { clave: 'activo', nombre: 'Activos' },
@@ -107,20 +129,31 @@ export default function Estudiantes({ anios, anio, grados, gradoId, totales, gru
                 (clave === 'todos' || (clave === 'activo' ? e.estado === 'activo' : e.estado !== 'activo')),
         ).length;
 
-    const kpis = [
-        { titulo: 'Matriculados activos', valor: totales.activos, icono: Users, tono: 'bg-[#1E3A7B] text-white' },
-        { titulo: 'Nuevos', valor: totales.nuevos, icono: UserPlus, tono: 'bg-[#DCE5F8] text-[#1E3A7B]' },
-        { titulo: 'Antiguos', valor: totales.antiguos, icono: UserCheck, tono: 'bg-[#E3F4EC] text-[#1C6B4A]' },
-        { titulo: 'Retirados / cancelados', valor: totales.retirados, icono: UserMinus, tono: 'bg-[#FDECEC] text-[#A12B2B]' },
-    ];
+    const activosGrado = estudiantes.filter((e) => e.estado === 'activo');
+    const distribucion = repartir(activosGrado);
+    const sedesGrado = [...new Set(grupos.map((g) => g.sede))];
+    const jornadasGrado = [...new Set(grupos.map((g) => g.jornada))];
+    const grupoSeleccionado = grupos.find((g) => g.id === grupoId);
 
     return (
         <PanelLayout titulo="Estudiantes">
-            {/* Encabezado */}
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                    <p className="text-sm font-medium text-[#5B7BD0]">Panel administrativo</p>
-                    <h1 className="mt-1 text-3xl font-semibold tracking-[-0.02em]">Estudiantes por grado</h1>
+            {/* Encabezado: las cifras del colegio van en una línea discreta */}
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-6">
+                    <h1 className="text-[28px] font-semibold tracking-[-0.02em]">Estudiantes</h1>
+                    <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[#56627F]">
+                        <span>
+                            <b className="font-semibold text-[#16223F] tabular-nums">{totales.activos.toLocaleString('es-CO')}</b> activos
+                        </span>
+                        <span aria-hidden className="h-3.5 w-px bg-[#D3DDF3]" />
+                        <span>
+                            <b className="font-semibold text-[#16223F] tabular-nums">{totales.nuevos.toLocaleString('es-CO')}</b> nuevos
+                        </span>
+                        <span aria-hidden className="h-3.5 w-px bg-[#D3DDF3]" />
+                        <span>
+                            <b className="font-semibold text-[#16223F] tabular-nums">{totales.retirados.toLocaleString('es-CO')}</b> retirados
+                        </span>
+                    </p>
                 </div>
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -168,7 +201,7 @@ export default function Estudiantes({ anios, anio, grados, gradoId, totales, gru
                     </div>
 
                     <label className="flex items-center gap-2 text-sm text-[#56627F]">
-                        Año lectivo
+                        Año
                         <select
                             value={anio}
                             onChange={(e) => ir({ anio: Number(e.target.value) })}
@@ -185,129 +218,110 @@ export default function Estudiantes({ anios, anio, grados, gradoId, totales, gru
                 </div>
             </div>
 
-            {/* Indicadores */}
-            <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                {kpis.map(({ titulo, valor, icono: Icono, tono }) => (
-                    <div key={titulo} className="flex items-center gap-4 rounded-2xl border border-[#E3E9F6] bg-white p-4">
-                        <span className={cn('flex size-11 shrink-0 items-center justify-center rounded-xl', tono)}>
-                            <Icono className="size-5" />
-                        </span>
-                        <div className="min-w-0">
-                            <p className="text-2xl font-semibold tabular-nums">{valor.toLocaleString('es-CO')}</p>
-                            <p className="truncate text-xs text-[#56627F]">{titulo}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            <div className="mt-6 grid gap-6 lg:grid-cols-[250px_minmax(0,1fr)]">
-                {/* Grados */}
-                <aside className="lg:sticky lg:top-24 lg:self-start">
-                    <nav
-                        aria-label="Grados"
-                        className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:gap-5 lg:overflow-visible lg:rounded-2xl lg:border lg:border-[#E3E9F6] lg:bg-white lg:p-4"
+            {/* Grados */}
+            <nav aria-label="Grados" className="-mx-4 mt-5 flex gap-1.5 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0">
+                {grados.map((g) => (
+                    <button
+                        key={g.id}
+                        type="button"
+                        onClick={() => ir({ grado: g.id })}
+                        disabled={g.activos === 0 && g.grupos === 0}
+                        aria-current={g.id === gradoId ? 'page' : undefined}
+                        className={cn(
+                            'shrink-0 rounded-full px-3.5 py-2 text-sm font-medium whitespace-nowrap transition disabled:opacity-40',
+                            g.id === gradoId
+                                ? 'bg-[#1E3A7B] text-white'
+                                : 'bg-white text-[#16223F] ring-1 ring-[#E3E9F6] ring-inset hover:bg-[#EEF2FB]',
+                        )}
                     >
-                        {niveles.map((nivel) => (
-                            <div key={nivel.clave} className="contents lg:block">
-                                <p className="mb-1.5 hidden px-2 text-[11px] font-semibold tracking-wider text-[#8C97B3] uppercase lg:block">
-                                    {nivel.nombre}
-                                </p>
-                                <div className="contents lg:flex lg:flex-col lg:gap-0.5">
-                                    {grados
-                                        .filter((g) => g.nivel === nivel.clave)
-                                        .map((g) => (
-                                            <button
-                                                key={g.id}
-                                                type="button"
-                                                onClick={() => ir({ grado: g.id })}
-                                                disabled={g.activos === 0 && g.grupos === 0}
-                                                className={cn(
-                                                    'flex shrink-0 items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-sm transition disabled:opacity-40',
-                                                    g.id === gradoId
-                                                        ? 'bg-[#1E3A7B] text-white'
-                                                        : 'border border-[#E3E9F6] bg-white hover:bg-[#EEF2FB] lg:border-0',
-                                                )}
-                                            >
-                                                <span className="font-medium whitespace-nowrap">{g.nombre}</span>
-                                                <span
-                                                    className={cn(
-                                                        'rounded-full px-2 py-0.5 text-xs tabular-nums',
-                                                        g.id === gradoId ? 'bg-white/20' : 'bg-[#EEF2FB] text-[#1E3A7B]',
-                                                    )}
-                                                >
-                                                    {g.activos}
-                                                </span>
-                                            </button>
-                                        ))}
-                                </div>
-                            </div>
-                        ))}
-                    </nav>
-                </aside>
+                        {g.nombre}
+                    </button>
+                ))}
+            </nav>
 
-                <section className="min-w-0 space-y-5">
-                    {/* Grupos del grado */}
-                    <div className="rounded-2xl border border-[#E3E9F6] bg-white p-5">
-                        <div className="flex flex-wrap items-baseline justify-between gap-2">
-                            <h2 className="text-xl font-semibold">{grado?.nombre ?? 'Sin grado'}</h2>
-                            <p className="text-sm text-[#56627F]">
-                                {grupos.length} {grupos.length === 1 ? 'grupo' : 'grupos'} · {grado?.activos ?? 0} activos
-                            </p>
-                        </div>
-
-                        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+                {/* El grado y sus grupos */}
+                <section className="rounded-[18px] border border-[#E3E9F6] bg-white p-5 md:p-6">
+                    <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                        <h2 className="text-[28px] font-semibold tracking-[-0.02em]">{grado?.nombre ?? 'Sin grado'}</h2>
+                        <p className="text-[15px] text-[#56627F]">
+                            {grado?.activos ?? 0} activos en {grupos.length} {grupos.length === 1 ? 'grupo' : 'grupos'}
+                            {sedesGrado.length > 0 && ` · ${sedesGrado.length > 2 ? `${sedesGrado.length} sedes` : sedesGrado.join(' y ')}`}
+                            {jornadasGrado.length > 0 && ` · ${jornadasGrado.join(' y ')}`}
+                        </p>
+                        {grupoSeleccionado && (
                             <button
                                 type="button"
                                 onClick={() => setGrupoId(null)}
-                                className={cn(
-                                    'flex flex-col justify-center rounded-xl border-[1.5px] p-4 text-left transition',
-                                    grupoId === null ? 'border-[#1E3A7B] bg-[#EEF2FB]' : 'border-[#E3E9F6] hover:border-[#B9C8EC]',
-                                )}
+                                className="ml-auto flex items-center gap-1.5 rounded-full bg-[#EEF2FB] px-3 py-1.5 text-sm font-medium text-[#1E3A7B] hover:bg-[#DCE5F8]"
                             >
-                                <span className="text-lg font-semibold">Todos</span>
-                                <span className="text-sm text-[#56627F]">{estudiantes.length} matrículas en el año</span>
+                                <X className="size-3.5" />
+                                Ver todo el grado
                             </button>
-                            {grupos.map((g) => {
-                                const porcentaje = g.cupos ? Math.min(100, Math.round((g.activos / g.cupos) * 100)) : 0;
-                                const lleno = g.activos > g.cupos;
-                                return (
-                                    <button
-                                        key={g.id}
-                                        type="button"
-                                        onClick={() => setGrupoId(g.id === grupoId ? null : g.id)}
-                                        className={cn(
-                                            'rounded-xl border-[1.5px] p-4 text-left transition',
-                                            g.id === grupoId ? 'border-[#1E3A7B] bg-[#EEF2FB]' : 'border-[#E3E9F6] hover:border-[#B9C8EC]',
-                                        )}
-                                    >
-                                        <div className="flex items-start justify-between gap-2">
-                                            <span className="text-lg font-semibold">{g.codigo}</span>
-                                            <Sede codigo={g.sede_codigo} nombre={g.sede} />
-                                        </div>
-                                        <p className="mt-0.5 text-xs text-[#56627F]">
-                                            Jornada {g.jornada.toLowerCase()}
-                                            {g.director ? ` · ${g.director}` : ''}
-                                        </p>
-                                        <div className="mt-3 flex items-center justify-between text-xs">
-                                            <span className="font-medium tabular-nums">
-                                                {g.activos} / {g.cupos} cupos
-                                            </span>
-                                            <span className={cn('tabular-nums', lleno ? 'font-medium text-[#A12B2B]' : 'text-[#56627F]')}>
-                                                {lleno ? `+${g.activos - g.cupos} sobre cupo` : `${g.cupos - g.activos} libres`}
-                                            </span>
-                                        </div>
-                                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#EEF2FB]">
-                                            <div
-                                                className={cn('h-full rounded-full', lleno ? 'bg-[#D05454]' : 'bg-[#5B7BD0]')}
-                                                style={{ width: `${porcentaje}%` }}
-                                            />
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
+                        )}
                     </div>
 
+                    <div className="mt-5 grid grid-cols-[repeat(auto-fill,minmax(168px,1fr))] gap-2.5">
+                        {grupos.map((g) => {
+                            const seleccionado = g.id === grupoId;
+                            const exceso = g.activos - g.cupos;
+                            return (
+                                <button
+                                    key={g.id}
+                                    type="button"
+                                    onClick={() => setGrupoId(seleccionado ? null : g.id)}
+                                    aria-pressed={seleccionado}
+                                    className={cn(
+                                        'flex flex-col gap-3 rounded-[14px] border-[1.5px] bg-white p-4 text-left transition',
+                                        seleccionado
+                                            ? 'border-[#1E3A7B] shadow-[0_8px_20px_-12px_rgba(30,58,123,0.5)]'
+                                            : 'border-[#E3E9F6] hover:border-[#B9C8EC]',
+                                    )}
+                                >
+                                    <span className="flex items-baseline justify-between gap-2">
+                                        <span className="text-xl font-semibold">{g.codigo}</span>
+                                        <span
+                                            className={cn('text-[13px] tabular-nums', exceso > 0 ? 'font-medium text-[#B23A3A]' : 'text-[#56627F]')}
+                                        >
+                                            {exceso > 0 ? `+${exceso} sobre cupo` : `${-exceso} ${exceso === -1 ? 'cupo libre' : 'cupos libres'}`}
+                                        </span>
+                                    </span>
+                                    <Asientos activos={g.activos} cupos={g.cupos} />
+                                    <span className="text-[13px] text-[#56627F]">
+                                        <b className="font-semibold text-[#16223F] tabular-nums">{g.activos}</b> activos · {g.nuevos} nuevos
+                                        {sedesGrado.length > 1 && <span className="block text-xs text-[#8C97B3]">{g.sede}</span>}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </section>
+
+                {/* Reparto del grado */}
+                <section className="rounded-[18px] border border-[#E3E9F6] bg-white p-5 md:p-6">
+                    <h3 className="text-sm font-semibold">{distribucion.titulo}</h3>
+                    <div className="mt-4 flex flex-col gap-3.5">
+                        {distribucion.filas.map(([nombre, valor]) => (
+                            <div key={nombre} className="flex flex-col gap-1.5">
+                                <span className="flex justify-between text-[13px]">
+                                    <span className="text-[#3E4A68]">{nombre}</span>
+                                    <b className="font-semibold tabular-nums">{valor}</b>
+                                </span>
+                                <span className="h-1.5 overflow-hidden rounded-full bg-[#EEF2FB]">
+                                    <span
+                                        className="block h-full rounded-full bg-[#1E3A7B]"
+                                        style={{ width: `${activosGrado.length ? (valor / activosGrado.length) * 100 : 0}%` }}
+                                    />
+                                </span>
+                            </div>
+                        ))}
+                        {distribucion.filas.length === 0 && <p className="text-sm text-[#56627F]">Sin estudiantes activos.</p>}
+                    </div>
+                </section>
+            </div>
+
+            <div className="mt-4">
+                <section className="min-w-0 space-y-5">
                     {/* Listado */}
                     <div className="overflow-hidden rounded-2xl border border-[#E3E9F6] bg-white">
                         <div className="flex flex-col gap-3 border-b border-[#E3E9F6] p-4 sm:flex-row sm:items-center sm:justify-between">
