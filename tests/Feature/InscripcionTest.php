@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\SolicitudInscripcion;
+use Carbon\Carbon;
 use Database\Seeders\DatosIniciales;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -269,6 +270,24 @@ class InscripcionTest extends TestCase
         ]))->assertSessionHasErrors(['autorizacion_datos', 'fecha_nacimiento', 'correo', 'acudiente_parentesco', 'grado_id']);
 
         $this->assertSame(0, SolicitudInscripcion::count());
+    }
+
+    public function test_se_registra_con_la_hora_de_colombia()
+    {
+        // 03:30 del 24 en UTC son las 10:30 p. m. del 23 en Colombia. Con la app
+        // en UTC, esta inscripción quedaba registrada al día siguiente.
+        $this->travelTo(Carbon::parse('2026-09-24 03:30:00', 'UTC'));
+
+        $this->post('/inscripcion', $this->datos())->assertSessionHasNoErrors();
+
+        $solicitud = SolicitudInscripcion::sole();
+        $this->assertSame('2026-09-23 22:30:00', $solicitud->autorizo_datos_en->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-09-23 22:30:00', $solicitud->created_at->format('Y-m-d H:i:s'));
+
+        // Y lo que fecha la base (NOW(), CURRENT_TIMESTAMP) usa la misma hora.
+        if (DB::getDriverName() !== 'sqlite') {
+            $this->assertSame('-05:00', DB::selectOne('SELECT @@session.time_zone AS zona')->zona);
+        }
     }
 
     public function test_la_fecha_de_la_autorizacion_no_cambia_al_revisar_la_solicitud()
