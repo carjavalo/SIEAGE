@@ -1,5 +1,4 @@
 import { BotonGuardar, tarjeta } from '@/components/formulario';
-import { Lavado } from '@/components/lavado';
 import PanelLayout from '@/layouts/panel-layout';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
@@ -73,8 +72,6 @@ export default function ImportarDatos() {
 
     return (
         <PanelLayout titulo="Importar datos">
-            <Lavado />
-
             <div className="relative max-w-[720px]">
                 <h1 className="text-[28px] leading-8 font-semibold tracking-[-0.025em]">Importar datos</h1>
                 <p className="mt-1 text-[15px] text-[#56627F]">

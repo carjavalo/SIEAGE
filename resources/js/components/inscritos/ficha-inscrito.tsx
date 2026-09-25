@@ -32,7 +32,7 @@ type Props = {
 export function FichaInscrito({ ficha, abierta, panel, ...resto }: Props) {
     return (
         <PanelFicha abierta={abierta} panel={panel} etiqueta="Ficha del inscrito">
-            {ficha && <Contenido ficha={ficha} {...resto} />}
+            {ficha && <Contenido key={ficha.solicitud.id} ficha={ficha} {...resto} />}
         </PanelFicha>
     );
 }

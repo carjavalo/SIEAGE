@@ -369,7 +369,7 @@ function armarColumnas(c: Columnas): Columna[] {
 }
 
 export const th = `sticky top-0 z-10 h-[30px] border-b border-[#E3E9F6] bg-white/95 px-3 text-left align-middle text-[12px] font-semibold tracking-[0.06em] text-[#56627F] uppercase backdrop-blur ${alto}:h-9`;
-export const td = `h-9 border-b border-[#EEF2F9] px-3 align-middle ${alto}:h-10`;
+export const td = `h-9 border-b border-[#EEF2F9] px-3 align-middle transition-colors duration-150 ${alto}:h-10`;
 
 function Tabla({
     filas,

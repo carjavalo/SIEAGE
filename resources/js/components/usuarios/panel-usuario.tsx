@@ -55,12 +55,27 @@ function sugerirUsuario(nombre: string) {
  * reinicia el formulario al cambiar de usuario.
  */
 export function PanelUsuario({ abierto, esYo, roles, panel, onCerrar }: Props) {
+    // Al cerrar, lo último que se mostró se queda mientras el panel sale (si no,
+    // desaparecería de golpe). Cada apertura, o cambio de usuario, empieza con el
+    // formulario limpio; si solo llegan datos nuevos del mismo usuario, no.
+    const [mostrado, setMostrado] = useState(abierto);
+    const [anterior, setAnterior] = useState(abierto);
+    const [vez, setVez] = useState(0);
+    const clave = (x: Props['abierto']) => (x === 'nuevo' ? 'nuevo' : (x?.id ?? null));
+    if (abierto !== anterior) {
+        setAnterior(abierto);
+        if (abierto !== null) {
+            setMostrado(abierto);
+            if (clave(abierto) !== clave(anterior)) setVez((v) => v + 1);
+        }
+    }
+
     return (
-        <PanelFicha abierta={abierto !== null} panel={panel} etiqueta={abierto === 'nuevo' ? 'Nuevo usuario' : 'Usuario'}>
-            {abierto === 'nuevo' ? (
-                <FormularioUsuario key="nuevo" roles={roles} esYo={false} onCerrar={onCerrar} />
-            ) : abierto ? (
-                <FormularioUsuario key={abierto.id} usuario={abierto} roles={roles} esYo={esYo} onCerrar={onCerrar} />
+        <PanelFicha abierta={abierto !== null} panel={panel} etiqueta={mostrado === 'nuevo' ? 'Nuevo usuario' : 'Usuario'}>
+            {mostrado === 'nuevo' ? (
+                <FormularioUsuario key={vez} roles={roles} esYo={false} onCerrar={onCerrar} />
+            ) : mostrado ? (
+                <FormularioUsuario key={vez} usuario={mostrado} roles={roles} esYo={esYo} onCerrar={onCerrar} />
             ) : null}
         </PanelFicha>
     );
@@ -96,7 +111,7 @@ function FormularioUsuario({ usuario, roles, esYo, onCerrar }: { usuario?: Usuar
     };
 
     return (
-        <div className="flex min-h-0 flex-1 flex-col">
+        <div className="animate-in fade-in-0 flex min-h-0 flex-1 flex-col duration-200 motion-reduce:animate-none">
             {nuevo ? (
                 <EncabezadoFicha
                     avatar={<UserPlus className="size-5" />}

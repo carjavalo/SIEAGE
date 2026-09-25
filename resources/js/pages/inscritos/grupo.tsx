@@ -2,7 +2,6 @@ import { PuntoSede, sedeInfo } from '@/components/estudiantes/etiquetas';
 import { Barra } from '@/components/estudiantes/tablero-grupos';
 import { EncabezadoInscrito } from '@/components/inscritos/encabezado';
 import { Pasos } from '@/components/inscritos/pasos';
-import { Lavado } from '@/components/lavado';
 import PanelLayout from '@/layouts/panel-layout';
 import { type Grupo, gradoCorto } from '@/lib/estudiantes';
 import { type FichaInscrito, enlaceEstudiante, nombreInscrito, padresListos } from '@/lib/inscritos';
@@ -67,8 +66,6 @@ export default function ElegirGrupo({ solicitud: s, padres, matricula, anio, gra
 
     return (
         <PanelLayout titulo={`Grupo · ${nombre}`}>
-            <Lavado />
-
             <div className="relative">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <Link

@@ -2,7 +2,6 @@ import { Desplegable } from '@/components/desplegable';
 import { EncabezadoInscrito } from '@/components/inscritos/encabezado';
 import { BloquesSolicitud } from '@/components/inscritos/ficha-inscrito';
 import { Pasos } from '@/components/inscritos/pasos';
-import { Lavado } from '@/components/lavado';
 import PanelLayout from '@/layouts/panel-layout';
 import {
     type DatosPadre,
@@ -134,8 +133,6 @@ export default function Inscrito({ solicitud: s, padres, matricula }: FichaInscr
 
     return (
         <PanelLayout titulo={`Inscrito · ${nombre}`}>
-            <Lavado />
-
             <div className="relative">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <Link

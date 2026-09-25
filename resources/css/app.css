@@ -227,9 +227,11 @@
     }
 }
 
-/* La barra de desplazamiento ocupa su espacio siempre, haya scroll o no: así
-   el encabezado y el contenido no se corren al pasar de una página que se
-   desplaza a una que no (p. ej. de Configuración a Estudiantes). */
-html {
+/* Páginas del panel (PanelLayout pone la clase): la barra de desplazamiento
+   ocupa su espacio siempre, haya scroll o no. Así el encabezado y el contenido
+   no se corren al pasar de una página que se desplaza a una que no (p. ej. de
+   Configuración a Estudiantes). El espacio se pinta del mismo fondo. */
+html.panel {
     scrollbar-gutter: stable;
+    background-color: #f5f7fc;
 }

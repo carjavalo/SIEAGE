@@ -2,7 +2,6 @@ import { VeloFicha } from '@/components/ficha';
 import { FichaInscrito } from '@/components/inscritos/ficha-inscrito';
 import { ListaInscritos } from '@/components/inscritos/lista-inscritos';
 import { TableroGrados } from '@/components/inscritos/tablero-grados';
-import { Lavado } from '@/components/lavado';
 import { useListaConFicha } from '@/hooks/use-lista-con-ficha';
 import PanelLayout from '@/layouts/panel-layout';
 import { numero, palabras, plano } from '@/lib/estudiantes';
@@ -73,8 +72,6 @@ export default function Inscritos({ estado, conteos, inscritos, detalle }: Props
 
     return (
         <PanelLayout titulo="Inscritos" completa>
-            <Lavado />
-
             {/* Primera franja: título y totales, estados en segmentos y búsqueda. */}
             <section className="relative flex shrink-0 flex-wrap items-center gap-x-6 gap-y-3 xl:flex-nowrap">
                 <div className="shrink-0">
