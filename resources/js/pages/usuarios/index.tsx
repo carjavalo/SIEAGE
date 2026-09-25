@@ -2,7 +2,6 @@ import { Resaltado } from '@/components/estudiantes/etiquetas';
 import { Tecla, Vacio, td, th } from '@/components/estudiantes/lista-estudiantes';
 import { VeloFicha } from '@/components/ficha';
 import { botonPrimario } from '@/components/formulario';
-import { Lavado } from '@/components/lavado';
 import { MarcaActivo, PanelUsuario, type Usuario } from '@/components/usuarios/panel-usuario';
 import PanelLayout from '@/layouts/panel-layout';
 import { palabras, plano } from '@/lib/estudiantes';
@@ -63,8 +62,6 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
 
     return (
         <PanelLayout titulo="Usuarios" completa>
-            <Lavado />
-
             {/* Primera franja: título y totales, roles en segmentos, búsqueda y "Nuevo usuario". */}
             <section className="relative flex shrink-0 flex-wrap items-center gap-x-6 gap-y-3 xl:flex-nowrap">
                 <div className="shrink-0">

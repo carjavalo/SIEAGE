@@ -1,9 +1,10 @@
+import { Lavado } from '@/components/lavado';
 import { MenuUsuario } from '@/components/menu-usuario';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ClipboardList, GraduationCap, UploadCloud, UserCog } from 'lucide-react';
-import { type ReactNode } from 'react';
+import { type ReactNode, useEffect, useLayoutEffect, useState } from 'react';
 
 const enlaces = [
     { titulo: 'Estudiantes', href: '/estudiantes', icono: GraduationCap },
@@ -12,6 +13,9 @@ const enlaces = [
     { titulo: 'Usuarios', href: '/usuarios', icono: UserCog, soloAdministrador: true },
 ];
 
+/** La página que se mostró antes: para saber si se llega de otra (fundido) o es la misma con otros datos. */
+let paginaAnterior: string | null = null;
+
 /**
  * `completa`: en pantallas grandes la página ocupa exactamente el alto de la
  * ventana y no se desplaza; cada panel interno se desplaza por su cuenta. En
@@ -19,6 +23,19 @@ const enlaces = [
  */
 export default function PanelLayout({ titulo, completa, children }: { titulo: string; completa?: boolean; children: ReactNode }) {
     const pagina = usePage<SharedData>();
+
+    // Antes de pintar: ver html.panel en app.css (la barra de desplazamiento no corre nada).
+    useLayoutEffect(() => {
+        document.documentElement.classList.add('panel');
+        return () => document.documentElement.classList.remove('panel');
+    }, []);
+    // Al llegar desde otra página el contenido aparece con un fundido; el encabezado y el
+    // degradado se quedan quietos. Cambiar de grado o de pestaña (la misma página) no parpadea.
+    const [entrar] = useState(() => paginaAnterior !== null && paginaAnterior !== pagina.component);
+    useEffect(() => {
+        paginaAnterior = pagina.component;
+    }, [pagina.component]);
+
     const { auth } = pagina.props;
     const pendientes = Number(pagina.props.inscritosPendientes ?? 0);
     const esAdministrador = !!(auth as { puedeGestionarUsuarios?: boolean }).puedeGestionarUsuarios;
@@ -75,12 +92,16 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
                     </div>
                 </header>
 
+                <Lavado />
+
                 <main
                     className={cn(
                         // Ancho y margen de arriba iguales en todas las páginas: el título queda
                         // siempre en el mismo sitio. En pantallas bajas (portátiles) el margen se
                         // recorta para que quepa más.
-                        'mx-auto max-w-[1400px] px-4 pt-1.5 md:px-8 2xl:max-w-[1760px] print:max-w-none print:p-0 [@media(min-height:860px)]:pt-4',
+                        'relative mx-auto max-w-[1400px] px-4 pt-1.5 md:px-8 2xl:max-w-[1760px] print:max-w-none print:p-0 [@media(min-height:860px)]:pt-4',
+                        // Solo opacidad: un transform aquí movería lo que va fijo (la ficha, el velo).
+                        entrar && 'animate-in fade-in-0 duration-300 ease-out motion-reduce:animate-none',
                         // 4rem del encabezado + 1px de su borde inferior.
                         completa ? 'pb-2 lg:flex lg:h-[calc(100dvh-4rem-1px)] lg:flex-col [@media(min-height:860px)]:pb-4' : 'pb-10',
                     )}

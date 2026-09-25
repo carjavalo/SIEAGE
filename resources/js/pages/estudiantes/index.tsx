@@ -4,7 +4,6 @@ import { FichaEstudiante } from '@/components/estudiantes/ficha-estudiante';
 import { ListaEstudiantes } from '@/components/estudiantes/lista-estudiantes';
 import { TableroGrupos } from '@/components/estudiantes/tablero-grupos';
 import { VeloFicha } from '@/components/ficha';
-import { Lavado } from '@/components/lavado';
 import { useListaConFicha } from '@/hooks/use-lista-con-ficha';
 import PanelLayout from '@/layouts/panel-layout';
 import {
@@ -112,8 +111,6 @@ export default function Estudiantes({ anios, anio, grados, gradoId, totales, gru
 
     return (
         <PanelLayout titulo="Estudiantes" completa>
-            <Lavado />
-
             <Cabecera
                 anios={anios}
                 anio={anio}

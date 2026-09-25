@@ -23,3 +23,6 @@ Homestead.json
 Homestead.yaml
 npm-debug.log
 yarn-error.log
+
+# Páginas de revisión visual con datos inventados (se generan y se borran al probar)
+/public/arnes

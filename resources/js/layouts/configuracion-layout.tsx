@@ -1,4 +1,3 @@
-import { Lavado } from '@/components/lavado';
 import PanelLayout from '@/layouts/panel-layout';
 import { cn } from '@/lib/utils';
 import { Link, usePage } from '@inertiajs/react';
@@ -16,8 +15,6 @@ export default function ConfiguracionLayout({ titulo, children }: { titulo: stri
 
     return (
         <PanelLayout titulo={titulo}>
-            <Lavado />
-
             <div className="relative max-w-[880px]">
                 <h1 className="text-[28px] leading-8 font-semibold tracking-[-0.025em]">Configuración</h1>
                 <p className="mt-1 text-[15px] text-[#56627F]">Tu cuenta en SIEAGE: tus datos y tu clave para ingresar.</p>

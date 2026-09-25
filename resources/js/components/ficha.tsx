@@ -18,6 +18,8 @@ export const Sep = () => (
  * El panel: por debajo de 2xl flota sobre la lista, bajo la primera franja
  * (la búsqueda y los filtros siguen a mano); en 2xl se acopla como una columna
  * más al lado de la tabla. Sin contenido todavía, muestra que está cargando.
+ * Entra frenando y sale acelerando. Ojo: en Tailwind 4 `translate-x-*` usa la
+ * propiedad `translate`, no `transform`; por eso va en la lista de transición.
  */
 export function PanelFicha({
     abierta,
@@ -40,7 +42,7 @@ export function PanelFicha({
             data-abierta={abierta}
             aria-hidden={!abierta}
             inert={!abierta}
-            className={`fixed top-[65px] right-0 bottom-0 z-40 flex w-full translate-x-[110%] flex-col overflow-hidden bg-white shadow-[0_32px_64px_-24px_rgba(22,34,63,0.45),0_0_0_1px_rgba(22,34,63,0.05)] transition-[transform,width,margin] duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] outline-none data-[abierta=true]:translate-x-0 sm:top-[125px] sm:right-3 sm:bottom-3 sm:w-[460px] sm:rounded-[24px] ${alto}:sm:top-[149px] 2xl:static 2xl:z-auto 2xl:w-0 2xl:translate-x-0 2xl:shadow-none 2xl:data-[abierta=true]:ml-3 2xl:data-[abierta=true]:w-[480px] 2xl:data-[abierta=true]:shadow-[0_1px_2px_rgba(22,34,63,0.04),0_12px_32px_-20px_rgba(22,34,63,0.18),0_0_0_1px_#E3E9F6] print:hidden`}
+            className={`fixed top-[65px] right-0 bottom-0 z-40 flex w-full translate-x-[110%] flex-col overflow-hidden bg-white opacity-0 shadow-[0_32px_64px_-24px_rgba(22,34,63,0.45),0_0_0_1px_rgba(22,34,63,0.05)] transition-[translate,width,margin,opacity] duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] outline-none data-[abierta=false]:duration-200 data-[abierta=false]:ease-[cubic-bezier(0.4,0,1,1)] data-[abierta=true]:translate-x-0 data-[abierta=true]:opacity-100 sm:top-[125px] sm:right-3 sm:bottom-3 sm:w-[460px] sm:rounded-[24px] ${alto}:sm:top-[149px] 2xl:static 2xl:z-auto 2xl:w-0 2xl:translate-x-0 2xl:shadow-none 2xl:data-[abierta=true]:ml-3 2xl:data-[abierta=true]:w-[480px] 2xl:data-[abierta=true]:shadow-[0_1px_2px_rgba(22,34,63,0.04),0_12px_32px_-20px_rgba(22,34,63,0.18),0_0_0_1px_#E3E9F6] print:hidden`}
         >
             <div className="flex h-full w-full flex-col 2xl:w-[480px]">
                 {children ?? (
@@ -74,7 +76,14 @@ export function ContenidoFicha({ iniciales, titulo, detalle, marcas, accion, car
     const { icono: Icono } = accion;
 
     return (
-        <div className={cn('flex min-h-0 flex-1 flex-col transition-opacity duration-150', cargando && 'opacity-60')} aria-busy={cargando}>
+        // Cada ficha nueva aparece con un fundido (quien la usa le pone una key por persona).
+        <div
+            className={cn(
+                'animate-in fade-in-0 flex min-h-0 flex-1 flex-col transition-opacity duration-200 motion-reduce:animate-none',
+                cargando && 'opacity-60',
+            )}
+            aria-busy={cargando}
+        >
             <EncabezadoFicha avatar={iniciales} titulo={titulo} detalle={detalle} marcas={marcas} cargando={cargando} onCerrar={onCerrar}>
                 <div className="flex items-center gap-2">
                     <Link
