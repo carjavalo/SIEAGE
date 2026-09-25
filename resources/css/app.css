@@ -226,3 +226,10 @@
         }
     }
 }
+
+/* La barra de desplazamiento ocupa su espacio siempre, haya scroll o no: así
+   el encabezado y el contenido no se corren al pasar de una página que se
+   desplaza a una que no (p. ej. de Configuración a Estudiantes). */
+html {
+    scrollbar-gutter: stable;
+}

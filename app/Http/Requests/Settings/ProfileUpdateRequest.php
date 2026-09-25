@@ -29,4 +29,18 @@ class ProfileUpdateRequest extends FormRequest
             ],
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Escribe tu nombre.',
+            'name.max' => 'Máximo :max caracteres.',
+            'email.email' => 'Escribe un correo válido.',
+            'email.lowercase' => 'Escribe el correo en minúsculas.',
+            'email.unique' => 'Ese correo ya lo usa otro usuario.',
+        ];
+    }
 }

@@ -75,33 +75,8 @@ export function ContenidoFicha({ iniciales, titulo, detalle, marcas, accion, car
 
     return (
         <div className={cn('flex min-h-0 flex-1 flex-col transition-opacity duration-150', cargando && 'opacity-60')} aria-busy={cargando}>
-            <div className="relative shrink-0 overflow-hidden bg-gradient-to-br from-[#EEF2FB] to-[#DCE5F8] px-5 pt-3.5 pb-3.5">
-                <div aria-hidden className="pointer-events-none absolute -top-20 -right-16 size-56 rounded-full bg-white/70 blur-3xl" />
-                <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                    {cargando && <LoaderCircle className="size-4 animate-spin text-[#5B7BD0]" aria-label="Cargando ficha" />}
-                    <button
-                        type="button"
-                        onClick={onCerrar}
-                        aria-label="Cerrar ficha (Esc)"
-                        title="Cerrar (Esc)"
-                        className="flex size-8 cursor-pointer items-center justify-center rounded-full bg-white/70 text-[#3E4A68] transition hover:bg-white hover:text-[#16223F]"
-                    >
-                        <X className="size-4" />
-                    </button>
-                </div>
-
-                <div className="relative flex items-start gap-3.5 pr-8">
-                    <span className="flex size-12 shrink-0 items-center justify-center rounded-[15px] bg-[#1E3A7B] text-[16px] font-semibold text-white shadow-[0_10px_20px_-10px_rgba(30,58,123,0.7)]">
-                        {iniciales}
-                    </span>
-                    <div className="min-w-0">
-                        <h2 className="text-[19px] leading-[1.2] font-semibold tracking-[-0.02em] text-balance">{titulo}</h2>
-                        <p className="mt-0.5 text-[14px] text-[#3E4A68] tabular-nums">{detalle}</p>
-                        {marcas && <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px]">{marcas}</p>}
-                    </div>
-                </div>
-
-                <div className="relative mt-3 flex items-center gap-2">
+            <EncabezadoFicha avatar={iniciales} titulo={titulo} detalle={detalle} marcas={marcas} cargando={cargando} onCerrar={onCerrar}>
+                <div className="flex items-center gap-2">
                     <Link
                         href={accion.href}
                         className="group/btn flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-[13px] bg-[#1E3A7B] px-3 text-[14px] font-semibold whitespace-nowrap text-white shadow-[0_12px_24px_-12px_rgba(30,58,123,0.6)] transition hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.99]"
@@ -119,7 +94,7 @@ export function ContenidoFicha({ iniciales, titulo, detalle, marcas, accion, car
                         <ChevronDown className="size-5" />
                     </BotonMover>
                 </div>
-            </div>
+            </EncabezadoFicha>
 
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-color:#C4D2F1_transparent] [scrollbar-width:thin]">
                 {children}
@@ -127,6 +102,56 @@ export function ContenidoFicha({ iniciales, titulo, detalle, marcas, accion, car
                     Con <Tecla>↑</Tecla> <Tecla>↓</Tecla> recorres la lista sin cerrar la ficha · <Tecla>Esc</Tecla> la cierra
                 </p>
             </div>
+        </div>
+    );
+}
+
+/** Encabezado de un panel lateral: degradado de marca, avatar, título y, debajo, las acciones. */
+export function EncabezadoFicha({
+    avatar,
+    titulo,
+    detalle,
+    marcas,
+    cargando,
+    onCerrar,
+    children,
+}: {
+    avatar: ReactNode;
+    titulo: string;
+    detalle?: ReactNode;
+    marcas?: ReactNode;
+    cargando?: boolean;
+    onCerrar: () => void;
+    children?: ReactNode;
+}) {
+    return (
+        <div className="relative shrink-0 overflow-hidden bg-gradient-to-br from-[#EEF2FB] to-[#DCE5F8] px-5 pt-3.5 pb-3.5">
+            <div aria-hidden className="pointer-events-none absolute -top-20 -right-16 size-56 rounded-full bg-white/70 blur-3xl" />
+            <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                {cargando && <LoaderCircle className="size-4 animate-spin text-[#5B7BD0]" aria-label="Cargando" />}
+                <button
+                    type="button"
+                    onClick={onCerrar}
+                    aria-label="Cerrar (Esc)"
+                    title="Cerrar (Esc)"
+                    className="flex size-8 cursor-pointer items-center justify-center rounded-full bg-white/70 text-[#3E4A68] transition hover:bg-white hover:text-[#16223F]"
+                >
+                    <X className="size-4" />
+                </button>
+            </div>
+
+            <div className="relative flex items-start gap-3.5 pr-8">
+                <span className="flex size-12 shrink-0 items-center justify-center rounded-[15px] bg-[#1E3A7B] text-[16px] font-semibold text-white shadow-[0_10px_20px_-10px_rgba(30,58,123,0.7)]">
+                    {avatar}
+                </span>
+                <div className="min-w-0">
+                    <h2 className="text-[19px] leading-[1.2] font-semibold tracking-[-0.02em] text-balance">{titulo}</h2>
+                    {detalle && <p className="mt-0.5 text-[14px] text-[#3E4A68] tabular-nums">{detalle}</p>}
+                    {marcas && <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px]">{marcas}</p>}
+                </div>
+            </div>
+
+            {children && <div className="relative mt-3">{children}</div>}
         </div>
     );
 }
