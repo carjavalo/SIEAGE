@@ -42,15 +42,12 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
 
     return (
         <>
-            <Head title={titulo}>
-                <link rel="preconnect" href="https://fonts.bunny.net" />
-                <link href="https://fonts.bunny.net/css?family=outfit:400,500,600,700" rel="stylesheet" />
-            </Head>
+            <Head title={titulo} />
 
             <div className="min-h-screen bg-[#F5F7FC] font-['Outfit',ui-sans-serif,system-ui,sans-serif] text-[#16223F] print:bg-white">
                 <header className="sticky top-0 z-30 border-b border-[#E3E9F6] bg-white/90 backdrop-blur print:hidden">
                     {/* El mismo ancho que <main> en todas las páginas: el logo y el menú nunca se corren al cambiar de página. */}
-                    <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-6 px-4 md:px-8 2xl:max-w-[1760px]">
+                    <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-3 px-4 md:gap-6 md:px-8 2xl:max-w-[1760px]">
                         <Link href="/estudiantes" className="flex shrink-0 items-center gap-3">
                             <img src="/sieage-logo.png" alt="SIEAGE" className="h-10 w-auto rounded-md object-contain" />
                             <div className="hidden leading-tight sm:block">
@@ -59,7 +56,7 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
                             </div>
                         </Link>
 
-                        <nav className="flex items-center gap-1 rounded-full bg-[#EEF2FB] p-1">
+                        <nav aria-label="Principal" className="flex items-center gap-1 rounded-full bg-[#EEF2FB] p-1">
                             {enlaces
                                 .filter((e) => !e.soloAdministrador || esAdministrador)
                                 .map(({ titulo: t, href, icono: Icono }) => {
@@ -68,20 +65,25 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
                                         <Link
                                             key={href}
                                             href={href}
+                                            aria-current={activo ? 'page' : undefined}
                                             className={cn(
-                                                'flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition',
+                                                'flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition md:px-3.5',
                                                 activo ? 'bg-white text-[#1E3A7B] shadow-sm' : 'text-[#56627F] hover:text-[#1E3A7B]',
                                             )}
                                         >
-                                            <Icono className="size-4" />
-                                            <span className="hidden md:inline">{t}</span>
+                                            <Icono aria-hidden className="size-4" />
+                                            {/* En celular solo se ve el ícono, pero el lector de pantalla sigue leyendo el nombre. */}
+                                            <span className="sr-only md:not-sr-only">{t}</span>
                                             {href === '/inscritos' && pendientes > 0 && (
-                                                <span
-                                                    aria-label={`${pendientes} pendientes`}
-                                                    className="min-w-5 rounded-full bg-[#1E3A7B] px-1.5 text-center text-[11px] leading-5 font-semibold text-white tabular-nums"
-                                                >
-                                                    {pendientes}
-                                                </span>
+                                                <>
+                                                    <span
+                                                        aria-hidden
+                                                        className="min-w-5 rounded-full bg-[#1E3A7B] px-1.5 text-center text-[11px] leading-5 font-semibold text-white tabular-nums"
+                                                    >
+                                                        {pendientes}
+                                                    </span>
+                                                    <span className="sr-only">, {pendientes} pendientes</span>
+                                                </>
                                             )}
                                         </Link>
                                     );

@@ -1,3 +1,4 @@
+import { FichaEsqueleto } from '@/components/esqueleto';
 import { telefono } from '@/lib/estudiantes';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
@@ -17,7 +18,7 @@ export const Sep = () => (
 /**
  * El panel: por debajo de 2xl flota sobre la lista, bajo la primera franja
  * (la búsqueda y los filtros siguen a mano); en 2xl se acopla como una columna
- * más al lado de la tabla. Sin contenido todavía, muestra que está cargando.
+ * más al lado de la tabla. Sin contenido todavía, muestra el esqueleto de la ficha.
  * Entra frenando y sale acelerando. Ojo: en Tailwind 4 `translate-x-*` usa la
  * propiedad `translate`, no `transform`; por eso va en la lista de transición.
  */
@@ -44,13 +45,7 @@ export function PanelFicha({
             inert={!abierta}
             className={`fixed top-[65px] right-0 bottom-0 z-40 flex w-full translate-x-[110%] flex-col overflow-hidden bg-white opacity-0 shadow-[0_32px_64px_-24px_rgba(22,34,63,0.45),0_0_0_1px_rgba(22,34,63,0.05)] transition-[translate,width,margin,opacity] duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] outline-none data-[abierta=false]:duration-200 data-[abierta=false]:ease-[cubic-bezier(0.4,0,1,1)] data-[abierta=true]:translate-x-0 data-[abierta=true]:opacity-100 sm:top-[125px] sm:right-3 sm:bottom-3 sm:w-[460px] sm:rounded-[24px] ${alto}:sm:top-[149px] 2xl:static 2xl:z-auto 2xl:w-0 2xl:translate-x-0 2xl:shadow-none 2xl:data-[abierta=true]:ml-3 2xl:data-[abierta=true]:w-[480px] 2xl:data-[abierta=true]:shadow-[0_1px_2px_rgba(22,34,63,0.04),0_12px_32px_-20px_rgba(22,34,63,0.18),0_0_0_1px_#E3E9F6] print:hidden`}
         >
-            <div className="flex h-full w-full flex-col 2xl:w-[480px]">
-                {children ?? (
-                    <div className="flex flex-1 items-center justify-center">
-                        <LoaderCircle className="size-6 animate-spin text-[#8C97B3]" aria-label="Cargando ficha" />
-                    </div>
-                )}
-            </div>
+            <div className="flex h-full w-full flex-col 2xl:w-[480px]">{children ?? <FichaEsqueleto />}</div>
         </aside>
     );
 }
@@ -107,7 +102,7 @@ export function ContenidoFicha({ iniciales, titulo, detalle, marcas, accion, car
 
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-color:#C4D2F1_transparent] [scrollbar-width:thin]">
                 {children}
-                <p className="px-5 pt-1 pb-5 text-[12px] text-[#6B7690]">
+                <p className="px-5 pt-1 pb-5 text-[12px] text-[#5E6983]">
                     Con <Tecla>↑</Tecla> <Tecla>↓</Tecla> recorres la lista sin cerrar la ficha · <Tecla>Esc</Tecla> la cierra
                 </p>
             </div>
@@ -169,7 +164,7 @@ export function EncabezadoFicha({
 export function Bloque({ titulo, children }: { titulo: string; children: ReactNode }) {
     return (
         <section className={`border-t border-[#EEF2F9] px-5 py-3.5 first:border-t-0 ${alto}:py-4`}>
-            <h3 className="mb-2.5 text-[12px] font-semibold tracking-[0.08em] text-[#6B7690] uppercase">{titulo}</h3>
+            <h3 className="mb-2.5 text-[12px] font-semibold tracking-[0.08em] text-[#5E6983] uppercase">{titulo}</h3>
             {children}
         </section>
     );

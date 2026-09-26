@@ -1,4 +1,5 @@
 import { Desplegable } from '@/components/desplegable';
+import { ResultadosEsqueleto } from '@/components/esqueleto';
 import { Marca, Resaltado, iniciales } from '@/components/estudiantes/etiquetas';
 import { type Grado, type Resultado, gradoCorto, numero, palabras } from '@/lib/estudiantes';
 import { cn } from '@/lib/utils';
@@ -91,7 +92,7 @@ export function Cabecera({ anios, anio, grados, gradoId, totales, busqueda, entr
                                 )}
                             >
                                 <span className={`text-[15px] font-semibold tracking-[-0.01em] ${alto}:text-[17px]`}>{gradoCorto(g)}</span>
-                                <span className={cn('text-[13px] tabular-nums', actual ? 'text-[#5B7BD0]' : 'text-[#56627F]')}>{g.activos}</span>
+                                <span className={cn('text-[13px] tabular-nums', actual ? 'text-[#4863B8]' : 'text-[#56627F]')}>{g.activos}</span>
                             </button>
                         </Fragment>
                     );
@@ -118,13 +119,16 @@ function BusquedaGlobal({
     const [consulta, setConsulta] = useState('');
     const [abierta, setAbierta] = useState(false);
     const [activo, setActivo] = useState(0);
+    // La consulta cuyos resultados ya llegaron: si no es la de ahora, lo que hay es viejo.
+    const [respondida, setRespondida] = useState<string | null>(null);
     const hay = consulta.trim().length >= 2;
+    const pendiente = hay && respondida !== consulta;
     const resultados = hay ? (busqueda ?? []) : [];
     const buscadas = palabras(consulta);
 
     useEffect(() => {
         if (!hay) return;
-        const t = setTimeout(() => router.reload({ only: ['busqueda'], data: { q: consulta } }), 250);
+        const t = setTimeout(() => router.reload({ only: ['busqueda'], data: { q: consulta }, onFinish: () => setRespondida(consulta) }), 250);
         return () => clearTimeout(t);
     }, [consulta, hay]);
 
@@ -143,7 +147,7 @@ function BusquedaGlobal({
 
     return (
         <div className="relative ml-auto w-full sm:w-[300px] xl:ml-0 xl:w-[280px] 2xl:w-[340px]" data-busqueda>
-            <Search className="pointer-events-none absolute top-1/2 left-3.5 size-[18px] -translate-y-1/2 text-[#6B7690]" />
+            <Search className="pointer-events-none absolute top-1/2 left-3.5 size-[18px] -translate-y-1/2 text-[#5E6983]" />
             <input
                 ref={entrada}
                 type="search"
@@ -176,7 +180,7 @@ function BusquedaGlobal({
                 aria-expanded={abierta && hay}
                 role="combobox"
                 aria-controls="resultados-busqueda"
-                className="h-10 w-full rounded-[14px] border-[1.5px] border-[#D3DDF3] bg-white pr-10 pl-10 text-[15px] text-[#16223F] shadow-[0_1px_2px_rgba(22,34,63,0.05)] transition outline-none placeholder:text-[#8C97B3] hover:border-[#B7C6EA] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] [&::-webkit-search-cancel-button]:hidden [@media(min-height:860px)]:h-11"
+                className="h-10 w-full rounded-[14px] border-[1.5px] border-[#D3DDF3] bg-white pr-10 pl-10 text-[15px] text-[#16223F] shadow-[0_1px_2px_rgba(22,34,63,0.05)] transition outline-none placeholder:text-[#6B7690] hover:border-[#B7C6EA] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] [&::-webkit-search-cancel-button]:hidden [@media(min-height:860px)]:h-11"
             />
             {consulta ? (
                 <button
@@ -202,8 +206,10 @@ function BusquedaGlobal({
 
             {abierta && hay && (
                 <div className="absolute top-[calc(100%+8px)] right-0 z-50 w-full overflow-hidden rounded-[18px] border border-[#E3E9F6] bg-white shadow-[0_24px_48px_-16px_rgba(22,34,63,0.28)] lg:w-[440px]">
-                    {busqueda === undefined ? (
-                        <p className="px-4 py-4 text-sm text-[#56627F]">Buscando…</p>
+                    {/* Sin nada que mostrar todavía: esqueleto. Con resultados de la consulta anterior,
+                        se quedan (atenuados) hasta que lleguen los nuevos, así la lista no parpadea. */}
+                    {busqueda === undefined || (pendiente && resultados.length === 0) ? (
+                        <ResultadosEsqueleto />
                     ) : resultados.length === 0 ? (
                         <p className="px-4 py-4 text-sm text-[#56627F]">Sin resultados para «{consulta.trim()}».</p>
                     ) : (
@@ -212,7 +218,11 @@ function BusquedaGlobal({
                                 id="resultados-busqueda"
                                 role="listbox"
                                 aria-label="Resultados de la búsqueda"
-                                className="max-h-[360px] overflow-y-auto overscroll-contain p-1.5 [scrollbar-color:#C4D2F1_transparent] [scrollbar-width:thin]"
+                                aria-busy={pendiente}
+                                className={cn(
+                                    'max-h-[360px] overflow-y-auto overscroll-contain p-1.5 transition-opacity duration-150 [scrollbar-color:#C4D2F1_transparent] [scrollbar-width:thin]',
+                                    pendiente && 'opacity-55',
+                                )}
                             >
                                 {resultados.map((r, i) => (
                                     <li

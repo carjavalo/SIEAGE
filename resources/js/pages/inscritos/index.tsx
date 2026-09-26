@@ -1,8 +1,10 @@
+import { TarjetasEsqueleto } from '@/components/esqueleto';
 import { VeloFicha } from '@/components/ficha';
 import { FichaInscrito } from '@/components/inscritos/ficha-inscrito';
 import { ListaInscritos } from '@/components/inscritos/lista-inscritos';
 import { TableroGrados } from '@/components/inscritos/tablero-grados';
 import { useListaConFicha } from '@/hooks/use-lista-con-ficha';
+import { useNavegando } from '@/hooks/use-navegando';
 import PanelLayout from '@/layouts/panel-layout';
 import { numero, palabras, plano } from '@/lib/estudiantes';
 import { type EstadoSolicitud, type FichaInscrito as Ficha, type InscritoFila, nombreInscrito } from '@/lib/inscritos';
@@ -30,16 +32,19 @@ const pestañas = [
 /**
  * Solicitudes que llegaron por el formulario público y aún no son estudiantes:
  * pestañas por estado, los grados a los que entran y la lista con la ficha del
- * inscrito elegido. Cambiar de pestaña es una visita nueva y todo vuelve a empezar.
+ * inscrito elegido. Cambiar de pestaña es una visita nueva y todo vuelve a empezar;
+ * mientras llega, la pestaña pulsada ya se ve elegida y, si tarda, esqueletos.
  */
 export default function Inscritos({ estado, conteos, inscritos, detalle }: Props) {
     const [gradoId, setGradoId] = useState<number | null>(null);
     const [filtro, setFiltro] = useState('');
     const campoFiltro = useRef<HTMLInputElement>(null);
+    const { destino, navegando } = useNavegando();
+    const estadoDestino = destino?.get('estado') ?? estado;
 
     const cuenta = (clave: EstadoSolicitud) => Number(conteos[clave] ?? 0);
     const total = cuenta('pendiente') + cuenta('aprobada') + cuenta('rechazada');
-    const pestaña = pestañas.find((p) => p.clave === estado) ?? pestañas[0];
+    const pestaña = pestañas.find((p) => p.clave === (navegando ? estadoDestino : estado)) ?? pestañas[0];
 
     const buscadas = useMemo(() => palabras(filtro), [filtro]);
     const alcance = useMemo(() => inscritos.filter((i) => gradoId === null || i.grado_id === gradoId), [inscritos, gradoId]);
@@ -121,7 +126,7 @@ export default function Inscritos({ estado, conteos, inscritos, detalle }: Props
                     className={`order-last flex h-11 w-full min-w-0 items-stretch gap-0.5 rounded-[16px] bg-[#D3DDF3]/45 p-1 ring-1 ring-white/70 xl:order-none xl:w-auto xl:flex-1 ${alto}:h-[52px] ${alto}:rounded-[18px]`}
                 >
                     {pestañas.map((p) => {
-                        const actual = p.clave === estado;
+                        const actual = p.clave === estadoDestino;
                         return (
                             <Link
                                 key={p.clave}
@@ -136,7 +141,7 @@ export default function Inscritos({ estado, conteos, inscritos, detalle }: Props
                                 )}
                             >
                                 <span className={`text-[15px] font-semibold tracking-[-0.01em] ${alto}:text-[16px]`}>{p.nombre}</span>
-                                <span className={cn('text-[13px] tabular-nums', actual ? 'text-[#5B7BD0]' : 'text-[#56627F]')}>
+                                <span className={cn('text-[13px] tabular-nums', actual ? 'text-[#4863B8]' : 'text-[#56627F]')}>
                                     {p.clave === 'todas' ? total : cuenta(p.clave)}
                                 </span>
                             </Link>
@@ -145,7 +150,7 @@ export default function Inscritos({ estado, conteos, inscritos, detalle }: Props
                 </nav>
 
                 <div className="relative ml-auto w-full sm:w-[300px] xl:ml-0 xl:w-[280px] 2xl:w-[340px]" data-busqueda>
-                    <Search className="pointer-events-none absolute top-1/2 left-3.5 size-[18px] -translate-y-1/2 text-[#6B7690]" />
+                    <Search className="pointer-events-none absolute top-1/2 left-3.5 size-[18px] -translate-y-1/2 text-[#5E6983]" />
                     <input
                         ref={campoFiltro}
                         type="search"
@@ -157,7 +162,7 @@ export default function Inscritos({ estado, conteos, inscritos, detalle }: Props
                         aria-label="Buscar inscrito por nombre, documento o acudiente"
                         aria-describedby="inscritos-cuenta"
                         className={cn(
-                            `h-10 w-full rounded-[14px] border-[1.5px] border-[#D3DDF3] bg-white pl-10 text-[15px] text-[#16223F] shadow-[0_1px_2px_rgba(22,34,63,0.05)] transition outline-none placeholder:text-[#8C97B3] hover:border-[#B7C6EA] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] [&::-webkit-search-cancel-button]:hidden ${alto}:h-11`,
+                            `h-10 w-full rounded-[14px] border-[1.5px] border-[#D3DDF3] bg-white pl-10 text-[15px] text-[#16223F] shadow-[0_1px_2px_rgba(22,34,63,0.05)] transition outline-none placeholder:text-[#6B7690] hover:border-[#B7C6EA] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] [&::-webkit-search-cancel-button]:hidden ${alto}:h-11`,
                             buscadas.length ? 'pr-[92px]' : 'pr-10',
                         )}
                     />
@@ -191,23 +196,28 @@ export default function Inscritos({ estado, conteos, inscritos, detalle }: Props
                 </div>
             </section>
 
-            <TableroGrados
-                inscritos={inscritos}
-                gradoId={gradoId}
-                onElegir={(id) => {
-                    setGradoId(id);
-                    ficha.alInicio();
-                }}
-            />
+            {navegando ? (
+                <TarjetasEsqueleto n={4} claseTarjeta="max-w-[300px]" />
+            ) : (
+                <TableroGrados
+                    inscritos={inscritos}
+                    gradoId={gradoId}
+                    onElegir={(id) => {
+                        setGradoId(id);
+                        ficha.alInicio();
+                    }}
+                />
+            )}
 
             <div className="relative mt-1.5 flex min-h-[420px] flex-col lg:min-h-0 lg:flex-1 lg:flex-row [@media(min-height:860px)]:mt-3">
                 <ListaInscritos
+                    cargando={navegando}
                     titulo={pestaña.nombre}
                     grado={grado && { id: grado.grado_id, numero: grado.grado_numero, nombre: grado.grado }}
                     filas={visibles}
                     alcance={alcance}
                     buscadas={buscadas}
-                    conSituacion={estado === 'todas'}
+                    conSituacion={(navegando ? estadoDestino : estado) === 'todas'}
                     seleccion={ficha.seleccion}
                     lista={ficha.lista}
                     vacio={

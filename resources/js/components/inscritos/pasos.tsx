@@ -34,6 +34,8 @@ export function Pasos({ solicitudId, actual, padresListos, matriculado }: Props)
                         </span>
                         {p.titulo}
                         {p.hecho && <span className="sr-only"> (listo)</span>}
+                        {/* El title solo lo ve quien pasa el mouse: el lector de pantalla también debe saber por qué no se puede. */}
+                        {!p.disponible && !esActual && <span className="sr-only"> (se habilita al completar la madre y el padre)</span>}
                     </>
                 );
                 const clase = cn(

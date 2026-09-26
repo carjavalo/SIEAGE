@@ -202,7 +202,7 @@ function Tarjeta({
             <Barra grupo={g} elegido={elegido} />
             <span className={`mt-1 flex min-w-0 items-baseline gap-2 text-[13px] leading-[18px] ${alto}:mt-2`}>
                 <span className={cn('min-w-0 truncate', elegido ? 'text-white/90' : 'text-[#3E4A68]')}>
-                    <span className={elegido ? 'text-white/60' : 'text-[#6B7690]'}>Dir.</span>{' '}
+                    <span className={elegido ? 'text-white/60' : 'text-[#5E6983]'}>Dir.</span>{' '}
                     {corto === director ? (
                         director
                     ) : (

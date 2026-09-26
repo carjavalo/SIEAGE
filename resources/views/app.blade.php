@@ -7,8 +7,13 @@
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
+        {{-- Outfit es la letra de toda la app. Se pide aquí, antes que el JS, y los tres pesos que más
+             se usan se precargan: así el texto aparece ya con su letra y no salta al cambiarla. --}}
+        <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
+        <link rel="preload" href="https://fonts.bunny.net/outfit/files/outfit-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+        <link rel="preload" href="https://fonts.bunny.net/outfit/files/outfit-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
+        <link rel="preload" href="https://fonts.bunny.net/outfit/files/outfit-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+        <link href="https://fonts.bunny.net/css?family=outfit:400,500,600,700&display=swap" rel="stylesheet" />
 
         @routes
         @viteReactRefresh

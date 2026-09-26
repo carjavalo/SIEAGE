@@ -1,3 +1,4 @@
+import { Esqueleto, FilasEsqueleto } from '@/components/esqueleto';
 import { Marca, Resaltado } from '@/components/estudiantes/etiquetas';
 import { Tecla, Vacio, td, th } from '@/components/estudiantes/lista-estudiantes';
 import { gradoCorto, telefono } from '@/lib/estudiantes';
@@ -7,6 +8,8 @@ import { ChevronRight, X } from 'lucide-react';
 import { type ReactNode, type RefObject, memo } from 'react';
 
 type Props = {
+    /** Llegando otra pestaña: se ven las columnas con filas en esqueleto. */
+    cargando: boolean;
     titulo: string;
     /** Grado elegido en el tablero, si hay uno. */
     grado: { id: number; numero: number; nombre: string } | undefined;
@@ -37,6 +40,7 @@ export function ListaInscritos(p: Props) {
     return (
         <section
             aria-label="Lista de inscritos"
+            aria-busy={p.cargando}
             className="flex min-h-[420px] min-w-0 flex-1 flex-col overflow-hidden rounded-[24px] border border-[#E3E9F6] bg-white shadow-[0_1px_2px_rgba(22,34,63,0.04),0_12px_32px_-20px_rgba(22,34,63,0.18)] lg:min-h-0"
         >
             <div className="flex shrink-0 flex-col gap-2.5 border-b border-[#EEF2F9] px-4 py-2.5 md:h-[42px] md:flex-row md:items-center md:gap-4 md:px-5 md:py-0 [@media(min-height:860px)]:md:h-12">
@@ -69,22 +73,31 @@ export function ListaInscritos(p: Props) {
                     ) : (
                         <h2 className="text-[16px] font-semibold tracking-[-0.01em] whitespace-nowrap">{p.titulo}</h2>
                     )}
-                    {p.alcance.length > 0 && (
-                        <p className="min-w-0 text-[14px] text-[#56627F] md:truncate">
-                            <Cifra>{p.alcance.length}</Cifra> inscrito{p.alcance.length === 1 ? '' : 's'}
-                            <Sep />
-                            <Cifra>{completos}</Cifra> con madre y padre
-                            {completos < p.alcance.length && (
-                                <>
-                                    <Sep />
-                                    <Cifra>{p.alcance.length - completos}</Cifra> por completar
-                                </>
-                            )}
-                        </p>
+                    {p.cargando ? (
+                        <Esqueleto className="h-3 w-52" />
+                    ) : (
+                        p.alcance.length > 0 && (
+                            <p className="min-w-0 text-[14px] text-[#56627F] md:truncate">
+                                <Cifra>{p.alcance.length}</Cifra> inscrito{p.alcance.length === 1 ? '' : 's'}
+                                <Sep />
+                                <Cifra>{completos}</Cifra> con madre y padre
+                                {completos < p.alcance.length && (
+                                    <>
+                                        <Sep />
+                                        <Cifra>{p.alcance.length - completos}</Cifra> por completar
+                                    </>
+                                )}
+                            </p>
+                        )
                     )}
                 </div>
 
-                <p className={cn('ml-auto hidden shrink-0 items-center gap-1.5 text-[12px] text-[#6B7690]', p.filas.length > 0 && 'xl:flex')}>
+                <p
+                    className={cn(
+                        'ml-auto hidden shrink-0 items-center gap-1.5 text-[12px] text-[#5E6983]',
+                        (p.filas.length > 0 || p.cargando) && 'xl:flex',
+                    )}
+                >
                     <Tecla>↑</Tecla>
                     <Tecla>↓</Tecla>
                     <span>moverse</span>
@@ -97,7 +110,7 @@ export function ListaInscritos(p: Props) {
                 ref={p.lista}
                 className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-color:#C4D2F1_transparent] [scrollbar-width:thin]"
             >
-                {p.filas.length > 0 && (
+                {(p.filas.length > 0 || p.cargando) && (
                     <table className="w-full table-fixed border-separate border-spacing-0 text-sm">
                         <thead>
                             <tr>
@@ -132,22 +145,39 @@ export function ListaInscritos(p: Props) {
                                 )}
                             </tr>
                         </thead>
-                        <tbody>
-                            {p.filas.map((i, n) => (
-                                <Fila
-                                    key={i.id}
-                                    inscrito={i}
-                                    indice={n}
-                                    elegida={i.id === p.seleccion}
-                                    buscadas={p.buscadas}
-                                    conSituacion={p.conSituacion}
-                                    onFila={p.onFila}
-                                />
-                            ))}
-                        </tbody>
+                        {p.cargando ? (
+                            <FilasEsqueleto
+                                celdas={[
+                                    { clase: cn(td, 'hidden pr-2 pl-5 text-right sm:table-cell'), barra: 'ml-auto w-4' },
+                                    { clase: cn(td, 'max-sm:pl-4') },
+                                    { clase: cn(td, 'hidden md:table-cell'), barra: 'w-28' },
+                                    { clase: td, barra: 'w-16' },
+                                    { clase: cn(td, 'hidden lg:table-cell') },
+                                    { clase: cn(td, 'hidden sm:table-cell'), barra: 'w-24' },
+                                    { clase: td, barra: 'w-28' },
+                                    { clase: cn(td, 'hidden md:table-cell', !p.conSituacion && 'pr-5'), barra: 'w-16' },
+                                    ...(p.conSituacion ? [{ clase: cn(td, 'pr-5'), barra: 'w-20' }] : []),
+                                ]}
+                            />
+                        ) : (
+                            <tbody>
+                                {p.filas.map((i, n) => (
+                                    <Fila
+                                        key={i.id}
+                                        inscrito={i}
+                                        indice={n}
+                                        elegida={i.id === p.seleccion}
+                                        buscadas={p.buscadas}
+                                        conSituacion={p.conSituacion}
+                                        onFila={p.onFila}
+                                    />
+                                ))}
+                            </tbody>
+                        )}
                     </table>
                 )}
                 {p.filas.length === 0 &&
+                    !p.cargando &&
                     (p.alcance.length === 0 ? (
                         p.vacio
                     ) : (
@@ -196,7 +226,7 @@ const Fila = memo(function Fila({
                     'group-focus-visible:shadow-[inset_3px_0_0_#1E3A7B]',
                 )}
             >
-                <span className="text-[13px] text-[#6B7690] tabular-nums">{indice + 1}</span>
+                <span className="text-[13px] text-[#5E6983] tabular-nums">{indice + 1}</span>
             </td>
             <td className={cn(celda, 'max-sm:pl-4')}>
                 <span className={cn('block truncate font-medium', elegida ? 'text-[#1E3A7B]' : 'text-[#16223F]')} title={nombreInscrito(i)}>
@@ -218,7 +248,7 @@ const Fila = memo(function Fila({
             <td className={cn(celda, 'hidden lg:table-cell')}>
                 <span className="block truncate text-[#3E4A68]">
                     <Resaltado texto={`${i.acudiente_primer_nombre} ${i.acudiente_primer_apellido}`} buscadas={buscadas} />
-                    <span className="text-[13px] text-[#6B7690]"> · {i.parentesco}</span>
+                    <span className="text-[13px] text-[#5E6983]"> · {i.parentesco}</span>
                 </span>
             </td>
             <td className={cn(celda, 'hidden sm:table-cell')}>
@@ -250,7 +280,7 @@ const Fila = memo(function Fila({
 function Registro({ nombre, listo }: { nombre: string; listo: boolean }) {
     return (
         <span
-            className={cn('inline-flex items-center gap-1.5 text-[13px] font-medium whitespace-nowrap', listo ? 'text-[#1C6B4A]' : 'text-[#8C97B3]')}
+            className={cn('inline-flex items-center gap-1.5 text-[13px] font-medium whitespace-nowrap', listo ? 'text-[#1C6B4A]' : 'text-[#5E6983]')}
             title={listo ? `${nombre}: registrado` : `${nombre}: falta completar`}
         >
             <span aria-hidden className={cn('size-1.5 rounded-full', listo ? 'bg-[#3BA67A]' : 'ring-1 ring-[#AEB7CC] ring-inset')} />

@@ -33,6 +33,8 @@ type Props<T> = {
     id?: string;
     desactivado?: boolean;
     invalido?: boolean;
+    /** El error o la ayuda del campo (lo pone Campo). */
+    'aria-describedby'?: string;
 };
 
 /**
@@ -51,6 +53,7 @@ export function Desplegable<T extends string | number>({
     id: idBoton,
     desactivado,
     invalido,
+    'aria-describedby': descripcion,
 }: Props<T>) {
     const [abierto, setAbierto] = useState(false);
     const elegida = opciones.findIndex((o) => o.valor === valor);
@@ -105,6 +108,7 @@ export function Desplegable<T extends string | number>({
                 role="combobox"
                 disabled={desactivado}
                 aria-invalid={invalido || undefined}
+                aria-describedby={descripcion}
                 aria-label={idBoton ? undefined : etiqueta}
                 aria-haspopup="listbox"
                 aria-expanded={abierto}
@@ -114,7 +118,7 @@ export function Desplegable<T extends string | number>({
                 onKeyDown={alTeclear}
                 className={cn('group flex cursor-pointer items-center gap-1 outline-none', claseBoton)}
             >
-                {elegida >= 0 ? opciones[elegida].etiqueta : <span className="text-[#8C97B3]">{placeholder}</span>}
+                {elegida >= 0 ? opciones[elegida].etiqueta : <span className="text-[#6B7690]">{placeholder}</span>}
                 <ChevronDown aria-hidden className={cn('size-4 shrink-0 transition-transform duration-200', abierto && 'rotate-180')} />
             </button>
 
@@ -146,7 +150,7 @@ export function Desplegable<T extends string | number>({
                             )}
                         >
                             <span className={cn('tabular-nums', i === elegida && 'font-semibold')}>{o.etiqueta}</span>
-                            {o.detalle && <span className="text-[12px] font-medium text-[#5B7BD0]">{o.detalle}</span>}
+                            {o.detalle && <span className="text-[12px] font-medium text-[#4863B8]">{o.detalle}</span>}
                             <Check aria-hidden className={cn('ml-auto size-4 shrink-0 text-[#1E3A7B]', i !== elegida && 'invisible')} />
                         </li>
                     ))}

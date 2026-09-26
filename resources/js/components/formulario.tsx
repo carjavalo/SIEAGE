@@ -1,11 +1,11 @@
 import { cn } from '@/lib/utils';
 import { Check, Copy, Eye, EyeOff, LoaderCircle, RefreshCw } from 'lucide-react';
-import { type ButtonHTMLAttributes, type ComponentProps, type ReactNode, useState } from 'react';
+import { type ButtonHTMLAttributes, Children, type ComponentProps, type ReactNode, cloneElement, isValidElement, useState } from 'react';
 
 /** Piezas de formulario del panel (inscritos, usuarios, configuración). Nada de shadcn. */
 
 export const claseCampo =
-    'h-11 w-full rounded-[12px] border-[1.5px] border-[#D3DDF3] bg-white px-3.5 text-[15px] text-[#16223F] outline-none transition placeholder:text-[#8C97B3] hover:border-[#B7C6EA] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] disabled:cursor-default disabled:border-[#E3E9F6] disabled:bg-[#F5F7FC] disabled:text-[#3E4A68] aria-invalid:border-[#E0897D]';
+    'h-11 w-full rounded-[12px] border-[1.5px] border-[#D3DDF3] bg-white px-3.5 text-[15px] text-[#16223F] outline-none transition placeholder:text-[#6B7690] hover:border-[#B7C6EA] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] disabled:cursor-default disabled:border-[#E3E9F6] disabled:bg-[#F5F7FC] disabled:text-[#3E4A68] aria-invalid:border-[#E0897D]';
 
 /** Tarjeta blanca de las páginas del panel. */
 export const tarjeta = 'rounded-[24px] border border-[#E3E9F6] bg-white shadow-[0_1px_2px_rgba(22,34,63,0.04),0_12px_32px_-20px_rgba(22,34,63,0.18)]';
@@ -17,6 +17,25 @@ export const botonSecundario =
     'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-[13px] px-4 text-[15px] font-medium whitespace-nowrap text-[#56627F] transition hover:bg-[#EEF2FB] hover:text-[#16223F] focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none';
 
 /** Etiqueta, control y, debajo, el error o una ayuda. */
+/** El id del texto que describe el campo: el error si lo hay; si no, la ayuda. */
+export function describir(id: string, error?: string, ayuda?: string) {
+    if (error) return `${id}-error`;
+    if (ayuda) return `${id}-ayuda`;
+}
+
+/**
+ * Etiqueta, control y, debajo, el error o la ayuda. Al control que lleva el mismo
+ * `id` le pone aria-describedby, para que el lector de pantalla lea el error al
+ * llegar al campo; si el control va envuelto, quien lo arma se lo pone con describir().
+ */
+export function ConDescripcion({ id, descripcion, children }: { id: string; descripcion?: string; children: ReactNode }) {
+    return Children.map(children, (hijo) =>
+        descripcion && isValidElement<{ id?: string; 'aria-describedby'?: string }>(hijo) && hijo.props.id === id
+            ? cloneElement(hijo, { 'aria-describedby': descripcion })
+            : hijo,
+    );
+}
+
 export function Campo({
     id,
     etiqueta,
@@ -36,13 +55,21 @@ export function Campo({
         <div className="flex min-w-0 flex-col gap-1.5">
             <label htmlFor={id} className="flex justify-between text-[13px] font-medium text-[#3E4A68]">
                 {etiqueta}
-                {opcional && <span className="font-normal text-[#8C97B3]">Opcional</span>}
+                {opcional && <span className="font-normal text-[#6B7690]">Opcional</span>}
             </label>
-            {children}
+            <ConDescripcion id={id} descripcion={describir(id, error, ayuda)}>
+                {children}
+            </ConDescripcion>
             {error ? (
-                <span className="text-[13px] text-[#B42318]">{error}</span>
+                <span id={`${id}-error`} className="text-[13px] text-[#B42318]">
+                    {error}
+                </span>
             ) : (
-                ayuda && <span className="text-[13px] leading-snug text-[#56627F]">{ayuda}</span>
+                ayuda && (
+                    <span id={`${id}-ayuda`} className="text-[13px] leading-snug text-[#56627F]">
+                        {ayuda}
+                    </span>
+                )
             )}
         </div>
     );
@@ -104,6 +131,7 @@ export function CampoClaveNueva({
                     autoComplete="new-password"
                     spellCheck={false}
                     aria-invalid={!!error}
+                    aria-describedby={describir(id, error, ayuda)}
                     className={cn(claseCampo, 'pr-32 font-mono tracking-wide')}
                 />
                 <div className="absolute right-1 flex">

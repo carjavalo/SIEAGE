@@ -23,7 +23,11 @@ function validarArchivo(archivo: File): string | null {
     return null;
 }
 
-/** Importar datos: se sube el libro de Excel de matrículas y queda guardado en el servidor para procesarlo. */
+/**
+ * Importar datos: se sube el libro de Excel de matrículas y queda guardado en el
+ * servidor para procesarlo. Es poco contenido: va centrado en la ventana (un poco
+ * por encima del centro, que es donde el ojo lo lee centrado).
+ */
 export default function ImportarDatos() {
     const { flash } = usePage<SharedData>().props;
     const [arrastrando, setArrastrando] = useState(false);
@@ -72,21 +76,23 @@ export default function ImportarDatos() {
 
     return (
         <PanelLayout titulo="Importar datos">
-            <div className="relative max-w-[720px]">
-                <h1 className="text-[28px] leading-8 font-semibold tracking-[-0.025em]">Importar datos</h1>
-                <p className="mt-1 text-[15px] text-[#56627F]">
+            {/* Ocupa del encabezado al borde de abajo (82px = encabezado + margen de arriba de <main>;
+                -mb-10 anula el de abajo) y centra el contenido; el pb lo sube un poco del centro exacto. */}
+            <div className="relative mx-auto flex w-full max-w-[640px] flex-col justify-center py-6 md:-mb-10 md:min-h-[calc(100dvh-82px)] [@media(min-height:720px)]:md:pb-[6vh]">
+                <h1 className="text-center text-[28px] leading-8 font-semibold tracking-[-0.025em]">Importar datos</h1>
+                <p className="mx-auto mt-2 max-w-[520px] text-center text-[15px] text-balance text-[#56627F]">
                     Sube el libro de Excel de matrículas, el mismo con el que se trabaja cada año. Queda guardado en el servidor para cargar
                     estudiantes, acudientes y grupos.
                 </p>
 
                 {flash.success && !archivo && (
-                    <p className="mt-5 flex items-center gap-3 rounded-[16px] bg-[#E3F4EC] px-4 py-3 text-[14px] font-medium text-[#1C6B4A]">
+                    <p className="animate-in fade-in-0 slide-in-from-bottom-1 mt-6 flex items-center gap-3 rounded-[16px] bg-[#E3F4EC] px-4 py-3 text-[14px] font-medium text-[#1C6B4A] duration-300">
                         <CheckCircle2 className="size-[18px] shrink-0" />
                         {flash.success}
                     </p>
                 )}
 
-                <form onSubmit={enviar} className={cn(tarjeta, 'mt-5')}>
+                <form onSubmit={enviar} className={cn(tarjeta, 'mt-6')}>
                     <div className="p-6">
                         {!archivo ? (
                             <label
@@ -97,7 +103,7 @@ export default function ImportarDatos() {
                                 onDragLeave={() => setArrastrando(false)}
                                 onDrop={alSoltar}
                                 className={cn(
-                                    'group flex cursor-pointer flex-col items-center justify-center rounded-[20px] border-[1.5px] border-dashed px-6 py-14 text-center transition duration-200 focus-within:ring-4 focus-within:ring-[#DCE5F8]',
+                                    'group flex cursor-pointer flex-col items-center justify-center rounded-[20px] border-[1.5px] border-dashed px-6 py-10 text-center transition duration-200 focus-within:ring-4 focus-within:ring-[#DCE5F8] [@media(min-height:720px)]:py-14',
                                     arrastrando
                                         ? 'scale-[1.01] border-[#1E3A7B] bg-[#EEF2FB]'
                                         : error
@@ -119,7 +125,7 @@ export default function ImportarDatos() {
                                 <span className="mt-1 text-[14px] text-[#56627F]">
                                     o <span className="font-medium text-[#1E3A7B] underline underline-offset-4">haz clic para elegirlo</span>
                                 </span>
-                                <span className="mt-5 text-[13px] text-[#6B7690]">.xlsx o .xls · máximo 20 MB</span>
+                                <span className="mt-5 text-[13px] text-[#5E6983]">.xlsx o .xls · máximo 20 MB</span>
                                 <input
                                     type="file"
                                     accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"

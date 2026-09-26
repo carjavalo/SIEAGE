@@ -35,7 +35,6 @@ export function Marca({ compacta }: { compacta?: boolean }) {
             <img src="/sieage-logo.png" alt="SIEAGE" className={cn('w-auto rounded-lg object-contain shadow-sm', compacta ? 'h-11' : 'h-16')} />
             <div className="leading-tight">
                 <p className={cn('font-semibold tracking-tight', compacta ? 'text-base' : 'text-xl')}>SIEAGE</p>
-                
             </div>
         </div>
     );
@@ -102,7 +101,7 @@ export function PanelLateral({ anio, actual, alcanzado, onIr }: ProgresoProps) {
                                             hecho && 'bg-[#1E3A7B] text-white',
                                             esActual &&
                                                 'scale-105 bg-white text-[#1E3A7B] shadow-[0_6px_18px_-6px_rgba(30,58,123,0.45)] ring-2 ring-[#1E3A7B]',
-                                            !hecho && !esActual && 'bg-white text-[#8C97B3] ring-1 ring-[#D3DDF3]',
+                                            !hecho && !esActual && 'bg-white text-[#6B7690] ring-1 ring-[#D3DDF3]',
                                             puedeIr && 'group-hover:scale-105',
                                         )}
                                     >
@@ -112,7 +111,7 @@ export function PanelLateral({ anio, actual, alcanzado, onIr }: ProgresoProps) {
                                         <span className={cn('block text-[15px] font-medium', !hecho && !esActual && 'text-[#56627F]')}>
                                             {paso.corto}
                                         </span>
-                                        <span className="text-[13px] text-[#8C97B3]">
+                                        <span className="text-[13px] text-[#56627F]">
                                             {hecho ? 'Listo' : esActual ? 'En curso' : `Paso ${i + 1}`}
                                         </span>
                                     </span>

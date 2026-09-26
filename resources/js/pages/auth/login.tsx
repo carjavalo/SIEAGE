@@ -21,7 +21,7 @@ const aparecer = 'animate-in fade-in slide-in-from-bottom-3 fill-mode-both durat
 const tras = (ms: number): CSSProperties => ({ animationDelay: `${ms}ms` });
 
 const campo =
-    'h-[52px] w-full rounded-[14px] border-[1.5px] border-[#D3DDF3] bg-white px-4 text-[15px] text-[#16223F] outline-none transition placeholder:text-[#8C97B3] hover:border-[#B7C6EA] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8]';
+    'h-[52px] w-full rounded-[14px] border-[1.5px] border-[#D3DDF3] bg-white px-4 text-[15px] text-[#16223F] outline-none transition placeholder:text-[#6B7690] hover:border-[#B7C6EA] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8]';
 
 export default function Login({ status }: { status?: string }) {
     const [verClave, setVerClave] = useState(false);
@@ -40,10 +40,7 @@ export default function Login({ status }: { status?: string }) {
 
     return (
         <>
-            <Head title="Ingresar">
-                <link rel="preconnect" href="https://fonts.bunny.net" />
-                <link href="https://fonts.bunny.net/css?family=outfit:400,500,600" rel="stylesheet" />
-            </Head>
+            <Head title="Ingresar" />
 
             <div className="grid min-h-screen bg-white p-4 font-['Outfit',ui-sans-serif,system-ui,sans-serif] text-[#16223F] lg:grid-cols-2 lg:gap-4">
                 {/* ------------------------------------------------ panel de marca */}
