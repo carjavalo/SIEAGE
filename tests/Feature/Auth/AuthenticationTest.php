@@ -27,7 +27,7 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect(route('estudiantes.index', absolute: false));
     }
 
     public function test_users_can_not_authenticate_with_invalid_password()
@@ -62,5 +62,13 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertGuest();
+    }
+
+    public function test_la_pagina_principal_es_estudiantes()
+    {
+        $this->get('/')->assertRedirect('/estudiantes');
+
+        // Con sesión, abrir el login también lleva a Estudiantes.
+        $this->actingAs(User::factory()->create())->get('/login')->assertRedirect('/estudiantes');
     }
 }

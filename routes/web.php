@@ -8,7 +8,8 @@ use App\Http\Controllers\UsuarioController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::redirect('/', '/dashboard')->name('home');
+// La página principal es Estudiantes (sin sesión, el middleware lleva al login).
+Route::redirect('/', '/estudiantes')->name('home');
 
 // Formulario público: lo llena el acudiente sin iniciar sesión.
 Route::get('inscripcion', [InscripcionController::class, 'create'])->name('inscripcion.create');
