@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
 import { Search, UserPlus, X } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 type FiltroEstado = 'activos' | 'desactivados' | 'todos';
 
@@ -28,6 +28,7 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
     const [abierto, setAbierto] = useState<'nuevo' | number | null>(null);
     const campoFiltro = useRef<HTMLInputElement>(null);
     const panel = useRef<HTMLElement>(null);
+    const franjaRoles = useRef<HTMLElement>(null);
 
     const buscadas = useMemo(() => palabras(filtro), [filtro]);
     const delRol = useMemo(() => usuarios.filter((u) => rolId === null || u.rol_id === rolId), [usuarios, rolId]);
@@ -60,6 +61,25 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
 
     const conteo = (id: number | null) => usuarios.filter((u) => id === null || u.rol_id === id).length;
 
+    // En celular los roles no caben: la franja se desliza y se desvanece por el lado
+    // en que queda algo más, para que se note que sigue.
+    useLayoutEffect(() => {
+        const f = franjaRoles.current;
+        if (!f) return;
+        const medir = () => {
+            f.dataset.antes = String(f.scrollLeft > 1);
+            f.dataset.despues = String(f.scrollLeft + f.clientWidth < f.scrollWidth - 1);
+        };
+        const observador = new ResizeObserver(medir);
+        observador.observe(f);
+        f.addEventListener('scroll', medir, { passive: true });
+        medir();
+        return () => {
+            observador.disconnect();
+            f.removeEventListener('scroll', medir);
+        };
+    }, []);
+
     return (
         <PanelLayout titulo="Usuarios" completa>
             {/* Primera franja: título y totales, roles en segmentos, búsqueda y "Nuevo usuario". */}
@@ -80,8 +100,11 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
                 </div>
 
                 <nav
+                    ref={franjaRoles}
                     aria-label="Roles"
-                    className={`order-last flex h-11 w-full min-w-0 items-stretch gap-0.5 overflow-x-auto rounded-[16px] bg-[#D3DDF3]/45 p-1 ring-1 ring-white/70 [scrollbar-width:none] xl:order-none xl:w-auto xl:flex-1 ${alto}:h-[52px] ${alto}:rounded-[18px]`}
+                    data-antes="false"
+                    data-despues="false"
+                    className={`order-last flex h-11 w-full min-w-0 snap-x items-stretch gap-0.5 overflow-x-auto rounded-[16px] bg-[#D3DDF3]/45 p-1 ring-1 ring-white/70 [--antes:#000] [--despues:#000] [mask-image:linear-gradient(to_right,var(--antes),#000_40px,#000_calc(100%-40px),var(--despues))] [scrollbar-width:none] data-[antes=true]:[--antes:transparent] data-[despues=true]:[--despues:transparent] xl:order-none xl:w-auto xl:flex-1 ${alto}:h-[52px] ${alto}:rounded-[18px]`}
                 >
                     {[{ id: null, nombre: null } as { id: number | null; nombre: string | null }, ...roles].map((r) => {
                         const actual = r.id === rolId;
@@ -89,10 +112,14 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
                             <button
                                 key={r.id ?? 'todos'}
                                 type="button"
-                                onClick={() => setRolId(r.id)}
+                                onClick={(e) => {
+                                    setRolId(r.id);
+                                    // Si el rol quedó a medias fuera de la franja, se trae a la vista.
+                                    e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+                                }}
                                 aria-pressed={actual}
                                 className={cn(
-                                    `flex min-w-fit flex-1 cursor-pointer items-center justify-center gap-2 rounded-[12px] px-3 transition duration-200 focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none ${alto}:rounded-[14px]`,
+                                    `flex min-w-fit flex-1 cursor-pointer snap-start items-center justify-center gap-2 rounded-[12px] px-3 transition duration-200 focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none ${alto}:rounded-[14px]`,
                                     actual
                                         ? 'bg-white text-[#1E3A7B] shadow-[0_1px_3px_rgba(22,34,63,0.14)] ring-1 ring-[#C4D2F1]'
                                         : 'text-[#16223F] hover:bg-white/60',
@@ -135,14 +162,20 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
                                 <X className="size-4" />
                             </button>
                         ) : (
-                            <kbd className="pointer-events-none absolute top-1/2 right-3 flex h-6 min-w-6 -translate-y-1/2 items-center justify-center rounded-md border border-[#D3DDF3] bg-[#F5F7FC] px-1.5 font-sans text-[12px] text-[#56627F]">
+                            <kbd className="pointer-events-none absolute top-1/2 right-3 hidden h-6 min-w-6 -translate-y-1/2 items-center justify-center rounded-md border border-[#D3DDF3] bg-[#F5F7FC] px-1.5 font-sans text-[12px] text-[#56627F] sm:flex">
                                 /
                             </kbd>
                         )}
                     </div>
-                    <button type="button" onClick={() => setAbierto('nuevo')} className={cn(botonPrimario, `h-10 ${alto}:h-11`)}>
-                        <UserPlus className="size-[18px]" />
-                        Nuevo usuario
+                    <button
+                        type="button"
+                        onClick={() => setAbierto('nuevo')}
+                        aria-label="Nuevo usuario"
+                        className={cn(botonPrimario, `h-10 shrink-0 max-sm:px-4 ${alto}:h-11`)}
+                    >
+                        <UserPlus aria-hidden className="size-[18px]" />
+                        <span className="sm:hidden">Nuevo</span>
+                        <span className="hidden sm:inline">Nuevo usuario</span>
                     </button>
                 </div>
             </section>
@@ -210,13 +243,13 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
                             <table className="w-full table-fixed border-separate border-spacing-0 text-sm">
                                 <thead>
                                     <tr>
-                                        <th scope="col" className={cn(th, 'pl-5')}>
+                                        <th scope="col" className={cn(th, 'pl-4 sm:pl-5')}>
                                             Persona
                                         </th>
                                         <th scope="col" className={cn(th, 'hidden w-[180px] md:table-cell')}>
                                             Usuario
                                         </th>
-                                        <th scope="col" className={cn(th, 'w-[150px]')}>
+                                        <th scope="col" className={cn(th, 'hidden w-[150px] sm:table-cell')}>
                                             Rol
                                         </th>
                                         <th scope="col" className={cn(th, 'hidden lg:table-cell')}>
@@ -225,7 +258,7 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
                                         <th scope="col" className={cn(th, 'hidden w-[150px] sm:table-cell')}>
                                             Último ingreso
                                         </th>
-                                        <th scope="col" className={cn(th, 'w-[130px] pr-5')}>
+                                        <th scope="col" className={cn(th, 'w-[118px] pr-4 sm:w-[130px] sm:pr-5')}>
                                             Estado
                                         </th>
                                     </tr>
@@ -247,7 +280,7 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
                                                 <td
                                                     className={cn(
                                                         celda,
-                                                        'h-12 pl-5 group-focus-visible:shadow-[inset_3px_0_0_#1E3A7B]',
+                                                        'h-[60px] pl-4 group-focus-visible:shadow-[inset_3px_0_0_#1E3A7B] sm:pl-5 md:h-12',
                                                         elegida && 'shadow-[inset_3px_0_0_#1E3A7B]',
                                                     )}
                                                 >
@@ -261,20 +294,48 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
                                                         >
                                                             {inicialesPersona(u.name)}
                                                         </span>
-                                                        <span className={cn('truncate font-medium', u.activo ? 'text-[#16223F]' : 'text-[#56627F]')}>
-                                                            <Resaltado texto={u.name} buscadas={buscadas} />
-                                                        </span>
-                                                        {u.id === auth.user.id && (
-                                                            <span className="shrink-0 rounded-full bg-[#EEF2FB] px-2 py-0.5 text-[12px] font-medium text-[#1E3A7B]">
-                                                                tú
+                                                        <span className="min-w-0">
+                                                            <span className="flex min-w-0 items-center gap-2">
+                                                                <span
+                                                                    className={cn(
+                                                                        'truncate font-medium',
+                                                                        u.activo ? 'text-[#16223F]' : 'text-[#56627F]',
+                                                                    )}
+                                                                >
+                                                                    <Resaltado texto={u.name} buscadas={buscadas} />
+                                                                </span>
+                                                                {u.id === auth.user.id && (
+                                                                    <span className="shrink-0 rounded-full bg-[#EEF2FB] px-2 py-0.5 text-[12px] leading-4 font-medium text-[#1E3A7B]">
+                                                                        tú
+                                                                    </span>
+                                                                )}
                                                             </span>
-                                                        )}
+                                                            {/* Lo que en pantallas anchas va en sus columnas: el usuario (hasta md) y el rol (hasta sm). */}
+                                                            <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[13px] leading-[18px] text-[#56627F] md:hidden">
+                                                                <span className="truncate">
+                                                                    @<Resaltado texto={u.usuario} buscadas={buscadas} />
+                                                                </span>
+                                                                <span className="flex shrink-0 items-center gap-1.5 sm:hidden">
+                                                                    <span aria-hidden className="text-[#8C97B3]">
+                                                                        ·
+                                                                    </span>
+                                                                    <span
+                                                                        aria-hidden
+                                                                        className={cn(
+                                                                            'size-1.5 rounded-full',
+                                                                            u.activo ? puntoRol(u.rol?.nombre) : 'bg-[#AEB7CC]',
+                                                                        )}
+                                                                    />
+                                                                    {nombreRol(u.rol?.nombre)}
+                                                                </span>
+                                                            </span>
+                                                        </span>
                                                     </span>
                                                 </td>
                                                 <td className={cn(celda, 'hidden truncate text-[#3E4A68] md:table-cell')}>
                                                     @<Resaltado texto={u.usuario} buscadas={buscadas} />
                                                 </td>
-                                                <td className={celda}>
+                                                <td className={cn(celda, 'hidden sm:table-cell')}>
                                                     <span className="inline-flex items-center gap-2 text-[#16223F]">
                                                         <span
                                                             aria-hidden
@@ -291,7 +352,7 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
                                                     )}
                                                 </td>
                                                 <td className={cn(celda, 'hidden text-[#56627F] sm:table-cell')}>{haceCuanto(u.ultimo_acceso)}</td>
-                                                <td className={cn(celda, 'pr-5')}>
+                                                <td className={cn(celda, 'pr-4 sm:pr-5')}>
                                                     <MarcaActivo activo={u.activo} />
                                                 </td>
                                             </tr>
