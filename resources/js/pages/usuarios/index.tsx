@@ -104,7 +104,7 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
                     aria-label="Roles"
                     data-antes="false"
                     data-despues="false"
-                    className={`order-last flex h-11 w-full min-w-0 snap-x items-stretch gap-0.5 overflow-x-auto rounded-[16px] bg-[#D3DDF3]/45 p-1 ring-1 ring-white/70 [--antes:#000] [--despues:#000] [mask-image:linear-gradient(to_right,var(--antes),#000_40px,#000_calc(100%-40px),var(--despues))] [scrollbar-width:none] data-[antes=true]:[--antes:transparent] data-[despues=true]:[--despues:transparent] xl:order-none xl:w-auto xl:flex-1 ${alto}:h-[52px] ${alto}:rounded-[18px]`}
+                    className={`order-last flex h-11 w-full min-w-0 snap-x scroll-px-1 items-stretch gap-0.5 overflow-x-auto rounded-[16px] bg-[#D3DDF3]/45 p-1 ring-1 ring-white/70 [--antes:#000] [--despues:#000] [mask-image:linear-gradient(to_right,var(--antes),#000_40px,#000_calc(100%-40px),var(--despues))] [scrollbar-width:none] data-[antes=true]:[--antes:transparent] data-[despues=true]:[--despues:transparent] xl:order-none xl:w-auto xl:flex-1 ${alto}:h-[52px] ${alto}:rounded-[18px]`}
                 >
                     {[{ id: null, nombre: null } as { id: number | null; nombre: string | null }, ...roles].map((r) => {
                         const actual = r.id === rolId;
@@ -135,7 +135,7 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
                     })}
                 </nav>
 
-                <div className="ml-auto flex w-full items-center gap-3 sm:w-auto">
+                <div className="ml-auto flex w-full items-center gap-2 sm:w-auto sm:gap-3">
                     <div className="relative min-w-0 flex-1 sm:w-[260px] 2xl:w-[300px]">
                         <Search className="pointer-events-none absolute top-1/2 left-3.5 size-[18px] -translate-y-1/2 text-[#5E6983]" />
                         <input
@@ -147,7 +147,7 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
                             onChange={(e) => setFiltro(e.target.value)}
                             placeholder="Buscar nombre o usuario"
                             aria-label="Buscar usuario por nombre, usuario o correo"
-                            className={`h-10 w-full rounded-[14px] border-[1.5px] border-[#D3DDF3] bg-white pr-10 pl-10 text-[15px] text-[#16223F] shadow-[0_1px_2px_rgba(22,34,63,0.05)] transition outline-none placeholder:text-[#6B7690] hover:border-[#B7C6EA] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] [&::-webkit-search-cancel-button]:hidden ${alto}:h-11`}
+                            className={`h-10 w-full rounded-[14px] border-[1.5px] border-[#D3DDF3] bg-white pl-10 text-[15px] ${filtro ? 'pr-10' : 'pr-3 sm:pr-10'} text-[#16223F] shadow-[0_1px_2px_rgba(22,34,63,0.05)] transition outline-none placeholder:text-[#6B7690] hover:border-[#B7C6EA] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] [&::-webkit-search-cancel-button]:hidden ${alto}:h-11`}
                         />
                         {filtro ? (
                             <button
@@ -258,8 +258,9 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
                                         <th scope="col" className={cn(th, 'hidden w-[150px] sm:table-cell')}>
                                             Último ingreso
                                         </th>
-                                        <th scope="col" className={cn(th, 'w-[118px] pr-4 sm:w-[130px] sm:pr-5')}>
-                                            Estado
+                                        <th scope="col" className={cn(th, 'w-[136px] pr-4 sm:w-[130px] sm:pr-5')}>
+                                            <span className="sm:hidden">Rol y estado</span>
+                                            <span className="hidden sm:inline">Estado</span>
                                         </th>
                                     </tr>
                                 </thead>
@@ -280,7 +281,7 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
                                                 <td
                                                     className={cn(
                                                         celda,
-                                                        'h-[60px] pl-4 group-focus-visible:shadow-[inset_3px_0_0_#1E3A7B] sm:pl-5 md:h-12',
+                                                        'h-[60px] py-2.5 pl-4 group-focus-visible:shadow-[inset_3px_0_0_#1E3A7B] sm:pl-5 md:h-12 md:py-0',
                                                         elegida && 'shadow-[inset_3px_0_0_#1E3A7B]',
                                                     )}
                                                 >
@@ -298,36 +299,22 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
                                                             <span className="flex min-w-0 items-center gap-2">
                                                                 <span
                                                                     className={cn(
-                                                                        'truncate font-medium',
+                                                                        // En celular el nombre puede ir en dos líneas: es lo que se busca con la vista.
+                                                                        'line-clamp-2 font-medium break-words md:line-clamp-none md:truncate',
                                                                         u.activo ? 'text-[#16223F]' : 'text-[#56627F]',
                                                                     )}
                                                                 >
                                                                     <Resaltado texto={u.name} buscadas={buscadas} />
                                                                 </span>
-                                                                {u.id === auth.user.id && (
-                                                                    <span className="shrink-0 rounded-full bg-[#EEF2FB] px-2 py-0.5 text-[12px] leading-4 font-medium text-[#1E3A7B]">
-                                                                        tú
-                                                                    </span>
-                                                                )}
+                                                                {u.id === auth.user.id && <Tu className="hidden md:inline-block" />}
                                                             </span>
-                                                            {/* Lo que en pantallas anchas va en sus columnas: el usuario (hasta md) y el rol (hasta sm). */}
-                                                            <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[13px] leading-[18px] text-[#56627F] md:hidden">
+                                                            {/* Hasta md el usuario no tiene columna propia: va debajo del nombre, con el
+                                                                "tú" (arriba le quitaría al nombre el poco ancho que hay). */}
+                                                            <span className="mt-0.5 flex min-w-0 items-center gap-2 text-[13px] leading-[18px] text-[#56627F] md:hidden">
                                                                 <span className="truncate">
                                                                     @<Resaltado texto={u.usuario} buscadas={buscadas} />
                                                                 </span>
-                                                                <span className="flex shrink-0 items-center gap-1.5 sm:hidden">
-                                                                    <span aria-hidden className="text-[#8C97B3]">
-                                                                        ·
-                                                                    </span>
-                                                                    <span
-                                                                        aria-hidden
-                                                                        className={cn(
-                                                                            'size-1.5 rounded-full',
-                                                                            u.activo ? puntoRol(u.rol?.nombre) : 'bg-[#AEB7CC]',
-                                                                        )}
-                                                                    />
-                                                                    {nombreRol(u.rol?.nombre)}
-                                                                </span>
+                                                                {u.id === auth.user.id && <Tu />}
                                                             </span>
                                                         </span>
                                                     </span>
@@ -353,6 +340,16 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
                                                 </td>
                                                 <td className={cn(celda, 'hidden text-[#56627F] sm:table-cell')}>{haceCuanto(u.ultimo_acceso)}</td>
                                                 <td className={cn(celda, 'pr-4 sm:pr-5')}>
+                                                    <span className="mb-0.5 flex min-w-0 items-center gap-1.5 text-[13px] leading-[18px] font-medium text-[#16223F] sm:hidden">
+                                                        <span
+                                                            aria-hidden
+                                                            className={cn(
+                                                                'size-1.5 shrink-0 rounded-full',
+                                                                u.activo ? puntoRol(u.rol?.nombre) : 'bg-[#AEB7CC]',
+                                                            )}
+                                                        />
+                                                        <span className="truncate">{nombreRol(u.rol?.nombre)}</span>
+                                                    </span>
                                                     <MarcaActivo activo={u.activo} />
                                                 </td>
                                             </tr>
@@ -375,5 +372,12 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
 
             <VeloFicha abierta={abierto !== null} />
         </PanelLayout>
+    );
+}
+
+/** Marca la fila del usuario que tiene la sesión abierta. */
+function Tu({ className }: { className?: string }) {
+    return (
+        <span className={cn('shrink-0 rounded-full bg-[#EEF2FB] px-2 py-0.5 text-[12px] leading-4 font-medium text-[#1E3A7B]', className)}>tú</span>
     );
 }
