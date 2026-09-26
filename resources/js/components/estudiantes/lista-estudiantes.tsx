@@ -1,3 +1,4 @@
+import { Esqueleto, FilasEsqueleto } from '@/components/esqueleto';
 import { Marca, PuntoSede, Resaltado, sedeInfo } from '@/components/estudiantes/etiquetas';
 import { type Estudiante, type FiltroEstado, type Grado, type Grupo, telefono } from '@/lib/estudiantes';
 import { cn } from '@/lib/utils';
@@ -9,6 +10,8 @@ const alto = '[@media(min-height:860px)]';
 type Columnas = { sede: boolean; jornada: boolean; modalidad: boolean; todosNuevos: boolean };
 
 type Props = {
+    /** Llegando otro grado o año: se ven las columnas con filas en esqueleto. */
+    cargando: boolean;
     grado: Grado | undefined;
     grupos: Grupo[];
     grupo: Grupo | undefined;
@@ -52,12 +55,13 @@ export function ListaEstudiantes(p: Props) {
     return (
         <section
             aria-label="Lista de estudiantes"
+            aria-busy={p.cargando}
             className="flex min-h-[420px] min-w-0 flex-1 flex-col overflow-hidden rounded-[24px] border border-[#E3E9F6] bg-white shadow-[0_1px_2px_rgba(22,34,63,0.04),0_12px_32px_-20px_rgba(22,34,63,0.18)] lg:min-h-0"
         >
             <div
                 className={`flex shrink-0 flex-col gap-2.5 border-b border-[#EEF2F9] px-4 py-2.5 md:h-[42px] md:flex-row md:items-center md:gap-4 md:px-5 md:py-0 ${alto}:md:h-12`}
             >
-                <Alcance grado={p.grado} grupos={p.grupos} grupo={p.grupo} onQuitarGrupo={p.onQuitarGrupo} />
+                <Alcance cargando={p.cargando} grado={p.grado} grupos={p.grupos} grupo={p.grupo} onQuitarGrupo={p.onQuitarGrupo} />
 
                 <div role="group" aria-label="Estado" className="flex shrink-0 gap-0.5 rounded-[11px] bg-[#F1F4FA] p-[3px]">
                     {opcionesEstado.map((o) => {
@@ -75,13 +79,17 @@ export function ListaEstudiantes(p: Props) {
                                 )}
                             >
                                 {o.nombre}
-                                <span className={cn('tabular-nums', activo ? 'text-[#5B7BD0]' : 'text-[#6B7690]')}>{p.conteos[o.clave]}</span>
+                                {p.cargando ? (
+                                    <Esqueleto className="h-3 w-5" />
+                                ) : (
+                                    <span className={cn('tabular-nums', activo ? 'text-[#4863B8]' : 'text-[#5E6983]')}>{p.conteos[o.clave]}</span>
+                                )}
                             </button>
                         );
                     })}
                 </div>
 
-                <p className="ml-auto hidden shrink-0 items-center gap-1.5 text-[12px] text-[#6B7690] xl:flex">
+                <p className="ml-auto hidden shrink-0 items-center gap-1.5 text-[12px] text-[#5E6983] xl:flex">
                     <Tecla>↑</Tecla>
                     <Tecla>↓</Tecla>
                     <span>moverse</span>
@@ -90,7 +98,7 @@ export function ListaEstudiantes(p: Props) {
                 </p>
 
                 <div className="relative md:ml-auto md:w-[220px] xl:ml-0 2xl:w-[260px]">
-                    <ListFilter className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#6B7690]" />
+                    <ListFilter className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#5E6983]" />
                     <input
                         ref={p.campoFiltro}
                         type="search"
@@ -103,7 +111,7 @@ export function ListaEstudiantes(p: Props) {
                         aria-describedby="filtro-cuenta"
                         data-filtro
                         className={cn(
-                            'h-9 w-full rounded-[12px] border-[1.5px] border-[#E3E9F6] bg-white pl-9 text-sm transition outline-none placeholder:text-[#8C97B3] hover:border-[#D3DDF3] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] [&::-webkit-search-cancel-button]:hidden',
+                            'h-9 w-full rounded-[12px] border-[1.5px] border-[#E3E9F6] bg-white pl-9 text-sm transition outline-none placeholder:text-[#6B7690] hover:border-[#D3DDF3] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] [&::-webkit-search-cancel-button]:hidden',
                             hayTexto ? 'pr-[84px]' : 'pr-3',
                         )}
                     />
@@ -134,8 +142,9 @@ export function ListaEstudiantes(p: Props) {
                 ref={p.lista}
                 className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-color:#C4D2F1_transparent] [scrollbar-width:thin]"
             >
-                <Tabla filas={p.filas} columnas={p.columnas} seleccion={p.seleccion} buscadas={p.buscadas} onFila={p.onFila} />
+                <Tabla cargando={p.cargando} filas={p.filas} columnas={p.columnas} seleccion={p.seleccion} buscadas={p.buscadas} onFila={p.onFila} />
                 {p.filas.length === 0 &&
+                    !p.cargando &&
                     (p.grupos.length === 0 && p.total === 0 ? (
                         <Vacio titulo={`${p.grado?.nombre ?? 'Este grado'} no tiene estudiantes matriculados este año`} />
                     ) : (
@@ -152,11 +161,13 @@ export function ListaEstudiantes(p: Props) {
 
 /** Qué se está mirando (el grado o un grupo) y sus cifras de cupos. */
 function Alcance({
+    cargando,
     grado,
     grupos,
     grupo,
     onQuitarGrupo,
 }: {
+    cargando: boolean;
     grado: Grado | undefined;
     grupos: Grupo[];
     grupo: Grupo | undefined;
@@ -169,6 +180,15 @@ function Alcance({
     const nuevos = suma(alcance, 'nuevos');
     const libres = cupos - activos;
     const variasSedes = new Set(grupos.map((g) => g.sede_codigo)).size > 1;
+
+    if (cargando) {
+        return (
+            <div className="flex min-w-0 items-center gap-x-2.5">
+                <h2 className="text-[16px] font-semibold tracking-[-0.01em] whitespace-nowrap">{nombre}</h2>
+                <Esqueleto className="h-3 w-52" />
+            </div>
+        );
+    }
 
     return (
         <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1 md:flex-nowrap">
@@ -250,10 +270,12 @@ type Columna = {
     ancho: string;
     visible?: string;
     extra?: string;
+    /** Ancho de la barra en el esqueleto; null: celda vacía; sin él, variable. */
+    barra?: string | null;
     celda: (e: Estudiante, i: number, elegida: boolean, buscadas: string[]) => ReactNode;
 };
 
-const guion = <span className="text-[#8C97B3]">—</span>;
+const guion = <span className="text-[#6B7690]">—</span>;
 
 /** Las columnas que no distinguen nada en el grado (una sola sede, una jornada, sin modalidad) no aparecen. */
 function armarColumnas(c: Columnas): Columna[] {
@@ -263,7 +285,8 @@ function armarColumnas(c: Columnas): Columna[] {
             ancho: 'w-12',
             visible: 'hidden sm:table-cell',
             extra: 'pr-2 pl-5 text-right',
-            celda: (_e, i) => <span className="text-[13px] text-[#6B7690] tabular-nums">{i + 1}</span>,
+            barra: 'ml-auto w-4',
+            celda: (_e, i) => <span className="text-[13px] text-[#5E6983] tabular-nums">{i + 1}</span>,
         },
         {
             titulo: 'Estudiante',
@@ -285,6 +308,7 @@ function armarColumnas(c: Columnas): Columna[] {
             titulo: 'Documento',
             ancho: 'w-[172px]',
             visible: 'hidden md:table-cell',
+            barra: 'w-28',
             celda: (e, _i, _el, b) => (
                 <span className="whitespace-nowrap text-[#3E4A68] tabular-nums">
                     <span className="mr-1.5 text-[13px] text-[#56627F]">{e.tipo_documento}</span>
@@ -295,12 +319,14 @@ function armarColumnas(c: Columnas): Columna[] {
         {
             titulo: 'Grupo',
             ancho: 'w-[76px]',
+            barra: 'w-9',
             celda: (e) => <span className="font-semibold text-[#16223F] tabular-nums">{e.grupo ?? '—'}</span>,
         },
         c.sede && {
             titulo: 'Sede',
             ancho: 'w-[148px]',
             visible: 'hidden lg:table-cell',
+            barra: 'w-20',
             celda: (e) => (
                 <span className="flex min-w-0 items-center gap-2 text-[#3E4A68]" title={e.sede}>
                     <PuntoSede codigo={e.sede_codigo} />
@@ -312,12 +338,14 @@ function armarColumnas(c: Columnas): Columna[] {
             titulo: 'Jornada',
             ancho: 'w-[92px]',
             visible: 'hidden lg:table-cell',
+            barra: 'w-12',
             celda: (e) => <span className={e.jornada === 'Tarde' ? 'font-medium text-[#8A5A0B]' : 'text-[#3E4A68]'}>{e.jornada ?? '—'}</span>,
         },
         c.modalidad && {
             titulo: 'Modalidad',
             ancho: 'w-[140px]',
             visible: 'hidden lg:table-cell',
+            barra: 'w-20',
             celda: (e) => (e.modalidad ? <span className="block truncate text-[#3E4A68]">{e.modalidad}</span> : guion),
         },
         {
@@ -337,6 +365,7 @@ function armarColumnas(c: Columnas): Columna[] {
             titulo: 'Teléfono',
             ancho: 'w-[136px]',
             visible: 'hidden sm:table-cell',
+            barra: 'w-24',
             celda: (e) =>
                 e.telefono ? (
                     <a
@@ -354,6 +383,7 @@ function armarColumnas(c: Columnas): Columna[] {
             titulo: 'Situación',
             ancho: 'w-[104px] sm:w-[120px]',
             extra: 'pr-4 sm:pr-5',
+            barra: null,
             // Solo lo que se sale de "activo y antiguo".
             celda: (e) =>
                 e.estado !== 'activo' ? (
@@ -372,12 +402,14 @@ export const th = `sticky top-0 z-10 h-[30px] border-b border-[#E3E9F6] bg-white
 export const td = `h-9 border-b border-[#EEF2F9] px-3 align-middle transition-colors duration-150 ${alto}:h-10`;
 
 function Tabla({
+    cargando,
     filas,
     columnas,
     seleccion,
     buscadas,
     onFila,
 }: {
+    cargando: boolean;
     filas: Estudiante[];
     columnas: Columnas;
     seleccion: number | null;
@@ -403,11 +435,15 @@ function Tabla({
                     ))}
                 </tr>
             </thead>
-            <tbody>
-                {filas.map((e, i) => (
-                    <Fila key={e.id} estudiante={e} indice={i} columnas={cols} elegida={e.id === seleccion} buscadas={buscadas} onFila={onFila} />
-                ))}
-            </tbody>
+            {cargando ? (
+                <FilasEsqueleto celdas={cols.map((k) => ({ clase: cn(td, k.visible, k.extra), barra: k.barra }))} />
+            ) : (
+                <tbody>
+                    {filas.map((e, i) => (
+                        <Fila key={e.id} estudiante={e} indice={i} columnas={cols} elegida={e.id === seleccion} buscadas={buscadas} onFila={onFila} />
+                    ))}
+                </tbody>
+            )}
         </table>
     );
 }

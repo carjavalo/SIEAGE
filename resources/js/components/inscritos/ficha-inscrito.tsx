@@ -128,7 +128,7 @@ export function BloquesSolicitud({ solicitud: s, padres }: { solicitud: Ficha['s
 
             <Bloque titulo="Residencia">
                 <p className="flex items-start gap-1.5 text-[14px] text-[#16223F]">
-                    <MapPin className="mt-0.5 size-4 shrink-0 text-[#6B7690]" />
+                    <MapPin className="mt-0.5 size-4 shrink-0 text-[#5E6983]" />
                     {[s.direccion, s.barrio].filter(Boolean).join(' · ')}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[14px]">
@@ -186,7 +186,7 @@ function Datos({ children }: { children: ReactNode }) {
 function Dato({ etiqueta, ancho, children }: { etiqueta: string; ancho?: boolean; children: ReactNode }) {
     return (
         <div className={ancho ? 'col-span-2 min-w-0' : 'min-w-0'}>
-            <dt className="text-[13px] text-[#6B7690]">{etiqueta}</dt>
+            <dt className="text-[13px] text-[#5E6983]">{etiqueta}</dt>
             <dd className="mt-0.5 text-[14px] break-words text-[#16223F]">{children || '—'}</dd>
         </div>
     );

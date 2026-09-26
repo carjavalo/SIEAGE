@@ -102,7 +102,7 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
                                 <span className={`text-[15px] font-semibold tracking-[-0.01em] whitespace-nowrap ${alto}:text-[16px]`}>
                                     {r.nombre ? nombreRol(r.nombre) : 'Todos'}
                                 </span>
-                                <span className={cn('text-[13px] tabular-nums', actual ? 'text-[#5B7BD0]' : 'text-[#56627F]')}>{conteo(r.id)}</span>
+                                <span className={cn('text-[13px] tabular-nums', actual ? 'text-[#4863B8]' : 'text-[#56627F]')}>{conteo(r.id)}</span>
                             </button>
                         );
                     })}
@@ -110,7 +110,7 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
 
                 <div className="ml-auto flex w-full items-center gap-3 sm:w-auto">
                     <div className="relative min-w-0 flex-1 sm:w-[260px] 2xl:w-[300px]">
-                        <Search className="pointer-events-none absolute top-1/2 left-3.5 size-[18px] -translate-y-1/2 text-[#6B7690]" />
+                        <Search className="pointer-events-none absolute top-1/2 left-3.5 size-[18px] -translate-y-1/2 text-[#5E6983]" />
                         <input
                             ref={campoFiltro}
                             type="search"
@@ -120,7 +120,7 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
                             onChange={(e) => setFiltro(e.target.value)}
                             placeholder="Buscar nombre o usuario"
                             aria-label="Buscar usuario por nombre, usuario o correo"
-                            className={`h-10 w-full rounded-[14px] border-[1.5px] border-[#D3DDF3] bg-white pr-10 pl-10 text-[15px] text-[#16223F] shadow-[0_1px_2px_rgba(22,34,63,0.05)] transition outline-none placeholder:text-[#8C97B3] hover:border-[#B7C6EA] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] [&::-webkit-search-cancel-button]:hidden ${alto}:h-11`}
+                            className={`h-10 w-full rounded-[14px] border-[1.5px] border-[#D3DDF3] bg-white pr-10 pl-10 text-[15px] text-[#16223F] shadow-[0_1px_2px_rgba(22,34,63,0.05)] transition outline-none placeholder:text-[#6B7690] hover:border-[#B7C6EA] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] [&::-webkit-search-cancel-button]:hidden ${alto}:h-11`}
                         />
                         {filtro ? (
                             <button
@@ -182,12 +182,12 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
                                         )}
                                     >
                                         {nombre}
-                                        <span className={cn('tabular-nums', on ? 'text-[#5B7BD0]' : 'text-[#6B7690]')}>{n}</span>
+                                        <span className={cn('tabular-nums', on ? 'text-[#4863B8]' : 'text-[#5E6983]')}>{n}</span>
                                     </button>
                                 );
                             })}
                         </div>
-                        <p className="ml-auto hidden shrink-0 items-center gap-1.5 text-[12px] text-[#6B7690] xl:flex">
+                        <p className="ml-auto hidden shrink-0 items-center gap-1.5 text-[12px] text-[#5E6983] xl:flex">
                             <Tecla>/</Tecla>
                             <span>buscar</span>
                             <Tecla className="ml-1.5 px-1">Esc</Tecla>
@@ -253,6 +253,7 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
                                                 >
                                                     <span className="flex min-w-0 items-center gap-3">
                                                         <span
+                                                            aria-hidden
                                                             className={cn(
                                                                 'flex size-8 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold',
                                                                 u.activo ? 'bg-[#EEF2FB] text-[#1E3A7B]' : 'bg-[#F1F2F6] text-[#8C97B3]',
@@ -286,7 +287,7 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
                                                     {u.email ? (
                                                         <Resaltado texto={u.email} buscadas={buscadas} />
                                                     ) : (
-                                                        <span className="text-[#8C97B3]">—</span>
+                                                        <span className="text-[#6B7690]">—</span>
                                                     )}
                                                 </td>
                                                 <td className={cn(celda, 'hidden text-[#56627F] sm:table-cell')}>{haceCuanto(u.ultimo_acceso)}</td>

@@ -34,7 +34,6 @@ import { cn } from '@/lib/utils';
 import { Head, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, ArrowRight, Check, Clock, HeartPulse, IdCard, Pencil, UserPlus } from 'lucide-react';
 import { type FormEvent, type ReactNode, type RefObject, useEffect, useMemo, useRef, useState } from 'react';
-import { sileo } from 'sileo';
 
 type Props = {
     anioLectivo: number;
@@ -95,6 +94,9 @@ function mensajeDeError(e: unknown) {
 /** Los campos de texto del formulario (todos menos la casilla de autorización). */
 type CampoDeTexto = { [K in Campo]: DatosInscripcion[K] extends string ? K : never }[Campo];
 
+/** Sileo, cuando haga falta (ver `aviso` en la página). */
+const avisos = () => import('sileo').then((m) => m.sileo);
+
 export default function Inscripcion({ anioLectivo, grados, parentescos, barrios, sello }: Props) {
     const form = useForm<DatosInscripcion>({ ...DATOS_VACIOS, sello });
     const { data, errors, processing } = form;
@@ -107,12 +109,15 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios,
     const titulo = useRef<HTMLHeadingElement>(null);
     const erroresPorEnfocar = useRef<Errores | null>(null);
     const montado = useRef(false);
-    const aviso = useRef<string | null>(null);
+    // Los avisos (Sileo) no van en la carga de esta página, la primera que ven las
+    // familias: se piden al mostrarlos (app.tsx ya los está trayendo). Por eso el
+    // id del aviso abierto es una promesa.
+    const aviso = useRef<Promise<string> | null>(null);
     const enviando = useRef(false);
 
     /** Retira el toast de "faltan datos" en cuanto deja de ser cierto. */
     const quitarAviso = () => {
-        if (aviso.current) sileo.dismiss(aviso.current);
+        aviso.current?.then((id) => avisos().then((s) => s.dismiss(id)));
         aviso.current = null;
     };
 
@@ -197,10 +202,12 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios,
         enfocarPrimerError(errs);
         const n = Object.keys(errs).length;
         quitarAviso();
-        aviso.current = sileo.warning({
-            title: n === 1 ? 'Falta un dato' : `Faltan ${n} datos`,
-            description: 'Los marcamos en rojo para que los revises.',
-        });
+        aviso.current = avisos().then((s) =>
+            s.warning({
+                title: n === 1 ? 'Falta un dato' : `Faltan ${n} datos`,
+                description: 'Los marcamos en rojo para que los revises.',
+            }),
+        );
     };
 
     const avanzar = () => {
@@ -259,11 +266,13 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios,
             });
         })();
 
-        sileo.promise(envio, {
-            loading: { title: 'Enviando inscripción…' },
-            success: { title: 'Inscripción enviada', description: 'La secretaría la revisará pronto.' },
-            error: mensajeDeError,
-        });
+        avisos().then((s) =>
+            s.promise(envio, {
+                loading: { title: 'Enviando inscripción…' },
+                success: { title: 'Inscripción enviada', description: 'La secretaría la revisará pronto.' },
+                error: mensajeDeError,
+            }),
+        );
 
         envio
             .then(() => {
@@ -313,10 +322,7 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios,
 
     return (
         <>
-            <Head title="Inscripción">
-                <link rel="preconnect" href="https://fonts.bunny.net" />
-                <link href="https://fonts.bunny.net/css?family=outfit:400,500,600" rel="stylesheet" />
-            </Head>
+            <Head title="Inscripción" />
 
             <div className="grid min-h-screen bg-white p-4 font-['Outfit',ui-sans-serif,system-ui,sans-serif] text-[#16223F] lg:grid-cols-[400px_minmax(0,1fr)] lg:gap-4 xl:grid-cols-[460px_minmax(0,1fr)]">
                 <PanelLateral anio={anioLectivo} actual={paso} alcanzado={alcanzado} onIr={irA} />

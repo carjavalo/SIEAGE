@@ -1,3 +1,4 @@
+import { TarjetasEsqueleto } from '@/components/esqueleto';
 import { Cabecera } from '@/components/estudiantes/cabecera';
 import { sedeInfo } from '@/components/estudiantes/etiquetas';
 import { FichaEstudiante } from '@/components/estudiantes/ficha-estudiante';
@@ -5,6 +6,7 @@ import { ListaEstudiantes } from '@/components/estudiantes/lista-estudiantes';
 import { TableroGrupos } from '@/components/estudiantes/tablero-grupos';
 import { VeloFicha } from '@/components/ficha';
 import { useListaConFicha } from '@/hooks/use-lista-con-ficha';
+import { useNavegando } from '@/hooks/use-navegando';
 import PanelLayout from '@/layouts/panel-layout';
 import {
     type Estudiante,
@@ -35,7 +37,8 @@ type Props = {
 /**
  * Tablero del grado: grados arriba, los grupos en tarjetas y la lista con la
  * ficha del estudiante elegido. Cambiar de grado o de año es una visita nueva
- * (router.get), así que todo este estado vuelve a empezar solo.
+ * (router.get), así que todo este estado vuelve a empezar solo. Mientras llega,
+ * el grado pulsado ya se ve elegido y, si tarda, tarjetas y filas en esqueleto.
  */
 export default function Estudiantes({ anios, anio, grados, gradoId, totales, grupos: gruposServidor, estudiantes, busqueda, detalle }: Props) {
     // Si la URL trae ?ver= (p. ej. desde la búsqueda global), se abre con esa ficha.
@@ -45,6 +48,9 @@ export default function Estudiantes({ anios, anio, grados, gradoId, totales, gru
     const [filtro, setFiltro] = useState('');
     const campoFiltro = useRef<HTMLInputElement>(null);
     const campoBusqueda = useRef<HTMLInputElement>(null);
+    const { destino, navegando } = useNavegando();
+    const gradoDestino = Number(destino?.get('grado')) || gradoId;
+    const anioDestino = Number(destino?.get('anio')) || anio;
 
     // activos, nuevos y cupos llegan como texto (son SUM en MySQL). Orden: por sede y luego por código.
     const grupos = useMemo(
@@ -57,7 +63,7 @@ export default function Estudiantes({ anios, anio, grados, gradoId, totales, gru
                 ),
         [gruposServidor],
     );
-    const grado = grados.find((g) => g.id === gradoId);
+    const grado = grados.find((g) => g.id === (navegando ? gradoDestino : gradoId));
     const grupo = grupos.find((g) => g.id === grupoId);
 
     const buscadas = useMemo(() => palabras(filtro), [filtro]);
@@ -113,28 +119,33 @@ export default function Estudiantes({ anios, anio, grados, gradoId, totales, gru
         <PanelLayout titulo="Estudiantes" completa>
             <Cabecera
                 anios={anios}
-                anio={anio}
+                anio={anioDestino}
                 grados={grados}
-                gradoId={gradoId}
+                gradoId={gradoDestino}
                 totales={totales}
                 busqueda={busqueda}
                 entrada={campoBusqueda}
                 onElegir={irAResultado}
             />
 
-            <TableroGrupos
-                grupos={grupos}
-                estudiantes={estudiantes}
-                grupoId={grupoId}
-                anio={anio}
-                onElegir={(id) => {
-                    setGrupoId(id);
-                    ficha.alInicio();
-                }}
-            />
+            {navegando ? (
+                <TarjetasEsqueleto n={Number(grado?.grupos ?? 4)} />
+            ) : (
+                <TableroGrupos
+                    grupos={grupos}
+                    estudiantes={estudiantes}
+                    grupoId={grupoId}
+                    anio={anio}
+                    onElegir={(id) => {
+                        setGrupoId(id);
+                        ficha.alInicio();
+                    }}
+                />
+            )}
 
             <div className="relative mt-1.5 flex min-h-[420px] flex-col lg:min-h-0 lg:flex-1 lg:flex-row [@media(min-height:860px)]:mt-3">
                 <ListaEstudiantes
+                    cargando={navegando}
                     grado={grado}
                     grupos={grupos}
                     grupo={grupo}

@@ -186,7 +186,7 @@ export default function ElegirGrupo({ solicitud: s, padres, matricula, anio, gra
                                                         </b>
                                                         <span className="text-[16px] text-[#56627F]">/{g.cupos}</span>
                                                     </span>
-                                                    <span className="block text-[12px] text-[#6B7690]">estudiantes</span>
+                                                    <span className="block text-[12px] text-[#5E6983]">estudiantes</span>
                                                 </span>
                                             </span>
                                             <Barra
@@ -202,7 +202,7 @@ export default function ElegirGrupo({ solicitud: s, padres, matricula, anio, gra
                                             </span>
                                             <span className="mt-1 flex items-center justify-between gap-2 text-[13px] text-[#3E4A68]">
                                                 <span className="min-w-0 truncate">
-                                                    <span className="text-[#6B7690]">Dir.</span> {g.director ?? 'Sin director asignado'}
+                                                    <span className="text-[#5E6983]">Dir.</span> {g.director ?? 'Sin director asignado'}
                                                 </span>
                                                 {masLibre?.id === g.id && grupos.length > 1 && (
                                                     <span className="shrink-0 rounded-full bg-[#E3F4EC] px-2 py-0.5 text-[12px] font-medium text-[#1C6B4A]">

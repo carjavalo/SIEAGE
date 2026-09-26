@@ -3,15 +3,15 @@ import ConfiguracionLayout from '@/layouts/configuracion-layout';
 import { haceCuanto, inicialesPersona, nombreRol, puntoRol } from '@/lib/usuarios';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
-import { Link, useForm, usePage } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 import { Lock } from 'lucide-react';
 import { type FormEventHandler } from 'react';
 import { sileo } from 'sileo';
 
-type Props = { mustVerifyEmail: boolean; status?: string; rol: string | null };
+type Props = { rol: string | null };
 
 /** Mi perfil: nombre y correo. El usuario con que se ingresa solo lo cambia un administrador. */
-export default function Perfil({ mustVerifyEmail, status, rol }: Props) {
+export default function Perfil({ rol }: Props) {
     const { auth } = usePage<SharedData>().props;
     const yo = auth.user;
     const form = useForm({ name: yo.name, email: yo.email ?? '' });
@@ -63,7 +63,7 @@ export default function Perfil({ mustVerifyEmail, status, rol }: Props) {
                     </div>
                     <Campo id="usuario" etiqueta="Usuario para ingresar" ayuda="Solo un administrador puede cambiarlo, desde Usuarios.">
                         <div className="relative">
-                            <input id="usuario" value={yo.usuario} disabled className={cn(claseCampo, 'pr-10')} />
+                            <input id="usuario" value={yo.usuario} disabled aria-describedby="usuario-ayuda" className={cn(claseCampo, 'pr-10')} />
                             <Lock aria-hidden className="absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-[#8C97B3]" />
                         </div>
                     </Campo>
@@ -79,23 +79,6 @@ export default function Perfil({ mustVerifyEmail, status, rol }: Props) {
                             className={claseCampo}
                         />
                     </Campo>
-
-                    {mustVerifyEmail && yo.email_verified_at === null && (
-                        <p className="rounded-[16px] bg-[#FFF7E8] px-4 py-3 text-[14px] text-[#6B4A0E] sm:col-span-2">
-                            Tu correo no está verificado.{' '}
-                            <Link
-                                href={route('verification.send')}
-                                method="post"
-                                as="button"
-                                className="cursor-pointer font-semibold underline underline-offset-4"
-                            >
-                                Enviar de nuevo el enlace de verificación
-                            </Link>
-                            {status === 'verification-link-sent' && (
-                                <span className="mt-1 block font-medium text-[#1C6B4A]">Te enviamos un enlace nuevo.</span>
-                            )}
-                        </p>
-                    )}
                 </div>
 
                 <div className="flex flex-wrap items-center justify-end gap-3 border-t border-[#EEF2F9] px-6 py-3.5">

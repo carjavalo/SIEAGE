@@ -8,7 +8,7 @@ import { type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, us
  */
 
 const CAMPO =
-    'h-[52px] w-full rounded-[14px] border-[1.5px] bg-white px-4 text-[15px] text-[#16223F] outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-[#8C97B3] focus:ring-4';
+    'h-[52px] w-full rounded-[14px] border-[1.5px] bg-white px-4 text-[15px] text-[#16223F] outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-[#6B7690] focus:ring-4';
 const CAMPO_NORMAL = 'border-[#D3DDF3] hover:border-[#B9C8EC] focus:border-[#6E8BD6] focus:ring-[#DCE5F8]';
 const CAMPO_ERROR = 'border-[#F0B4AB] focus:border-[#E0897D] focus:ring-[#FDECEA]';
 
@@ -28,7 +28,7 @@ function Etiqueta({ htmlFor, id, children, opcional }: { htmlFor?: string; id?: 
     const contenido = (
         <>
             {children}
-            {opcional && <span className="text-[13px] font-normal text-[#8C97B3]">Opcional</span>}
+            {opcional && <span className="text-[13px] font-normal text-[#6B7690]">Opcional</span>}
         </>
     );
     // Un grupo de radios no tiene un único control al que apuntar: su título
@@ -93,7 +93,19 @@ type CampoTextoProps = {
     numerico?: boolean;
 } & Omit<InputHTMLAttributes<HTMLInputElement>, 'id' | 'value' | 'onChange'>;
 
-export function CampoTexto({ id, etiqueta, valor, onCambio, error, ayuda, opcional, ancho = 'medio', numerico, maxLength, ...resto }: CampoTextoProps) {
+export function CampoTexto({
+    id,
+    etiqueta,
+    valor,
+    onCambio,
+    error,
+    ayuda,
+    opcional,
+    ancho = 'medio',
+    numerico,
+    maxLength,
+    ...resto
+}: CampoTextoProps) {
     return (
         <div className={cn('flex flex-col gap-2', ancho === 'completo' && 'sm:col-span-2')}>
             <Etiqueta htmlFor={id} opcional={opcional}>
@@ -224,7 +236,7 @@ export function Opciones({ id, etiqueta, opciones, valor, onCambio, error, ayuda
                                 />
                             </span>
                             <span className="min-w-0">{opcion.etiqueta}</span>
-                            {opcion.detalle && <span className="ml-auto pl-2 text-[13px] font-normal text-[#8C97B3]">{opcion.detalle}</span>}
+                            {opcion.detalle && <span className="ml-auto pl-2 text-[13px] font-normal text-[#5E6983]">{opcion.detalle}</span>}
                         </label>
                     );
                 })}
