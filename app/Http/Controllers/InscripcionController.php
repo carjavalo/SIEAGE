@@ -21,14 +21,21 @@ class InscripcionController extends Controller
      */
     public function create(): Response
     {
+        $anio = DB::table('anios_lectivos')->where('estado', 'activo')->value('anio') ?? (int) date('Y');
+
         return Inertia::render('inscripcion/create', [
-            'anioLectivo' => DB::table('anios_lectivos')->where('estado', 'activo')->value('anio') ?? (int) date('Y'),
+            'anioLectivo' => $anio,
             'grados' => DB::table('grados')->orderBy('numero')->get(['id', 'numero', 'nombre']),
             'parentescos' => DB::table('parentescos')->orderBy('id')->pluck('nombre'),
             'barrios' => DB::table('barrios')->orderBy('nombre')->pluck('nombre'),
             // Hora en que se abrió el formulario, cifrada: ver esRobot().
             'sello' => Crypt::encryptString((string) now()->getTimestamp()),
-        ]);
+        ])->withViewData(['meta' => [
+            // Lo que se ve al compartir el enlace (WhatsApp, correo) y en un buscador.
+            'titulo' => "Inscripciones {$anio} · I.E. Alfonso López Pumarejo",
+            'descripcion' => 'Inscribe a tu hijo o hija en la I.E. Alfonso López Pumarejo (Cali). Son cinco pasos: datos del estudiante, grado, residencia, acudiente y revisión.',
+            'indexar' => true,
+        ]]);
     }
 
     /**

@@ -9,6 +9,7 @@ import {
     Seccion,
 } from '@/components/inscripcion/controles';
 import { BarraMovil, PanelLateral } from '@/components/inscripcion/progreso';
+import { SaltarAlContenido } from '@/components/saltar-al-contenido';
 import {
     type Campo,
     CAMPOS_COMPARTIDOS_ENTRE_HERMANOS,
@@ -325,9 +326,10 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios,
             <Head title="Inscripción" />
 
             <div className="grid min-h-screen bg-white p-4 font-['Outfit',ui-sans-serif,system-ui,sans-serif] text-[#16223F] lg:grid-cols-[400px_minmax(0,1fr)] lg:gap-4 xl:grid-cols-[460px_minmax(0,1fr)]">
+                <SaltarAlContenido />
                 <PanelLateral anio={anioLectivo} actual={paso} alcanzado={alcanzado} onIr={irA} />
 
-                <main className="flex min-w-0 flex-col">
+                <main id="contenido" tabIndex={-1} className="flex min-w-0 flex-col outline-none">
                     <BarraMovil actual={paso} />
 
                     <div className={cn('flex flex-1 justify-center px-1 py-10 sm:px-8 lg:py-16', !enPasos && 'lg:items-center')}>
