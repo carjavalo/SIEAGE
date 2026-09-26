@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as RespuestaHttp;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -19,19 +20,24 @@ class AuthenticatedSessionController extends Controller
     {
         return Inertia::render('auth/login', [
             'status' => $request->session()->get('status'),
-        ]);
+        ])->withViewData(['meta' => [
+            'descripcion' => 'Acceso al sistema de gestión académica de la I.E. Alfonso López Pumarejo.',
+            'indexar' => false,
+        ]]);
     }
 
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(LoginRequest $request): RespuestaHttp
     {
         $request->authenticate();
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('estudiantes.index', absolute: false));
+        // Recarga completa, no una visita de Inertia: la página del login solo trae las
+        // rutas públicas (ver @routes en app.blade.php) y el panel necesita todas.
+        return Inertia::location(redirect()->intended(route('estudiantes.index', absolute: false))->getTargetUrl());
     }
 
     /**

@@ -87,6 +87,16 @@ class InscripcionTest extends TestCase
                 ->has('parentescos', 9));
     }
 
+    public function test_el_enlace_compartido_tiene_descripcion_y_vista_previa()
+    {
+        $html = $this->get('/inscripcion')->assertOk()->getContent();
+
+        $this->assertStringContainsString('<title inertia>Inscripciones 2026 · I.E. Alfonso López Pumarejo</title>', $html);
+        $this->assertStringContainsString('<meta name="description" content="Inscribe a tu hijo o hija', $html);
+        $this->assertStringContainsString('<meta property="og:title" content="Inscripciones 2026', $html);
+        $this->assertStringNotContainsString('noindex', $html);
+    }
+
     public function test_guarda_la_inscripcion_como_solicitud_pendiente()
     {
         $this->post('/inscripcion', $this->datos())

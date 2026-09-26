@@ -32,7 +32,7 @@ function Volver({ compacto }: { compacto?: boolean }) {
 export function Marca({ compacta }: { compacta?: boolean }) {
     return (
         <div className="flex items-center gap-3">
-            <img src="/sieage-logo.png" alt="SIEAGE" className={cn('w-auto rounded-lg object-contain shadow-sm', compacta ? 'h-11' : 'h-16')} />
+            <img src="/sieage-logo.webp" alt="SIEAGE" className={cn('w-auto rounded-lg object-contain shadow-sm', compacta ? 'h-11' : 'h-16')} />
             <div className="leading-tight">
                 <p className={cn('font-semibold tracking-tight', compacta ? 'text-base' : 'text-xl')}>SIEAGE</p>
             </div>

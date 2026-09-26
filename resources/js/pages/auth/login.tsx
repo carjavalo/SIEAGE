@@ -42,7 +42,7 @@ export default function Login({ status }: { status?: string }) {
         <>
             <Head title="Ingresar" />
 
-            <div className="grid min-h-screen bg-white p-4 font-['Outfit',ui-sans-serif,system-ui,sans-serif] text-[#16223F] lg:grid-cols-2 lg:gap-4">
+            <main className="grid min-h-screen bg-white p-4 font-['Outfit',ui-sans-serif,system-ui,sans-serif] text-[#16223F] lg:grid-cols-2 lg:gap-4">
                 {/* ------------------------------------------------ panel de marca */}
                 <section className="relative hidden flex-col overflow-hidden rounded-[32px] bg-gradient-to-b from-[#EEF2FB] to-[#DCE5F8] p-12 lg:flex">
                     <div aria-hidden className="pointer-events-none absolute -top-28 -right-24 size-80 rounded-full bg-white/60 blur-3xl" />
@@ -59,7 +59,7 @@ export default function Login({ status }: { status?: string }) {
                                 <div aria-hidden className="absolute inset-x-4 top-10 bottom-0 rounded-[28px] bg-[#1E3A7B]/30 blur-2xl" />
                                 {/* 188 px = alto real del archivo: se ve nítido, sin estirar. */}
                                 <img
-                                    src="/sieage-logo.png"
+                                    src="/sieage-logo.webp"
                                     alt="SIEAGE ADES versión 1.5, edición azul"
                                     className="animate-flotar relative h-[188px] w-auto rounded-[16px] shadow-[0_30px_60px_-24px_rgba(22,34,63,0.55)] ring-1 ring-white/70 motion-reduce:animate-none"
                                 />
@@ -68,12 +68,12 @@ export default function Login({ status }: { status?: string }) {
                     </div>
 
                     <div className="relative space-y-6">
-                        <h1
+                        <p
                             className={cn('max-w-lg text-[44px] leading-[1.08] font-semibold tracking-[-0.03em] text-balance xl:text-5xl', aparecer)}
                             style={tras(250)}
                         >
                             La información de tus estudiantes, en un solo lugar.
-                        </h1>
+                        </p>
                         <div className={cn('flex flex-wrap gap-2.5', aparecer)} style={tras(350)}>
                             {modulos.map(({ nombre, icono: Icono, color }) => (
                                 <span
@@ -92,7 +92,7 @@ export default function Login({ status }: { status?: string }) {
                 <section className="flex items-center justify-center px-2 py-10 sm:px-12 lg:py-4">
                     <div className="flex w-full max-w-[400px] flex-col gap-7">
                         <div className={cn('flex items-center gap-3 lg:hidden', aparecer)}>
-                            <img src="/sieage-logo.png" alt="" className="h-14 w-auto rounded-lg object-contain shadow-sm" />
+                            <img src="/sieage-logo.webp" alt="" className="h-14 w-auto rounded-lg object-contain shadow-sm" />
                             <div className="leading-tight">
                                 <p className="text-xl font-semibold tracking-tight">SIEAGE</p>
                                 <p className="text-[13px] text-[#56627F]">Sistema de gestión académica</p>
@@ -101,7 +101,7 @@ export default function Login({ status }: { status?: string }) {
 
                         <form onSubmit={submit} className="flex flex-col gap-6">
                             <div className={cn('space-y-2', aparecer)} style={tras(100)}>
-                                <h2 className="text-[32px] leading-tight font-semibold tracking-[-0.02em]">Bienvenido de nuevo</h2>
+                                <h1 className="text-[32px] leading-tight font-semibold tracking-[-0.02em]">Bienvenido de nuevo</h1>
                                 <p className="text-base text-[#56627F]">Ingresa con el usuario y la clave que te asignaron.</p>
                             </div>
 
@@ -227,7 +227,7 @@ export default function Login({ status }: { status?: string }) {
                         </div>
                     </div>
                 </section>
-            </div>
+            </main>
         </>
     );
 }

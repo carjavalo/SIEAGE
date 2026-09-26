@@ -1,5 +1,6 @@
 import { Lavado } from '@/components/lavado';
 import { MenuUsuario } from '@/components/menu-usuario';
+import { SaltarAlContenido } from '@/components/saltar-al-contenido';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
@@ -45,11 +46,12 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
             <Head title={titulo} />
 
             <div className="min-h-screen bg-[#F5F7FC] font-['Outfit',ui-sans-serif,system-ui,sans-serif] text-[#16223F] print:bg-white">
+                <SaltarAlContenido />
                 <header className="sticky top-0 z-30 border-b border-[#E3E9F6] bg-white/90 backdrop-blur print:hidden">
                     {/* El mismo ancho que <main> en todas las páginas: el logo y el menú nunca se corren al cambiar de página. */}
                     <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-3 px-4 md:gap-6 md:px-8 2xl:max-w-[1760px]">
                         <Link href="/estudiantes" className="flex shrink-0 items-center gap-3">
-                            <img src="/sieage-logo.png" alt="SIEAGE" className="h-10 w-auto rounded-md object-contain" />
+                            <img src="/sieage-logo.webp" alt="SIEAGE" className="h-10 w-auto rounded-md object-contain" />
                             <div className="hidden leading-tight sm:block">
                                 <p className="text-[15px] font-semibold tracking-tight">SIEAGE</p>
                                 <p className="text-xs text-[#56627F]">I.E. Alfonso López Pumarejo</p>
@@ -97,7 +99,10 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
                 <Lavado />
 
                 <main
+                    id="contenido"
+                    tabIndex={-1}
                     className={cn(
+                        'outline-none',
                         // Ancho y margen de arriba iguales en todas las páginas: el título queda
                         // siempre en el mismo sitio. En pantallas bajas (portátiles) el margen se
                         // recorta para que quepa más.
