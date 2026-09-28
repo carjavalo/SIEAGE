@@ -47,6 +47,8 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
                 // Para mostrar el menú "Usuarios" solo a quien puede usarlo.
                 'puedeGestionarUsuarios' => fn () => (bool) $request->user()?->can('gestionar-usuarios'),
+                'puedePromover' => fn () => (bool) $request->user()?->can('promover-estudiantes'),
+                'puedeDeshabilitar' => fn () => (bool) $request->user()?->can('gestionar-matriculas'),
             ],
             // Para el aviso del menú "Inscritos": solo con sesión iniciada.
             'inscritosPendientes' => fn () => $request->user()
@@ -54,6 +56,8 @@ class HandleInertiaRequests extends Middleware
                 : 0,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
+                // Resumen de la última promoción, para el aviso (toast) en pantalla.
+                'promocion' => fn () => $request->session()->get('promocion'),
             ],
         ]);
     }

@@ -4,7 +4,7 @@ import { type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, us
 
 /**
  * Controles propios del formulario público. Siguen los tokens del login
- * (Outfit, verde #1E3A7B, bordes #D3DDF3) y no dependen de shadcn.
+ * (Roboto, azul #1E3A7B, bordes #D3DDF3) y no dependen de shadcn.
  */
 
 const CAMPO =

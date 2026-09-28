@@ -42,12 +42,9 @@ export default function Login({ status }: { status?: string }) {
         <>
             <Head title="Ingresar" />
 
-            <main className="grid min-h-screen bg-white p-4 font-['Outfit',ui-sans-serif,system-ui,sans-serif] text-[#16223F] lg:grid-cols-2 lg:gap-4">
+            <main className="grid min-h-screen bg-white p-4 font-sans text-[#16223F] lg:grid-cols-2 lg:gap-4">
                 {/* ------------------------------------------------ panel de marca */}
-                <section className="relative hidden flex-col overflow-hidden rounded-[32px] bg-gradient-to-b from-[#EEF2FB] to-[#DCE5F8] p-12 lg:flex">
-                    <div aria-hidden className="pointer-events-none absolute -top-28 -right-24 size-80 rounded-full bg-white/60 blur-3xl" />
-                    <div aria-hidden className="pointer-events-none absolute -bottom-36 -left-24 size-96 rounded-full bg-[#C4D2F1]/70 blur-3xl" />
-
+                <section className="relative hidden flex-col overflow-hidden rounded-[32px] bg-[#EEF2FB] p-12 lg:flex">
                     <div className={cn('relative flex items-baseline gap-2.5', aparecer)}>
                         <p className="text-xl font-semibold tracking-tight">SIEAGE</p>
                         <p className="text-[13px] text-[#56627F]">Sistema de gestión académica</p>
@@ -56,7 +53,6 @@ export default function Login({ status }: { status?: string }) {
                     <div className="relative flex flex-1 items-center justify-center py-10 [@media(max-height:760px)]:py-5">
                         <div className={cn(aparecer, 'zoom-in-95')} style={tras(150)}>
                             <div className="relative">
-                                <div aria-hidden className="absolute inset-x-4 top-10 bottom-0 rounded-[28px] bg-[#1E3A7B]/30 blur-2xl" />
                                 {/* 188 px = alto real del archivo: se ve nítido, sin estirar. */}
                                 <img
                                     src="/sieage-logo.webp"
@@ -101,7 +97,7 @@ export default function Login({ status }: { status?: string }) {
 
                         <form onSubmit={submit} className="flex flex-col gap-6">
                             <div className={cn('space-y-2', aparecer)} style={tras(100)}>
-                                <h1 className="text-[32px] leading-tight font-semibold tracking-[-0.02em]">Bienvenido de nuevo</h1>
+                                <h1 className="text-[32px] leading-tight font-bold tracking-[-0.02em]">Bienvenido de nuevo</h1>
                                 <p className="text-base text-[#56627F]">Ingresa con el usuario y la clave que te asignaron.</p>
                             </div>
 
@@ -182,7 +178,7 @@ export default function Login({ status }: { status?: string }) {
                                 <button
                                     type="submit"
                                     disabled={processing}
-                                    className="flex h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-[#1E3A7B] text-base font-semibold text-white shadow-[0_12px_24px_-12px_rgba(30,58,123,0.6)] transition-all duration-200 hover:bg-[#172E63] hover:shadow-[0_16px_28px_-12px_rgba(30,58,123,0.7)] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.98] disabled:opacity-70"
+                                    className="flex h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-[#1E3A7B] text-base font-semibold text-white transition-all duration-200 hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.98] disabled:opacity-70"
                                 >
                                     {processing && <LoaderCircle className="size-4 animate-spin" />}
                                     Ingresar
@@ -217,7 +213,7 @@ export default function Login({ status }: { status?: string }) {
                                     <Link
                                         href={route('inscripcion.create')}
                                         prefetch
-                                        className="flex h-12 flex-1 items-center justify-center gap-2 rounded-[16px] border-[1.5px] border-[#6E8BD6] bg-white text-[15px] font-semibold text-[#1E3A7B] transition-all duration-200 hover:border-[#1E3A7B] hover:bg-[#1E3A7B] hover:text-white hover:shadow-[0_12px_24px_-12px_rgba(30,58,123,0.6)] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.98]"
+                                        className="flex h-12 flex-1 items-center justify-center gap-2 rounded-[16px] border-[1.5px] border-[#6E8BD6] bg-white text-[15px] font-semibold text-[#1E3A7B] transition-all duration-200 hover:border-[#1E3A7B] hover:bg-[#1E3A7B] hover:text-white focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.98]"
                                     >
                                         Inscribir estudiante
                                         <ArrowRight className="size-[18px] transition-transform duration-200 group-hover:translate-x-0.5" />

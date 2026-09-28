@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\DeshabilitacionController;
 use App\Http\Controllers\EstudianteController;
 use App\Http\Controllers\ImportacionController;
 use App\Http\Controllers\InscripcionController;
 use App\Http\Controllers\InscritoController;
+use App\Http\Controllers\PromocionController;
 use App\Http\Controllers\UsuarioController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -34,6 +36,13 @@ Route::middleware(['auth'])->group(function () {
     Route::put('inscritos/{solicitud}/padres', [InscritoController::class, 'guardarPadres'])->whereNumber('solicitud')->name('inscritos.padres');
     Route::get('inscritos/{solicitud}/grupo', [InscritoController::class, 'grupo'])->whereNumber('solicitud')->name('inscritos.grupo');
     Route::post('inscritos/{solicitud}/matricular', [InscritoController::class, 'matricular'])->whereNumber('solicitud')->name('inscritos.matricular');
+
+    Route::middleware('can:gestionar-matriculas')->group(function () {
+        Route::post('estudiantes/{estudiante}/deshabilitar', [DeshabilitacionController::class, 'deshabilitar'])->whereNumber('estudiante')->name('estudiantes.deshabilitar');
+        Route::post('estudiantes/{estudiante}/habilitar', [DeshabilitacionController::class, 'habilitar'])->whereNumber('estudiante')->name('estudiantes.habilitar');
+    });
+
+    Route::post('promociones', [PromocionController::class, 'store'])->middleware('can:promover-estudiantes')->name('promociones.store');
 
     Route::middleware('can:gestionar-usuarios')->group(function () {
         Route::get('usuarios', [UsuarioController::class, 'index'])->name('usuarios.index');

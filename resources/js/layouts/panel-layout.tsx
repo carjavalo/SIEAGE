@@ -45,7 +45,7 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
         <>
             <Head title={titulo} />
 
-            <div className="min-h-screen bg-[#F5F7FC] font-['Outfit',ui-sans-serif,system-ui,sans-serif] text-[#16223F] print:bg-white">
+            <div className="min-h-screen bg-white font-sans text-[#16223F] print:bg-white">
                 <SaltarAlContenido />
                 <header className="sticky top-0 z-30 border-b border-[#E3E9F6] bg-white/90 backdrop-blur print:hidden">
                     {/* El mismo ancho que <main> en todas las páginas: el logo y el menú nunca se corren al cambiar de página. */}

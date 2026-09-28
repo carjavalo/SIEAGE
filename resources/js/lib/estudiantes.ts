@@ -1,5 +1,8 @@
 /** Tipos y formatos de la vista de estudiantes (EstudianteController). */
 
+/** Sede en el filtro del panel, con sus estudiantes activos en el año. */
+export type SedeFiltro = { codigo: string; nombre: string; activos: number };
+
 export type Grado = { id: number; numero: number; nombre: string; nivel: string; activos: number; grupos: number };
 
 /** activos y nuevos llegan como texto desde MySQL (son SUM): se convierten al recibirlos. */
@@ -31,6 +34,8 @@ export type Estudiante = {
     estado: string;
     acudiente: string | null;
     telefono: string | null;
+    /** Grupo del año siguiente, si ya fue promovido. */
+    promovido_a: string | null;
 };
 
 export type Resultado = {
@@ -89,7 +94,19 @@ export type FichaDetalle = {
         genero: 'F' | 'M' | 'O' | null;
     };
     actual: Matricula | null;
+    /** Matrícula del año siguiente (planeado), si ya fue promovido. */
+    promocion: {
+        anio: number;
+        grado_id: number;
+        grado: string;
+        grupo: string | null;
+        sede: string;
+        sede_codigo: string;
+        jornada: string | null;
+    } | null;
     historia: Matricula[];
+    /** Deshabilitaciones y habilitaciones de la matrícula actual, la más reciente primero. */
+    novedades: import('@/components/estudiantes/deshabilitar').Novedad[];
     acudientes: Acudiente[];
     boletines: { numero: number; valor: string }[];
 };

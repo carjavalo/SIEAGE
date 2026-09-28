@@ -43,7 +43,7 @@ export function PanelFicha({
             data-abierta={abierta}
             aria-hidden={!abierta}
             inert={!abierta}
-            className={`fixed top-[65px] right-0 bottom-0 z-40 flex w-full translate-x-[110%] flex-col overflow-hidden bg-white opacity-0 shadow-[0_32px_64px_-24px_rgba(22,34,63,0.45),0_0_0_1px_rgba(22,34,63,0.05)] transition-[translate,width,margin,opacity] duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] outline-none data-[abierta=false]:duration-200 data-[abierta=false]:ease-[cubic-bezier(0.4,0,1,1)] data-[abierta=true]:translate-x-0 data-[abierta=true]:opacity-100 sm:top-[125px] sm:right-3 sm:bottom-3 sm:w-[460px] sm:rounded-[24px] ${alto}:sm:top-[149px] 2xl:static 2xl:z-auto 2xl:w-0 2xl:translate-x-0 2xl:shadow-none 2xl:data-[abierta=true]:ml-3 2xl:data-[abierta=true]:w-[480px] 2xl:data-[abierta=true]:shadow-[0_1px_2px_rgba(22,34,63,0.04),0_12px_32px_-20px_rgba(22,34,63,0.18),0_0_0_1px_#E3E9F6] print:hidden`}
+            className={`fixed top-[65px] right-0 bottom-0 z-40 flex w-full translate-x-[110%] flex-col overflow-hidden bg-white opacity-0 shadow-[0_32px_64px_-24px_rgba(22,34,63,0.45),0_0_0_1px_rgba(22,34,63,0.05)] transition-[translate,width,margin,opacity] duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] outline-none data-[abierta=false]:duration-200 data-[abierta=false]:ease-[cubic-bezier(0.4,0,1,1)] data-[abierta=true]:translate-x-0 data-[abierta=true]:opacity-100 sm:top-[125px] sm:right-3 sm:bottom-3 sm:w-[460px] sm:rounded-[24px] ${alto}:sm:top-[149px] ring-[#E3E9F6] 2xl:static 2xl:z-auto 2xl:w-0 2xl:translate-x-0 2xl:shadow-none 2xl:data-[abierta=true]:ml-3 2xl:data-[abierta=true]:w-[480px] 2xl:data-[abierta=true]:ring-1 print:hidden`}
         >
             <div className="flex h-full w-full flex-col 2xl:w-[480px]">{children ?? <FichaEsqueleto />}</div>
         </aside>
@@ -83,7 +83,7 @@ export function ContenidoFicha({ iniciales, titulo, detalle, marcas, accion, car
                 <div className="flex items-center gap-2">
                     <Link
                         href={accion.href}
-                        className="group/btn flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-[13px] bg-[#1E3A7B] px-3 text-[14px] font-semibold whitespace-nowrap text-white shadow-[0_12px_24px_-12px_rgba(30,58,123,0.6)] transition hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.99]"
+                        className="group/btn flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-[13px] bg-[#1E3A7B] px-3 text-[14px] font-semibold whitespace-nowrap text-white transition hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.99]"
                     >
                         <Icono className="size-[18px] shrink-0 transition-transform group-hover/btn:-translate-y-px" />
                         <span className="truncate">{accion.texto}</span>
@@ -129,8 +129,7 @@ export function EncabezadoFicha({
     children?: ReactNode;
 }) {
     return (
-        <div className="relative shrink-0 overflow-hidden bg-gradient-to-br from-[#EEF2FB] to-[#DCE5F8] px-5 pt-3.5 pb-3.5">
-            <div aria-hidden className="pointer-events-none absolute -top-20 -right-16 size-56 rounded-full bg-white/70 blur-3xl" />
+        <div className="relative shrink-0 overflow-hidden bg-[#EEF2FB] px-5 pt-3.5 pb-3.5">
             <div className="absolute top-3 right-3 flex items-center gap-1.5">
                 {cargando && <LoaderCircle className="size-4 animate-spin text-[#5B7BD0]" aria-label="Cargando" />}
                 <button
@@ -145,7 +144,7 @@ export function EncabezadoFicha({
             </div>
 
             <div className="relative flex items-start gap-3.5 pr-8">
-                <span className="flex size-12 shrink-0 items-center justify-center rounded-[15px] bg-[#1E3A7B] text-[16px] font-semibold text-white shadow-[0_10px_20px_-10px_rgba(30,58,123,0.7)]">
+                <span className="flex size-12 shrink-0 items-center justify-center rounded-[15px] bg-[#1E3A7B] text-[16px] font-semibold text-white">
                     {avatar}
                 </span>
                 <div className="min-w-0">

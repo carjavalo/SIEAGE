@@ -3,6 +3,7 @@ import { Cabecera } from '@/components/estudiantes/cabecera';
 import { sedeInfo } from '@/components/estudiantes/etiquetas';
 import { FichaEstudiante } from '@/components/estudiantes/ficha-estudiante';
 import { ListaEstudiantes } from '@/components/estudiantes/lista-estudiantes';
+import { BotonPromover, puedePromover } from '@/components/estudiantes/promocion';
 import { TableroGrupos } from '@/components/estudiantes/tablero-grupos';
 import { VeloFicha } from '@/components/ficha';
 import { useListaConFicha } from '@/hooks/use-lista-con-ficha';
@@ -15,16 +16,20 @@ import {
     type Grado,
     type Grupo,
     type Resultado,
+    type SedeFiltro,
     cumpleEstado,
     cumpleTexto,
     palabras,
 } from '@/lib/estudiantes';
-import { router } from '@inertiajs/react';
+import { type SharedData } from '@/types';
+import { router, usePage } from '@inertiajs/react';
 import { useMemo, useRef, useState } from 'react';
 
 type Props = {
     anios: { id: number; anio: number; estado: string }[];
     anio: number;
+    sedes: SedeFiltro[];
+    sede: string | null;
     grados: Grado[];
     gradoId: number | null;
     totales: { activos: number; nuevos: number; antiguos: number; retirados: number };
@@ -40,7 +45,19 @@ type Props = {
  * (router.get), así que todo este estado vuelve a empezar solo. Mientras llega,
  * el grado pulsado ya se ve elegido y, si tarda, tarjetas y filas en esqueleto.
  */
-export default function Estudiantes({ anios, anio, grados, gradoId, totales, grupos: gruposServidor, estudiantes, busqueda, detalle }: Props) {
+export default function Estudiantes({
+    anios,
+    anio,
+    sedes,
+    sede,
+    grados,
+    gradoId,
+    totales,
+    grupos: gruposServidor,
+    estudiantes,
+    busqueda,
+    detalle,
+}: Props) {
     // Si la URL trae ?ver= (p. ej. desde la búsqueda global), se abre con esa ficha.
     const inicial = detalle ? estudiantes.find((e) => e.id === detalle.estudiante.id) : undefined;
     const [grupoId, setGrupoId] = useState<number | null>(null);
@@ -65,6 +82,12 @@ export default function Estudiantes({ anios, anio, grados, gradoId, totales, gru
     );
     const grado = grados.find((g) => g.id === (navegando ? gradoDestino : gradoId));
     const grupo = grupos.find((g) => g.id === grupoId);
+    // Promover: solo desde el año en curso y con permiso.
+    const { auth } = usePage<SharedData>().props;
+    const anioEnCurso = anios.find((a) => a.estado === 'activo')?.anio ?? null;
+    const promueve = puedePromover(auth) && anio === anioEnCurso;
+    const siguienteDe = (g?: Grado) => (g ? grados.find((x) => x.numero === g.numero + 1) : undefined);
+    const porPromover = useMemo(() => estudiantes.filter((e) => e.estado === 'activo' && !e.promovido_a).length, [estudiantes]);
 
     const buscadas = useMemo(() => palabras(filtro), [filtro]);
     const delAlcance = useMemo(() => estudiantes.filter((e) => grupoId === null || e.grupo_id === grupoId), [estudiantes, grupoId]);
@@ -106,7 +129,10 @@ export default function Estudiantes({ anios, anio, grados, gradoId, totales, gru
     const irAResultado = (r: Resultado) => {
         // Sin matrícula en este año: no está en ningún grado, se abre su ficha completa.
         if (r.grado_id === null) return router.visit(`/estudiantes/${r.id}`);
-        if (r.grado_id !== gradoId) return router.get('/estudiantes', { anio, grado: r.grado_id, ver: r.id });
+        // Si está en otra sede que la filtrada, se quita el filtro para poder mostrarlo.
+        const otraSede = !!sede && r.sede_codigo !== sede;
+        if (r.grado_id !== gradoId || otraSede)
+            return router.get('/estudiantes', { anio, grado: r.grado_id, ver: r.id, ...(sede && !otraSede ? { sede } : {}) });
         const e = estudiantes.find((x) => x.id === r.id);
         if (!e) return;
         if (grupoId !== null && grupoId !== e.grupo_id) setGrupoId(null);
@@ -120,6 +146,8 @@ export default function Estudiantes({ anios, anio, grados, gradoId, totales, gru
             <Cabecera
                 anios={anios}
                 anio={anioDestino}
+                sedes={sedes}
+                sede={sede}
                 grados={grados}
                 gradoId={gradoDestino}
                 totales={totales}
@@ -174,6 +202,19 @@ export default function Estudiantes({ anios, anio, grados, gradoId, totales, gru
                         setEstado('activo');
                     }}
                     onFila={ficha.abrirFila}
+                    acciones={
+                        promueve &&
+                        grado &&
+                        !navegando && (
+                            <BotonPromover
+                                anio={anio}
+                                grado={grado}
+                                siguiente={siguienteDe(grado)}
+                                pendientes={porPromover}
+                                sede={sedes.find((s) => s.codigo === sede)}
+                            />
+                        )
+                    }
                 />
 
                 <FichaEstudiante
@@ -185,6 +226,8 @@ export default function Estudiantes({ anios, anio, grados, gradoId, totales, gru
                     panel={ficha.panel}
                     onCerrar={ficha.cerrar}
                     onMover={ficha.mover}
+                    anioEnCurso={anio === anioEnCurso ? anio : null}
+                    grados={grados}
                 />
             </div>
 

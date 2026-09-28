@@ -8,13 +8,13 @@ export const claseCampo =
     'h-11 w-full rounded-[12px] border-[1.5px] border-[#D3DDF3] bg-white px-3.5 text-[15px] text-[#16223F] outline-none transition placeholder:text-[#6B7690] hover:border-[#B7C6EA] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] disabled:cursor-default disabled:border-[#E3E9F6] disabled:bg-[#F5F7FC] disabled:text-[#3E4A68] aria-invalid:border-[#E0897D]';
 
 /** Tarjeta blanca de las páginas del panel. */
-export const tarjeta = 'rounded-[24px] border border-[#E3E9F6] bg-white shadow-[0_1px_2px_rgba(22,34,63,0.04),0_12px_32px_-20px_rgba(22,34,63,0.18)]';
+export const tarjeta = 'rounded-[28px] bg-[#F2F5FA]';
 
 export const botonPrimario =
-    'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-[13px] bg-[#1E3A7B] px-5 text-[15px] font-semibold whitespace-nowrap text-white shadow-[0_12px_24px_-12px_rgba(30,58,123,0.6)] transition hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.99] disabled:cursor-default disabled:opacity-60 disabled:shadow-none';
+    'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-full bg-[#1E3A7B] px-5 text-[15px] font-semibold whitespace-nowrap text-white transition hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.99] disabled:cursor-default disabled:opacity-60';
 
 export const botonSecundario =
-    'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-[13px] px-4 text-[15px] font-medium whitespace-nowrap text-[#56627F] transition hover:bg-[#EEF2FB] hover:text-[#16223F] focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none';
+    'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-full px-4 text-[15px] font-medium whitespace-nowrap text-[#56627F] transition hover:bg-[#EEF2FB] hover:text-[#16223F] focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none';
 
 /** Etiqueta, control y, debajo, el error o una ayuda. */
 /** El id del texto que describe el campo: el error si lo hay; si no, la ayuda. */

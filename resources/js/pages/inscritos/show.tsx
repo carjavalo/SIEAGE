@@ -64,7 +64,7 @@ function inicial(rol: (typeof ROLES)[number], s: Solicitud, guardado?: PadreGuar
     return { ...PADRE_VACIO };
 }
 
-const tarjeta = 'rounded-[24px] border border-[#E3E9F6] bg-white shadow-[0_1px_2px_rgba(22,34,63,0.04),0_12px_32px_-20px_rgba(22,34,63,0.18)]';
+const tarjeta = 'rounded-[28px] bg-[#F2F5FA]';
 
 const campoClase =
     'h-11 w-full rounded-[12px] border-[1.5px] border-[#D3DDF3] bg-white px-3.5 text-[15px] text-[#16223F] outline-none transition placeholder:text-[#6B7690] hover:border-[#B7C6EA] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] disabled:cursor-default disabled:border-[#E3E9F6] disabled:bg-[#F5F7FC] disabled:text-[#3E4A68] aria-invalid:border-[#E0897D]';
@@ -322,7 +322,7 @@ export default function Inscrito({ solicitud: s, padres, matricula }: FichaInscr
                             );
                         })}
 
-                        <div className="sticky bottom-4 z-10 flex items-center justify-end gap-3 rounded-[18px] border border-[#E3E9F6] bg-white/90 p-2.5 pl-4 shadow-[0_12px_32px_-16px_rgba(22,34,63,0.35)] backdrop-blur">
+                        <div className="sticky bottom-4 z-10 flex items-center justify-end gap-3 rounded-[18px] border border-[#E3E9F6] bg-white/90 p-2.5 pl-4 backdrop-blur">
                             <span className="mr-auto flex items-center gap-2 text-[14px] text-[#56627F]">
                                 <span aria-hidden className={cn('size-2 rounded-full', form.isDirty ? 'bg-[#D99A2B]' : 'bg-[#3BA67A]')} />
                                 {form.isDirty ? 'Tienes cambios sin guardar' : 'Todo guardado'}
@@ -330,7 +330,7 @@ export default function Inscrito({ solicitud: s, padres, matricula }: FichaInscr
                             <button
                                 type="submit"
                                 disabled={form.processing}
-                                className="flex h-11 cursor-pointer items-center gap-2 rounded-[13px] bg-[#1E3A7B] px-5 text-[15px] font-semibold text-white shadow-[0_12px_24px_-12px_rgba(30,58,123,0.6)] transition hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.99] disabled:cursor-default disabled:opacity-70"
+                                className="flex h-11 cursor-pointer items-center gap-2 rounded-[13px] bg-[#1E3A7B] px-5 text-[15px] font-semibold text-white transition hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.99] disabled:cursor-default disabled:opacity-70"
                             >
                                 {form.processing && <LoaderCircle className="size-4 animate-spin" />}
                                 {pendiente ? 'Guardar y elegir grupo' : 'Guardar madre y padre'}
