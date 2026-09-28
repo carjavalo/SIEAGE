@@ -175,6 +175,7 @@ function Progenitor({ rol, datos }: { rol: (typeof ROLES)[number]; datos?: Padre
             insignia={datos.es_acudiente ? 'Acudiente' : undefined}
             celular={datos.telefono}
             correo={datos.correo}
+            direccion={[datos.direccion, datos.barrio].filter(Boolean).join(' · ') || null}
         />
     );
 }

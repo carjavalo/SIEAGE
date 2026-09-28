@@ -35,6 +35,8 @@ export type DatosPadre = {
     fecha_nacimiento: string;
     telefono: string;
     correo: string;
+    direccion: string;
+    barrio: string;
     ocupacion: string;
 };
 
@@ -50,6 +52,8 @@ export const PADRE_VACIO: DatosPadre = {
     fecha_nacimiento: '',
     telefono: '',
     correo: '',
+    direccion: '',
+    barrio: '',
     ocupacion: '',
 };
 

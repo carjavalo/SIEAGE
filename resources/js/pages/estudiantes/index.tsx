@@ -1,5 +1,6 @@
 import { TarjetasEsqueleto } from '@/components/esqueleto';
 import { Cabecera } from '@/components/estudiantes/cabecera';
+import { BotonCupos, puedeEditarCupos } from '@/components/estudiantes/cupos';
 import { sedeInfo } from '@/components/estudiantes/etiquetas';
 import { FichaEstudiante } from '@/components/estudiantes/ficha-estudiante';
 import { ListaEstudiantes } from '@/components/estudiantes/lista-estudiantes';
@@ -203,16 +204,21 @@ export default function Estudiantes({
                     }}
                     onFila={ficha.abrirFila}
                     acciones={
-                        promueve &&
                         grado &&
                         !navegando && (
-                            <BotonPromover
-                                anio={anio}
-                                grado={grado}
-                                siguiente={siguienteDe(grado)}
-                                pendientes={porPromover}
-                                sede={sedes.find((s) => s.codigo === sede)}
-                            />
+                            <>
+                                {/* Los cupos se editan en cualquier año (también en el planeado, después de promover). */}
+                                {puedeEditarCupos(auth) && <BotonCupos grado={grado} grupos={grupos} anio={anio} />}
+                                {promueve && (
+                                    <BotonPromover
+                                        anio={anio}
+                                        grado={grado}
+                                        siguiente={siguienteDe(grado)}
+                                        pendientes={porPromover}
+                                        sede={sedes.find((s) => s.codigo === sede)}
+                                    />
+                                )}
+                            </>
                         )
                     }
                 />

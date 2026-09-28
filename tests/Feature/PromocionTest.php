@@ -165,4 +165,23 @@ class PromocionTest extends TestCase
 
         $this->assertNull($this->anioId(2027));
     }
+
+    public function test_la_promocion_se_puede_deshacer()
+    {
+        $antes = DB::table('matriculas')->where('anio_lectivo_id', $this->anioId(2026))
+            ->selectRaw('estado, count(*) as n')->groupBy('estado')->pluck('n', 'estado')->all();
+        $total = DB::table('matriculas')->count();
+
+        $this->promover([]);
+        $this->artisan('sieage:revertir-promocion', ['--force' => true])->assertSuccessful();
+
+        $this->assertSame($antes, DB::table('matriculas')->where('anio_lectivo_id', $this->anioId(2026))
+            ->selectRaw('estado, count(*) as n')->groupBy('estado')->pluck('n', 'estado')->all());
+        $this->assertSame(0, DB::table('matriculas')->where('anio_lectivo_id', $this->anioId(2026))->where('resultado', 'promovido')->count());
+        $this->assertSame($total, DB::table('matriculas')->count());
+        $this->assertNull($this->anioId(2027));
+
+        // Y se puede volver a promover.
+        $this->assertGreaterThan(0, $this->promover([])['promovidos']);
+    }
 }

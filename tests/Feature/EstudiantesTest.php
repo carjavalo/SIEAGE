@@ -117,4 +117,22 @@ class EstudiantesTest extends TestCase
         $this->assertSame($activosRp, session('promocion')['promovidos']);
         $this->assertSame($activosRp, DB::table('matriculas as m')->join('anios_lectivos as al', 'al.id', '=', 'm.anio_lectivo_id')->where('al.anio', 2027)->count());
     }
+
+    public function test_los_cupos_de_cada_grupo_se_pueden_cambiar()
+    {
+        $this->seed(DatosInicialesSeeder::class);
+        [$a, $b] = DB::table('grupos')->where('anio_lectivo_id', 12)->limit(2)->pluck('id')->all();
+
+        $this->actingAs(User::first())->put('/grupos/cupos', ['cupos' => [$a => 40, $b => 28]])->assertSessionHasNoErrors();
+        $this->assertSame(40, (int) DB::table('grupos')->where('id', $a)->value('cupos_proyectados'));
+        $this->assertSame(28, (int) DB::table('grupos')->where('id', $b)->value('cupos_proyectados'));
+
+        // Fuera de rango: no se guarda nada.
+        $this->actingAs(User::first())->put('/grupos/cupos', ['cupos' => [$a => 0, $b => 150]])->assertSessionHasErrors(["cupos.{$a}", "cupos.{$b}"]);
+        $this->assertSame(40, (int) DB::table('grupos')->where('id', $a)->value('cupos_proyectados'));
+
+        // Los docentes no pueden.
+        $docente = User::factory()->create(['rol_id' => DB::table('roles')->where('nombre', 'docente')->value('id')]);
+        $this->actingAs($docente)->put('/grupos/cupos', ['cupos' => [$a => 20]])->assertForbidden();
+    }
 }
