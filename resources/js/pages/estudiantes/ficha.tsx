@@ -138,12 +138,12 @@ export default function Ficha({ estudiante, actual, historia, acudientes, boleti
             </div>
 
             {/* Resumen del estudiante */}
-            <div className="mt-4 flex flex-col gap-5 rounded-2xl bg-gradient-to-br from-[#EEF2FB] to-[#DCE5F8] p-6 sm:flex-row sm:items-center print:mt-0 print:rounded-none print:bg-none print:p-0 print:pb-3">
+            <div className="mt-4 flex flex-col gap-5 rounded-[28px] bg-[#EEF2FB] p-6 sm:flex-row sm:items-center print:mt-0 print:rounded-none print:bg-none print:p-0 print:pb-3">
                 <span className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-[#1E3A7B] text-xl font-semibold text-white print:hidden">
                     {iniciales(estudiante.nombre_completo)}
                 </span>
                 <div className="min-w-0 flex-1">
-                    <h1 className="text-2xl font-semibold tracking-[-0.02em] sm:text-3xl print:text-xl">{estudiante.nombre_completo}</h1>
+                    <h1 className="text-2xl font-bold tracking-[-0.02em] sm:text-3xl print:text-xl">{estudiante.nombre_completo}</h1>
                     <p className="mt-1 text-sm text-[#3E4A68]">
                         {estudiante.tipo_documento} {estudiante.numero_documento}
                         {anios !== null && ` · ${anios} años`}

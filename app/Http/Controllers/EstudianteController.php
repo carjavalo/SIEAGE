@@ -20,8 +20,21 @@ class EstudianteController extends Controller
             ?? $anios->firstWhere('estado', 'activo')
             ?? $anios->first();
 
+        // Filtro por sede (?sede=LF). Sin él, todas. Se ofrecen las sedes con
+        // su número de activos en el año, para mostrarlo en el selector.
+        $sedes = DB::table('sedes as s')
+            ->leftJoin('matriculas as m', fn ($j) => $j->on('m.sede_id', '=', 's.id')->where('m.anio_lectivo_id', $anio?->id)->where('m.estado', 'activo'))
+            ->groupBy('s.id', 's.codigo', 's.nombre', 's.es_principal')
+            ->orderByDesc('s.es_principal')
+            ->orderBy('s.nombre')
+            ->selectRaw('s.id, s.codigo, s.nombre, count(m.id) as activos')
+            ->get();
+        $sede = $sedes->firstWhere('codigo', (string) $request->query('sede'));
+        $enSede = fn ($q, string $columna = 'sede_id') => $q->when($sede, fn ($q) => $q->where($columna, $sede->id));
+
         $resumenPorGrado = DB::table('matriculas')
             ->where('anio_lectivo_id', $anio?->id)
+            ->tap(fn ($q) => $enSede($q))
             ->groupBy('grado_id')
             ->selectRaw("grado_id, count(*) as total, sum(estado = 'activo') as activos, count(distinct grupo_id) as grupos")
             ->get()
@@ -36,10 +49,15 @@ class EstudianteController extends Controller
             'grupos' => (int) ($resumenPorGrado[$g->id]->grupos ?? 0),
         ]);
 
-        $gradoId = (int) $request->query('grado') ?: $grados->firstWhere('activos', '>', 0)['id'] ?? null;
+        // El grado pedido; si no hay (o no existe en la sede elegida), el primero con estudiantes.
+        $pedido = $grados->firstWhere('id', (int) $request->query('grado'));
+        $gradoId = $pedido && (! $sede || $pedido['grupos'] > 0 || $pedido['activos'] > 0)
+            ? $pedido['id']
+            : ($grados->firstWhere('activos', '>', 0)['id'] ?? $pedido['id'] ?? null);
 
         $totales = DB::table('matriculas')
             ->where('anio_lectivo_id', $anio?->id)
+            ->tap(fn ($q) => $enSede($q))
             ->selectRaw("
                 sum(estado = 'activo') as activos,
                 sum(estado = 'activo' and condicion = 'nuevo') as nuevos,
@@ -48,7 +66,10 @@ class EstudianteController extends Controller
             ")
             ->first();
 
-        $grupos = Grupos::conOcupacion($anio?->id, $gradoId);
+        $grupos = Grupos::conOcupacion($anio?->id, $gradoId, $sede?->id);
+
+        // Si ya fue promovido: el grupo que tiene en el año siguiente.
+        $siguienteId = DB::table('anios_lectivos')->where('anio', ($anio?->anio ?? 0) + 1)->value('id');
 
         $estudiantes = DB::table('matriculas as m')
             ->join('estudiantes as e', 'e.id', '=', 'm.estudiante_id')
@@ -59,8 +80,13 @@ class EstudianteController extends Controller
                 $join->on('ea.estudiante_id', '=', 'e.id')->where('ea.es_principal', true);
             })
             ->leftJoin('acudientes as a', 'a.id', '=', 'ea.acudiente_id')
+            ->leftJoin('matriculas as sig', function ($join) use ($siguienteId) {
+                $join->on('sig.estudiante_id', '=', 'e.id')->where('sig.anio_lectivo_id', $siguienteId);
+            })
+            ->leftJoin('grupos as gsig', 'gsig.id', '=', 'sig.grupo_id')
             ->where('m.anio_lectivo_id', $anio?->id)
             ->where('m.grado_id', $gradoId)
+            ->tap(fn ($q) => $enSede($q, 'm.sede_id'))
             ->whereNull('e.deleted_at')
             ->orderBy('e.nombre_completo')
             ->get([
@@ -68,11 +94,14 @@ class EstudianteController extends Controller
                 'm.grupo_id', 'g.codigo as grupo', 's.nombre as sede', 's.codigo as sede_codigo', 'm.jornada', 'mo.nombre as modalidad',
                 'm.condicion', 'm.estado', 'a.nombre_completo as acudiente',
                 DB::raw('coalesce(a.telefono_celular, a.telefono_fijo) as telefono'),
+                'gsig.codigo as promovido_a',
             ]);
 
         return Inertia::render('estudiantes/index', [
             'anios' => $anios,
             'anio' => $anio?->anio,
+            'sedes' => $sedes->map(fn ($s) => ['codigo' => $s->codigo, 'nombre' => $s->nombre, 'activos' => (int) $s->activos]),
+            'sede' => $sede?->codigo,
             'grados' => $grados,
             'gradoId' => $gradoId,
             'totales' => array_map('intval', (array) $totales),
@@ -120,6 +149,7 @@ class EstudianteController extends Controller
             ->leftJoin('grupos as g', 'g.id', '=', 'm.grupo_id')
             ->leftJoin('modalidades as mo', 'mo.id', '=', 'm.modalidad_id')
             ->where('m.estudiante_id', $alumno->id)
+            ->where('al.estado', '<>', 'planeado')
             ->orderByDesc('al.anio')
             ->get([
                 'm.id', 'al.anio', 'gr.id as grado_id', 'gr.nombre as grado', 'gr.numero as grado_numero', 'g.codigo as grupo',
@@ -145,9 +175,30 @@ class EstudianteController extends Controller
             ? DB::table('boletines_excel')->where('matricula_id', $actual->id)->orderBy('numero')->get(['numero', 'valor'])
             : collect();
 
+        $promocion = DB::table('matriculas as m')
+            ->join('anios_lectivos as al', 'al.id', '=', 'm.anio_lectivo_id')
+            ->join('grados as gr', 'gr.id', '=', 'm.grado_id')
+            ->join('sedes as s', 's.id', '=', 'm.sede_id')
+            ->leftJoin('grupos as g', 'g.id', '=', 'm.grupo_id')
+            ->where('m.estudiante_id', $alumno->id)
+            ->where('al.estado', 'planeado')
+            ->orderBy('al.anio')
+            ->first(['al.anio', 'gr.id as grado_id', 'gr.nombre as grado', 'g.codigo as grupo', 's.nombre as sede', 's.codigo as sede_codigo', 'm.jornada']);
+
+        $novedades = $actual
+            ? DB::table('novedades_matricula as n')
+                ->leftJoin('users as u', 'u.id', '=', 'n.user_id')
+                ->where('n.matricula_id', $actual->id)
+                ->orderByDesc('n.id')
+                ->get(['n.id', 'n.tipo', 'n.estado_nuevo', 'n.razon', 'n.fecha', 'n.created_at', 'u.name as usuario'])
+            : collect();
+
         return [
             'estudiante' => $alumno,
             'actual' => $actual,
+            'novedades' => $novedades,
+            // Matrícula del año siguiente, si ya fue promovido.
+            'promocion' => $promocion,
             'historia' => $historia,
             'acudientes' => $acudientes,
             'boletines' => $boletines,

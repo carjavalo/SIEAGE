@@ -78,7 +78,7 @@ export function TarjetasEsqueleto({ n, claseTarjeta }: { n: number; claseTarjeta
 export function FichaEsqueleto() {
     return (
         <div role="status" aria-label="Cargando la ficha…" className="flex min-h-0 flex-1 flex-col">
-            <div className="relative shrink-0 overflow-hidden bg-gradient-to-br from-[#EEF2FB] to-[#DCE5F8] px-5 pt-3.5 pb-3.5">
+            <div className="relative shrink-0 overflow-hidden bg-[#EEF2FB] px-5 pt-3.5 pb-3.5">
                 <span aria-hidden className="absolute top-3 right-3 size-8 rounded-full bg-white/70" />
                 <div className="flex items-start gap-3.5 pr-8">
                     <Esqueleto className={cn('size-12 shrink-0 rounded-[15px]', sobreAzul)} />

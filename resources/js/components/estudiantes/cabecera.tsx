@@ -1,7 +1,7 @@
 import { Desplegable } from '@/components/desplegable';
 import { ResultadosEsqueleto } from '@/components/esqueleto';
 import { Marca, Resaltado, iniciales } from '@/components/estudiantes/etiquetas';
-import { type Grado, type Resultado, gradoCorto, numero, palabras } from '@/lib/estudiantes';
+import { type Grado, type Resultado, type SedeFiltro, gradoCorto, numero, palabras } from '@/lib/estudiantes';
 import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
 import { Search, X } from 'lucide-react';
@@ -10,6 +10,9 @@ import { Fragment, type RefObject, useEffect, useState } from 'react';
 type Props = {
     anios: { id: number; anio: number; estado: string }[];
     anio: number;
+    sedes: SedeFiltro[];
+    /** Código de la sede elegida; null = todas. */
+    sede: string | null;
     grados: Grado[];
     gradoId: number | null;
     totales: { activos: number; nuevos: number; retirados: number };
@@ -21,30 +24,57 @@ type Props = {
 const alto = '[@media(min-height:860px)]';
 
 /** Primera franja: título con el año, grados en segmentos y búsqueda en todo el colegio. */
-export function Cabecera({ anios, anio, grados, gradoId, totales, busqueda, entrada, onElegir }: Props) {
-    const ir = (datos: { anio?: number; grado?: number }) =>
-        router.get('/estudiantes', { anio: datos.anio ?? anio, grado: datos.grado ?? gradoId ?? undefined });
+export function Cabecera({ anios, anio, sedes, sede, grados, gradoId, totales, busqueda, entrada, onElegir }: Props) {
+    const ir = (datos: { anio?: number; grado?: number; sede?: string | null }) => {
+        const s = datos.sede !== undefined ? datos.sede : sede;
+        router.get('/estudiantes', { anio: datos.anio ?? anio, grado: datos.grado ?? gradoId ?? undefined, ...(s ? { sede: s } : {}) });
+    };
 
     return (
         <section className="relative flex shrink-0 flex-wrap items-center gap-x-6 gap-y-3 xl:flex-nowrap">
             <div className="shrink-0">
                 <div className="flex items-center gap-2">
-                    <h1 className={`text-[24px] leading-[26px] font-semibold tracking-[-0.025em] ${alto}:text-[28px] ${alto}:leading-8`}>
-                        Estudiantes
-                    </h1>
+                    <h1 className={`text-[24px] leading-[26px] font-bold tracking-[-0.025em] ${alto}:text-[28px] ${alto}:leading-8`}>Estudiantes</h1>
                     <Desplegable
                         etiqueta="Año lectivo"
                         valor={anio}
                         opciones={anios.map((a) => ({
                             valor: a.anio,
                             etiqueta: String(a.anio),
-                            detalle: a.estado === 'activo' ? 'en curso' : undefined,
+                            detalle: a.estado === 'activo' ? 'en curso' : a.estado === 'planeado' ? 'planeado' : undefined,
                         }))}
                         onCambio={(valor) => ir({ anio: valor })}
                         claseBoton={`h-[26px] rounded-full bg-white/75 pr-2 pl-2.5 text-[15px] font-semibold text-[#1E3A7B] tabular-nums ring-1 ring-[#D3DDF3] transition hover:bg-white focus-visible:ring-2 focus-visible:ring-[#6E8BD6] aria-expanded:bg-white aria-expanded:ring-[#6E8BD6] ${alto}:h-8 ${alto}:text-[16px]`}
                     />
+                    <Desplegable
+                        etiqueta="Sede"
+                        valor={sede ?? ''}
+                        opciones={[
+                            { valor: '', etiqueta: 'Todas las sedes', detalle: numero(sedes.reduce((t, s) => t + s.activos, 0)) },
+                            ...sedes.map((s) => ({ valor: s.codigo, etiqueta: s.nombre, detalle: numero(s.activos) })),
+                        ]}
+                        onCambio={(valor) => ir({ sede: valor || null })}
+                        claseBoton={cn(
+                            `h-[26px] rounded-full pr-2 pl-2.5 text-[14px] font-semibold ring-1 transition focus-visible:ring-2 focus-visible:ring-[#6E8BD6] aria-expanded:ring-[#6E8BD6] ${alto}:h-8 ${alto}:text-[15px]`,
+                            sede
+                                ? 'bg-[#1E3A7B] text-white ring-[#1E3A7B] hover:bg-[#172E63]'
+                                : 'bg-white/75 text-[#1E3A7B] ring-[#D3DDF3] hover:bg-white aria-expanded:bg-white',
+                        )}
+                    />
+                    {sede && (
+                        <button
+                            type="button"
+                            onClick={() => ir({ sede: null })}
+                            aria-label="Quitar el filtro de sede"
+                            title="Ver todas las sedes"
+                            className="-ml-1 flex size-[26px] cursor-pointer items-center justify-center rounded-full text-[#56627F] transition hover:bg-white hover:text-[#16223F]"
+                        >
+                            <X className="size-3.5" />
+                        </button>
+                    )}
                 </div>
                 <dl
+                    title={sede ? `Solo la sede ${sedes.find((s) => s.codigo === sede)?.nombre}` : undefined}
                     className={`mt-0.5 flex items-baseline gap-1.5 text-[13px] leading-4 whitespace-nowrap text-[#56627F] ${alto}:mt-1 ${alto}:text-[14px] ${alto}:leading-5`}
                 >
                     {[
@@ -74,6 +104,8 @@ export function Cabecera({ anios, anio, grados, gradoId, totales, busqueda, entr
             >
                 {grados.map((g, i) => {
                     const actual = g.id === gradoId;
+                    // Con una sede elegida, los grados que no tiene se ven apagados.
+                    const vacio = !!sede && g.activos === 0 && g.grupos === 0;
                     return (
                         <Fragment key={g.id}>
                             {i > 0 && g.nivel !== grados[i - 1].nivel && (
@@ -82,6 +114,7 @@ export function Cabecera({ anios, anio, grados, gradoId, totales, busqueda, entr
                             <button
                                 type="button"
                                 onClick={() => !actual && ir({ grado: g.id })}
+                                disabled={vacio && !actual}
                                 aria-current={actual ? 'page' : undefined}
                                 title={`${g.nombre} · ${g.activos} activos · ${g.grupos} grupos`}
                                 className={cn(
@@ -89,6 +122,7 @@ export function Cabecera({ anios, anio, grados, gradoId, totales, busqueda, entr
                                     actual
                                         ? 'bg-white text-[#1E3A7B] shadow-[0_1px_3px_rgba(22,34,63,0.14)] ring-1 ring-[#C4D2F1]'
                                         : 'text-[#16223F] hover:bg-white/60',
+                                    vacio && !actual && 'cursor-default opacity-35 hover:bg-transparent',
                                 )}
                             >
                                 <span className={`text-[15px] font-semibold tracking-[-0.01em] ${alto}:text-[17px]`}>{gradoCorto(g)}</span>

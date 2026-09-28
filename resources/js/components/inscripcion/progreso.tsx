@@ -20,7 +20,7 @@ function Volver({ compacto }: { compacto?: boolean }) {
     ) : (
         <Link
             href={route('login')}
-            className="group inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/80 px-3.5 py-2 text-sm font-medium text-[#1E3A7B] shadow-[0_1px_2px_rgba(22,34,63,0.06)] transition-all hover:bg-white hover:shadow-[0_4px_12px_-4px_rgba(22,34,63,0.18)] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none"
+            className="group inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/80 px-3.5 py-2 text-sm font-medium text-[#1E3A7B] shadow-[0_1px_2px_rgba(22,34,63,0.06)] transition-all hover:bg-white focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none"
         >
             <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" />
             Volver
@@ -53,7 +53,7 @@ export function PanelLateral({ anio, actual, alcanzado, onIr }: ProgresoProps) {
     const enviado = actual >= PASOS.length;
 
     return (
-        <aside className="sticky top-4 hidden h-[calc(100vh-2rem)] flex-col justify-between overflow-y-auto rounded-[32px] bg-gradient-to-b from-[#EEF2FB] to-[#DCE5F8] p-10 lg:flex xl:p-12">
+        <aside className="sticky top-4 hidden h-[calc(100vh-2rem)] flex-col justify-between overflow-y-auto rounded-[32px] bg-[#EEF2FB] p-10 lg:flex xl:p-12">
             <div className="flex items-center justify-between gap-3">
                 <Marca />
                 <Volver />
@@ -99,8 +99,7 @@ export function PanelLateral({ anio, actual, alcanzado, onIr }: ProgresoProps) {
                                         className={cn(
                                             'flex size-10 shrink-0 items-center justify-center rounded-full transition-all duration-300',
                                             hecho && 'bg-[#1E3A7B] text-white',
-                                            esActual &&
-                                                'scale-105 bg-white text-[#1E3A7B] shadow-[0_6px_18px_-6px_rgba(30,58,123,0.45)] ring-2 ring-[#1E3A7B]',
+                                            esActual && 'scale-105 bg-white text-[#1E3A7B] ring-2 ring-[#1E3A7B]',
                                             !hecho && !esActual && 'bg-white text-[#6B7690] ring-1 ring-[#D3DDF3]',
                                             puedeIr && 'group-hover:scale-105',
                                         )}

@@ -9,11 +9,11 @@ export function EncabezadoInscrito({ solicitud: s, matricula }: Pick<FichaInscri
 
     return (
         <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center">
-            <span className="flex size-16 shrink-0 items-center justify-center rounded-[20px] bg-[#1E3A7B] text-[20px] font-semibold text-white shadow-[0_14px_28px_-14px_rgba(30,58,123,0.7)]">
+            <span className="flex size-16 shrink-0 items-center justify-center rounded-[20px] bg-[#1E3A7B] text-[20px] font-semibold text-white">
                 {inicialesInscrito(s)}
             </span>
             <div className="min-w-0">
-                <h1 className="text-[28px] leading-8 font-semibold tracking-[-0.025em] text-balance">{nombreInscrito(s)}</h1>
+                <h1 className="text-[28px] leading-8 font-bold tracking-[-0.025em] text-balance">{nombreInscrito(s)}</h1>
                 <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] text-[#3E4A68]">
                     <span className="tabular-nums">
                         {s.tipo_documento === 'Otro' ? s.tipo_documento_otro : s.tipo_documento} {s.numero_documento}

@@ -23,5 +23,13 @@ class AppServiceProvider extends ServiceProvider
     {
         // Crear, editar y desactivar usuarios: solo administradores.
         Gate::define('gestionar-usuarios', fn (User $user) => $user->esAdministrador());
+
+        // Deshabilitar o volver a habilitar la matrícula de un estudiante: todos menos los docentes.
+        Gate::define('gestionar-matriculas', fn (User $user) => $user->activo
+            && in_array($user->rol?->nombre, ['administrador', 'coordinacion', 'secretaria'], true));
+
+        // Promover estudiantes al grado siguiente: todos menos los docentes.
+        Gate::define('promover-estudiantes', fn (User $user) => $user->activo
+            && in_array($user->rol?->nombre, ['administrador', 'coordinacion', 'secretaria'], true));
     }
 }

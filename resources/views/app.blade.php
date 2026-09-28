@@ -29,13 +29,11 @@
         <link rel="icon" href="/icono-192.png" type="image/png" sizes="192x192">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-        {{-- Outfit es la letra de toda la app. Se pide aquí, antes que el JS, y los tres pesos que más
-             se usan se precargan: así el texto aparece ya con su letra y no salta al cambiarla. --}}
-        <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
-        <link rel="preload" href="https://fonts.bunny.net/outfit/files/outfit-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-        <link rel="preload" href="https://fonts.bunny.net/outfit/files/outfit-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-        <link rel="preload" href="https://fonts.bunny.net/outfit/files/outfit-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
-        <link href="https://fonts.bunny.net/css?family=outfit:400,500,600,700&display=swap" rel="stylesheet" />
+        {{-- Roboto es la letra de toda la app. Se pide aquí, antes que el JS, para que el
+             texto aparezca ya con su letra y no salte al cambiarla. --}}
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 
         {{-- Sin sesión, el navegador solo conoce las rutas de las páginas públicas (config/ziggy.php).
              Al ingresar se recarga la página completa y ya llegan todas. --}}

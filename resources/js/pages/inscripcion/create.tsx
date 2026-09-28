@@ -325,7 +325,7 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios,
         <>
             <Head title="Inscripción" />
 
-            <div className="grid min-h-screen bg-white p-4 font-['Outfit',ui-sans-serif,system-ui,sans-serif] text-[#16223F] lg:grid-cols-[400px_minmax(0,1fr)] lg:gap-4 xl:grid-cols-[460px_minmax(0,1fr)]">
+            <div className="grid min-h-screen bg-white p-4 font-sans text-[#16223F] lg:grid-cols-[400px_minmax(0,1fr)] lg:gap-4 xl:grid-cols-[460px_minmax(0,1fr)]">
                 <SaltarAlContenido />
                 <PanelLateral anio={anioLectivo} actual={paso} alcanzado={alcanzado} onIr={irA} />
 

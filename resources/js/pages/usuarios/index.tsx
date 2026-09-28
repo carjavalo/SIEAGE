@@ -85,7 +85,7 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
             {/* Primera franja: título y totales, roles en segmentos, búsqueda y "Nuevo usuario". */}
             <section className="relative flex shrink-0 flex-wrap items-center gap-x-6 gap-y-3 xl:flex-nowrap">
                 <div className="shrink-0">
-                    <h1 className={`text-[24px] leading-[26px] font-semibold tracking-[-0.025em] ${alto}:text-[28px] ${alto}:leading-8`}>Usuarios</h1>
+                    <h1 className={`text-[24px] leading-[26px] font-bold tracking-[-0.025em] ${alto}:text-[28px] ${alto}:leading-8`}>Usuarios</h1>
                     <p className={`mt-0.5 text-[13px] leading-4 whitespace-nowrap text-[#56627F] ${alto}:mt-1 ${alto}:text-[14px] ${alto}:leading-5`}>
                         <b className="font-semibold text-[#16223F] tabular-nums">{activos}</b> activos
                         {usuarios.length > activos && (
@@ -183,7 +183,7 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
             <div className="relative mt-3 flex min-h-[420px] flex-col lg:min-h-0 lg:flex-1 lg:flex-row [@media(min-height:860px)]:mt-5">
                 <section
                     aria-label="Lista de usuarios"
-                    className="flex min-h-[420px] min-w-0 flex-1 flex-col overflow-hidden rounded-[24px] border border-[#E3E9F6] bg-white shadow-[0_1px_2px_rgba(22,34,63,0.04),0_12px_32px_-20px_rgba(22,34,63,0.18)] lg:min-h-0"
+                    className="flex min-h-[420px] min-w-0 flex-1 flex-col overflow-hidden rounded-[28px] border border-[#E6EBF4] bg-white lg:min-h-0"
                 >
                     <div
                         className={`flex shrink-0 flex-col gap-2.5 border-b border-[#EEF2F9] px-4 py-2.5 md:h-[42px] md:flex-row md:items-center md:gap-4 md:px-5 md:py-0 ${alto}:md:h-12`}

@@ -1,7 +1,11 @@
+import { EstadoMatricula, puedeDeshabilitar } from '@/components/estudiantes/deshabilitar';
 import { Marca, PuntoSede, iniciales, sedeInfo, textoSituacion } from '@/components/estudiantes/etiquetas';
+import { PromocionEstudiante, puedePromover } from '@/components/estudiantes/promocion';
 import { Bloque, ContenidoFicha, PanelFicha, Sep, TarjetaContacto } from '@/components/ficha';
-import { type FichaDetalle, edad, fecha } from '@/lib/estudiantes';
+import { type FichaDetalle, type Grado, edad, fecha } from '@/lib/estudiantes';
 import { cn } from '@/lib/utils';
+import { type SharedData } from '@/types';
+import { usePage } from '@inertiajs/react';
 import { CircleAlert, FileText, StickyNote } from 'lucide-react';
 import { type RefObject } from 'react';
 
@@ -15,6 +19,9 @@ type Props = {
     panel: RefObject<HTMLElement | null>;
     onCerrar: () => void;
     onMover: (paso: 1 | -1) => void;
+    /** Año que se está viendo, si es el año en curso (desde él se promueve y se deshabilita). */
+    anioEnCurso?: number | null;
+    grados?: Grado[];
 };
 
 /** Ficha del estudiante elegido, al lado de la lista. */
@@ -27,7 +34,10 @@ export function FichaEstudiante({ ficha, abierta, panel, ...resto }: Props) {
 }
 
 function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel'> & { ficha: FichaDetalle }) {
+    const { anioEnCurso, grados = [], ...demas } = resto;
     const { estudiante: e, actual: m, historia, acudientes } = ficha;
+    const { auth } = usePage<SharedData>().props;
+    const enCurso = !!m && anioEnCurso === m.anio;
     const anios = edad(e.fecha_nacimiento);
     const retirado = m && m.estado !== 'activo';
     // La sede solo se repite en la historia si el estudiante ha pasado por más de una.
@@ -35,7 +45,7 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
 
     return (
         <ContenidoFicha
-            {...resto}
+            {...demas}
             iniciales={iniciales(e.nombre_completo)}
             titulo={e.nombre_completo}
             detalle={
@@ -126,6 +136,23 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
                         <p className="mt-1 text-[14px] text-[#56627F]">
                             Matriculado el {fecha(m.fecha_matricula) ?? '—'} <Sep /> Nació el {fecha(e.fecha_nacimiento) ?? '—'}
                         </p>
+                    </Bloque>
+                )}
+
+                {m && enCurso && (puedeDeshabilitar(auth) || ficha.novedades.length > 0) && (
+                    <Bloque titulo={`Estado en ${m.anio}`}>
+                        <EstadoMatricula estudianteId={e.id} nombre={e.nombre_completo} estado={m.estado} novedades={ficha.novedades} />
+                    </Bloque>
+                )}
+
+                {m && (ficha.promocion || (enCurso && m.estado === 'activo' && puedePromover(auth))) && (
+                    <Bloque titulo={`Año ${m.anio + 1}`}>
+                        <PromocionEstudiante
+                            anio={m.anio}
+                            estudianteId={e.id}
+                            siguiente={grados.find((g) => g.numero === m.grado_numero + 1)}
+                            promocion={ficha.promocion}
+                        />
                     </Bloque>
                 )}
 

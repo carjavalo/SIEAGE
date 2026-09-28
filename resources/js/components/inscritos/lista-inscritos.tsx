@@ -41,7 +41,7 @@ export function ListaInscritos(p: Props) {
         <section
             aria-label="Lista de inscritos"
             aria-busy={p.cargando}
-            className="flex min-h-[420px] min-w-0 flex-1 flex-col overflow-hidden rounded-[24px] border border-[#E3E9F6] bg-white shadow-[0_1px_2px_rgba(22,34,63,0.04),0_12px_32px_-20px_rgba(22,34,63,0.18)] lg:min-h-0"
+            className="flex min-h-[420px] min-w-0 flex-1 flex-col overflow-hidden rounded-[28px] border border-[#E6EBF4] bg-white lg:min-h-0"
         >
             <div className="flex shrink-0 flex-col gap-2.5 border-b border-[#EEF2F9] px-4 py-2.5 md:h-[42px] md:flex-row md:items-center md:gap-4 md:px-5 md:py-0 [@media(min-height:860px)]:md:h-12">
                 <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1 md:flex-nowrap">

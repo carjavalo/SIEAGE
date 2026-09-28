@@ -13,7 +13,7 @@ export function SaltarAlContenido({ destino = 'contenido' }: { destino?: string 
                 e.preventDefault();
                 document.getElementById(destino)?.focus();
             }}
-            className="sr-only rounded-full bg-[#1E3A7B] text-sm font-semibold whitespace-nowrap text-white shadow-[0_12px_24px_-12px_rgba(30,58,123,0.6)] focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:px-4 focus:py-2.5 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#B7C6EA]"
+            className="sr-only rounded-full bg-[#1E3A7B] text-sm font-semibold whitespace-nowrap text-white focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:px-4 focus:py-2.5 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#B7C6EA]"
         >
             Saltar al contenido
         </a>
