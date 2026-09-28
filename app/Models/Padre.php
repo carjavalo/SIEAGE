@@ -12,7 +12,7 @@ class Padre extends Model
     public const CAMPOS = [
         'situacion', 'es_acudiente',
         'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido',
-        'tipo_documento', 'numero_documento', 'fecha_nacimiento', 'telefono', 'correo', 'ocupacion',
+        'tipo_documento', 'numero_documento', 'fecha_nacimiento', 'telefono', 'correo', 'direccion', 'barrio', 'ocupacion',
     ];
 
     protected $fillable = ['solicitud_inscripcion_id', 'estudiante_id', 'parentesco', 'registrado_por', ...self::CAMPOS];

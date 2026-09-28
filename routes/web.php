@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DeshabilitacionController;
 use App\Http\Controllers\EstudianteController;
+use App\Http\Controllers\GrupoController;
 use App\Http\Controllers\ImportacionController;
 use App\Http\Controllers\InscripcionController;
 use App\Http\Controllers\InscritoController;
@@ -40,6 +41,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('can:gestionar-matriculas')->group(function () {
         Route::post('estudiantes/{estudiante}/deshabilitar', [DeshabilitacionController::class, 'deshabilitar'])->whereNumber('estudiante')->name('estudiantes.deshabilitar');
         Route::post('estudiantes/{estudiante}/habilitar', [DeshabilitacionController::class, 'habilitar'])->whereNumber('estudiante')->name('estudiantes.habilitar');
+        Route::put('grupos/cupos', [GrupoController::class, 'cupos'])->name('grupos.cupos');
     });
 
     Route::post('promociones', [PromocionController::class, 'store'])->middleware('can:promover-estudiantes')->name('promociones.store');

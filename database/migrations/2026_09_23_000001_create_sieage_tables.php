@@ -18,9 +18,18 @@ return new class extends Migration
         // En MySQL se conservan los nombres de índice originales; SQLite exige nombres únicos en toda la BD.
         $indice = fn (string $tabla, string $nombre) => DB::getDriverName() === 'mysql' ? $nombre : "{$tabla}_{$nombre}";
 
+        // Hay equipos donde la base se cargó antes desde docs/bd/sieage.sql: esas tablas
+        // ya existen (con los mismos datos) y no se vuelven a crear. Así `migrate`
+        // funciona igual en una base vacía que en una importada del SQL.
+        $crear = function (string $tabla, Closure $definicion): void {
+            if (! Schema::hasTable($tabla)) {
+                Schema::create($tabla, $definicion);
+            }
+        };
+
         // --- Catálogos ---------------------------------------------------
 
-        Schema::create('instituciones', function (Blueprint $table) {
+        $crear('instituciones', function (Blueprint $table) {
             $table->tinyIncrements('id');
             $table->string('nombre', 150);
             $table->string('nit', 20)->nullable();
@@ -31,7 +40,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('sedes', function (Blueprint $table) {
+        $crear('sedes', function (Blueprint $table) {
             $table->tinyIncrements('id');
             $table->unsignedTinyInteger('institucion_id');
             $table->string('codigo', 5);
@@ -45,7 +54,7 @@ return new class extends Migration
             $table->foreign('institucion_id', 'fk_sedes_inst')->references('id')->on('instituciones')->restrictOnDelete()->cascadeOnUpdate();
         });
 
-        Schema::create('anios_lectivos', function (Blueprint $table) use ($indice) {
+        $crear('anios_lectivos', function (Blueprint $table) use ($indice) {
             $table->smallIncrements('id');
             $table->unsignedSmallInteger('anio')->unique($indice('anios_lectivos', 'anio'));
             $table->date('fecha_inicio')->nullable();
@@ -54,7 +63,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('periodos', function (Blueprint $table) {
+        $crear('periodos', function (Blueprint $table) {
             $table->smallIncrements('id');
             $table->unsignedSmallInteger('anio_lectivo_id');
             $table->unsignedTinyInteger('numero');
@@ -66,25 +75,25 @@ return new class extends Migration
             $table->foreign('anio_lectivo_id', 'fk_periodo_anio')->references('id')->on('anios_lectivos')->cascadeOnDelete();
         });
 
-        Schema::create('grados', function (Blueprint $table) use ($indice) {
+        $crear('grados', function (Blueprint $table) use ($indice) {
             $table->tinyIncrements('id');
             $table->tinyInteger('numero')->unique($indice('grados', 'numero'));
             $table->string('nombre', 20);
             $table->enum('nivel', ['preescolar', 'primaria', 'secundaria', 'media']);
         });
 
-        Schema::create('modalidades', function (Blueprint $table) use ($indice) {
+        $crear('modalidades', function (Blueprint $table) use ($indice) {
             $table->tinyIncrements('id');
             $table->string('nombre', 40)->unique($indice('modalidades', 'nombre'));
             $table->boolean('activa')->default(true);
         });
 
-        Schema::create('parentescos', function (Blueprint $table) use ($indice) {
+        $crear('parentescos', function (Blueprint $table) use ($indice) {
             $table->tinyIncrements('id');
             $table->string('nombre', 30)->unique($indice('parentescos', 'nombre'));
         });
 
-        Schema::create('barrios', function (Blueprint $table) use ($indice) {
+        $crear('barrios', function (Blueprint $table) use ($indice) {
             $table->smallIncrements('id');
             $table->string('nombre', 80)->unique($indice('barrios', 'nombre'));
             $table->string('comuna', 20)->nullable();
@@ -92,7 +101,7 @@ return new class extends Migration
 
         // --- Personas ----------------------------------------------------
 
-        Schema::create('docentes', function (Blueprint $table) use ($indice) {
+        $crear('docentes', function (Blueprint $table) use ($indice) {
             $table->increments('id');
             $table->unsignedBigInteger('user_id')->nullable();
             $table->string('documento', 20)->nullable()->unique($indice('docentes', 'documento'));
@@ -103,7 +112,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('estudiantes', function (Blueprint $table) {
+        $crear('estudiantes', function (Blueprint $table) {
             $table->increments('id');
             $table->enum('tipo_documento', ['R.C.', 'T.I.', 'C.C.', 'C.E.', 'P.P.T.', 'N.U.I.P.', 'N.E.S.'])->default('T.I.');
             $table->string('numero_documento', 20);
@@ -123,7 +132,7 @@ return new class extends Migration
             $table->index('nombre_completo', 'ix_est_nombre');
         });
 
-        Schema::create('acudientes', function (Blueprint $table) {
+        $crear('acudientes', function (Blueprint $table) {
             $table->increments('id');
             $table->enum('tipo_documento', ['C.C.', 'C.E.', 'P.P.T.', 'PAS', 'N.I.T.'])->default('C.C.');
             $table->string('numero_documento', 20);
@@ -139,7 +148,7 @@ return new class extends Migration
             $table->foreign('barrio_id', 'fk_acu_barrio')->references('id')->on('barrios')->nullOnDelete();
         });
 
-        Schema::create('estudiante_acudiente', function (Blueprint $table) {
+        $crear('estudiante_acudiente', function (Blueprint $table) {
             $table->unsignedInteger('estudiante_id');
             $table->unsignedInteger('acudiente_id');
             $table->unsignedTinyInteger('parentesco_id');
@@ -154,7 +163,7 @@ return new class extends Migration
 
         // --- Grupos y matrículas -----------------------------------------
 
-        Schema::create('grupos', function (Blueprint $table) use ($jornadas) {
+        $crear('grupos', function (Blueprint $table) use ($jornadas) {
             $table->increments('id');
             $table->unsignedSmallInteger('anio_lectivo_id');
             $table->unsignedTinyInteger('sede_id');
@@ -174,7 +183,7 @@ return new class extends Migration
             $table->foreign('sede_id', 'fk_grupo_sede')->references('id')->on('sedes')->restrictOnDelete();
         });
 
-        Schema::create('matriculas', function (Blueprint $table) use ($jornadas) {
+        $crear('matriculas', function (Blueprint $table) use ($jornadas) {
             $table->increments('id');
             $table->unsignedInteger('estudiante_id');
             $table->unsignedSmallInteger('anio_lectivo_id');
@@ -205,7 +214,7 @@ return new class extends Migration
             $table->foreign('sede_id', 'fk_mat_sede')->references('id')->on('sedes')->restrictOnDelete();
         });
 
-        Schema::create('entregas_boletin', function (Blueprint $table) {
+        $crear('entregas_boletin', function (Blueprint $table) {
             $table->increments('id');
             $table->unsignedInteger('matricula_id');
             $table->unsignedSmallInteger('periodo_id');
@@ -218,7 +227,7 @@ return new class extends Migration
             $table->foreign('periodo_id', 'fk_bol_per')->references('id')->on('periodos')->restrictOnDelete();
         });
 
-        Schema::create('boletines_excel', function (Blueprint $table) {
+        $crear('boletines_excel', function (Blueprint $table) {
             $table->increments('id');
             $table->unsignedInteger('matricula_id')->comment('la matrícula del año en curso');
             $table->unsignedTinyInteger('numero')->comment('el encabezado: 1 = 1º … 10 = 10º');
