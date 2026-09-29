@@ -38,8 +38,8 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
     }, [pagina.component]);
 
     const { auth } = pagina.props;
-    const pendientes = Number(pagina.props.inscritosPendientes ?? 0);
-    const esAdministrador = !!(auth as { puedeGestionarUsuarios?: boolean }).puedeGestionarUsuarios;
+    const pendientes = pagina.props.inscritosPendientes;
+    const esAdministrador = auth.puedeGestionarUsuarios;
 
     return (
         <>
