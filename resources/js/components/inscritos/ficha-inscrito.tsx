@@ -5,6 +5,7 @@ import {
     type FichaInscrito as Ficha,
     type PadreGuardado,
     type Rol,
+    documentosListos,
     enlaceEstudiante,
     hace,
     inicialesInscrito,
@@ -14,7 +15,7 @@ import {
     padresListos,
     parentescoAcudiente,
 } from '@/lib/inscritos';
-import { GraduationCap, MapPin, UserPen } from 'lucide-react';
+import { Check, FileCheck2, GraduationCap, MapPin, UserPen } from 'lucide-react';
 import { type ReactNode, type RefObject } from 'react';
 
 type Props = {
@@ -43,7 +44,7 @@ const ROLES: { clave: Rol; titulo: string; fallecido: string }[] = [
 ];
 
 function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel'> & { ficha: Ficha }) {
-    const { solicitud: s, padres, matricula } = ficha;
+    const { solicitud: s, padres, documentos, matricula } = ficha;
     const anios = edad(s.fecha_nacimiento);
     const documento = s.tipo_documento === 'Otro' ? s.tipo_documento_otro : s.tipo_documento;
 
@@ -68,21 +69,31 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
                 </>
             }
             accion={
-                // Cada etapa lleva a su paso: madre y padre → grupo → el estudiante ya matriculado.
+                // Cada etapa lleva a su paso: madre y padre → documentos → grupo → el estudiante ya matriculado.
                 matricula
                     ? { href: enlaceEstudiante(matricula), texto: 'Verlo en Estudiantes', icono: GraduationCap }
-                    : padresListos(padres) && s.estado === 'pendiente'
-                      ? { href: `/inscritos/${s.id}/grupo`, texto: 'Elegir grupo y matricular', icono: GraduationCap }
-                      : { href: `/inscritos/${s.id}`, texto: 'Completar madre y padre', icono: UserPen }
+                    : !padresListos(padres) || s.estado !== 'pendiente'
+                      ? { href: `/inscritos/${s.id}`, texto: 'Completar madre y padre', icono: UserPen }
+                      : documentos.listos === 0
+                        ? { href: `/inscritos/${s.id}/documentos`, texto: 'Recibir documentos', icono: FileCheck2 }
+                        : { href: `/inscritos/${s.id}/grupo`, texto: 'Elegir grupo y matricular', icono: GraduationCap }
             }
         >
-            <BloquesSolicitud solicitud={s} padres={padres} />
+            <BloquesSolicitud solicitud={s} padres={padres} documentos={documentos} />
         </ContenidoFicha>
     );
 }
 
 /** Lo que llenó la familia, en bloques. Sin `padres`, no muestra el de la madre y el padre (la página del inscrito los edita aparte). */
-export function BloquesSolicitud({ solicitud: s, padres }: { solicitud: Ficha['solicitud']; padres?: Ficha['padres'] }) {
+export function BloquesSolicitud({
+    solicitud: s,
+    padres,
+    documentos,
+}: {
+    solicitud: Ficha['solicitud'];
+    padres?: Ficha['padres'];
+    documentos?: Ficha['documentos'];
+}) {
     return (
         <div>
             <Bloque titulo="Acudiente">
@@ -102,6 +113,41 @@ export function BloquesSolicitud({ solicitud: s, padres }: { solicitud: Ficha['s
                             <Progenitor key={r.clave} rol={r} datos={padres[r.clave]} />
                         ))}
                     </div>
+                </Bloque>
+            )}
+
+            {/* Solo cuando ya se empezó a recibir (o ya se puede): a una inscripción recién llegada no le "faltan" aún. */}
+            {documentos && padres && (documentos.listos > 0 || padresListos(padres)) && (
+                <Bloque titulo="Documentos">
+                    {documentosListos(documentos) ? (
+                        <p className="flex items-center gap-2 text-[14px] font-medium text-[#1C6B4A]">
+                            <Check className="size-4" strokeWidth={2.5} />
+                            Completos ({documentos.total})
+                        </p>
+                    ) : (
+                        <>
+                            <p className="text-[14px] text-[#56627F]">
+                                <b className="font-semibold text-[#16223F] tabular-nums">
+                                    {documentos.listos} de {documentos.total}
+                                </b>{' '}
+                                entregados · falta{documentos.faltan.length === 1 ? '' : 'n'}:
+                            </p>
+                            <ul className="mt-1.5 space-y-1 text-[14px] text-[#16223F]">
+                                {documentos.faltan.map((d) => (
+                                    <li key={d} className="flex gap-2">
+                                        <span aria-hidden className="mt-[7px] size-1.5 shrink-0 rounded-full bg-[#D99A2B]" />
+                                        {d}
+                                    </li>
+                                ))}
+                            </ul>
+                            <a
+                                href={`/inscritos/${s.id}/documentos`}
+                                className="mt-2 inline-block text-[14px] font-semibold text-[#1E3A7B] underline-offset-4 hover:underline"
+                            >
+                                Marcar documentos
+                            </a>
+                        </>
+                    )}
                 </Bloque>
             )}
 

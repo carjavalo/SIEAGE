@@ -84,6 +84,8 @@ class SolicitudInscripcion extends Model
             'fecha_nacimiento' => 'date',
             'acudiente_fecha_nacimiento' => 'date',
             'autorizo_datos_en' => 'datetime',
+            'documentos' => 'array',
+            'documentos_en' => 'datetime',
         ];
     }
 

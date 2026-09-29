@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Padre;
 use App\Models\SolicitudInscripcion;
+use App\Support\Documentos;
 use App\Support\Grupos;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,8 +16,9 @@ use Inertia\Response;
 
 /**
  * Estudiantes inscritos por el formulario público que la secretaría revisa:
- * primero se completan los datos de la madre y el padre, y después se elige
- * el grupo y se matricula (se crean el estudiante, el acudiente y la matrícula).
+ * primero se completan los datos de la madre y el padre, luego se marcan los
+ * documentos que trajo el acudiente y después se elige el grupo y se
+ * matricula (se crean el estudiante, el acudiente y la matrícula).
  */
 class InscritoController extends Controller
 {
@@ -92,6 +94,7 @@ class InscritoController extends Controller
                 'acudiente_parentesco' => DB::table('parentescos')->where('id', $solicitud->acudiente_parentesco_id)->value('nombre'),
             ],
             'padres' => $solicitud->padres()->get()->keyBy('parentesco'),
+            'documentos' => Documentos::resumen($solicitud),
             // Si ya se aprobó: dónde quedó matriculado.
             'matricula' => $solicitud->matricula_id
                 ? DB::table('matriculas as m')
@@ -104,7 +107,54 @@ class InscritoController extends Controller
     }
 
     /**
-     * Segundo paso: elegir el grupo, dentro del grado que pidió la familia,
+     * Segundo paso: marcar los documentos que trajo el acudiente, con la lista
+     * de primaria o de bachillerato según el grado.
+     */
+    public function documentos(SolicitudInscripcion $solicitud): Response
+    {
+        return Inertia::render('inscritos/documentos', [
+            ...$this->ficha($solicitud),
+            'requisitos' => Documentos::para($solicitud),
+            'nivel' => Documentos::esPrimaria($solicitud) ? 'primaria' : 'bachillerato',
+            // Como objeto aunque esté vacío: en el navegador es un mapa clave → estado.
+            'marcados' => (object) ($solicitud->documentos ?? []),
+            'registro' => $solicitud->documentos_en ? [
+                'por' => DB::table('users')->where('id', $solicitud->documentos_por)->value('name'),
+                'en' => $solicitud->documentos_en->toIso8601String(),
+            ] : null,
+        ]);
+    }
+
+    public function guardarDocumentos(Request $request, SolicitudInscripcion $solicitud): RedirectResponse
+    {
+        $requisitos = collect(Documentos::para($solicitud))->keyBy('clave');
+
+        $request->validate([
+            // Solo claves de la lista que le toca (primaria o bachillerato).
+            'documentos' => ['present', 'array:'.$requisitos->keys()->implode(',')],
+            ...$requisitos->mapWithKeys(fn (array $d, string $clave) => [
+                "documentos.{$clave}" => ['nullable', Rule::in($d['noAplica'] ? [Documentos::ENTREGADO, Documentos::NO_APLICA] : [Documentos::ENTREGADO])],
+            ])->all(),
+        ], [
+            'array' => 'Hay un documento que no está en la lista.',
+            'in' => 'Ese documento no se puede marcar así.',
+        ]);
+
+        $solicitud->forceFill([
+            // Solo lo marcado, en el orden de la lista.
+            'documentos' => $requisitos->keys()->mapWithKeys(fn ($clave) => [$clave => $request->input("documentos.{$clave}")])->filter()->all(),
+            'documentos_por' => $request->user()?->id,
+            'documentos_en' => now(),
+        ])->save();
+
+        // Si sigue pendiente, lo que sigue es elegir el grupo y matricular.
+        return $solicitud->estado === SolicitudInscripcion::PENDIENTE
+            ? to_route('inscritos.grupo', $solicitud)
+            : back();
+    }
+
+    /**
+     * Tercer paso: elegir el grupo, dentro del grado que pidió la familia,
      * viendo cuántos estudiantes tiene cada uno.
      */
     public function grupo(SolicitudInscripcion $solicitud): Response
@@ -354,9 +404,9 @@ class InscritoController extends Controller
             }
         });
 
-        // Si sigue pendiente, lo que sigue es elegir el grupo y matricular.
+        // Si sigue pendiente, lo que sigue es recibir los documentos.
         return $solicitud->estado === SolicitudInscripcion::PENDIENTE
-            ? to_route('inscritos.grupo', $solicitud)
+            ? to_route('inscritos.documentos', $solicitud)
             : back();
     }
 }

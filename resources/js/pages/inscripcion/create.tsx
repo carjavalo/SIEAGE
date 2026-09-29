@@ -1,3 +1,4 @@
+import { AvisoSalir } from '@/components/inscripcion/aviso-salir';
 import {
     BotonPrincipal,
     BotonSecundario,
@@ -183,17 +184,26 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios,
     }, [form.isDirty, paso]);
 
     // El botón "Volver" navega sin recargar la página, así que "beforeunload"
-    // no se entera: se pregunta aquí antes de ir a otra página y perder lo escrito.
+    // no se entera: se detiene la visita y se pregunta con nuestro propio aviso.
+    // Si confirma, se repite la visita dejándola pasar.
+    const [salida, setSalida] = useState<string | null>(null);
+    const dejarSalir = useRef(false);
     useEffect(() => {
         if (!form.isDirty || paso === ENVIADO) return;
         return router.on('before', (evento) => {
             const { method, url } = evento.detail.visit;
             if (method !== 'get' || url.pathname === window.location.pathname) return; // el envío o esta misma página
-            if (!window.confirm('Si sales ahora, se perderán los datos que escribiste. ¿Quieres salir de la inscripción?')) {
-                evento.preventDefault();
-            }
+            if (dejarSalir.current) return;
+            evento.preventDefault();
+            setSalida(url.href);
         });
     }, [form.isDirty, paso]);
+    const salir = () => {
+        if (!salida) return;
+        dejarSalir.current = true;
+        setSalida(null);
+        router.visit(salida);
+    };
 
     const marcarErrores = (errs: Errores) => {
         form.clearErrors(...PASOS[paso].campos);
@@ -685,6 +695,8 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios,
                         </form>
                     </div>
                 </main>
+
+                <AvisoSalir abierto={salida !== null} onSeguir={() => setSalida(null)} onSalir={salir} />
             </div>
         </>
     );

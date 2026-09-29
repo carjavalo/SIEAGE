@@ -4,7 +4,7 @@ import { EncabezadoInscrito } from '@/components/inscritos/encabezado';
 import { Pasos } from '@/components/inscritos/pasos';
 import PanelLayout from '@/layouts/panel-layout';
 import { type Grupo, gradoCorto } from '@/lib/estudiantes';
-import { type FichaInscrito, enlaceEstudiante, nombreInscrito, padresListos } from '@/lib/inscritos';
+import { type FichaInscrito, documentosListos, enlaceEstudiante, nombreInscrito, padresListos } from '@/lib/inscritos';
 import { cn } from '@/lib/utils';
 import { Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Check, CircleAlert, GraduationCap, LoaderCircle } from 'lucide-react';
@@ -27,10 +27,10 @@ function cupo(libres: number) {
 }
 
 /**
- * Segundo paso para matricular a un inscrito: elegir el grupo, dentro del
+ * Tercer paso para matricular a un inscrito: elegir el grupo, dentro del
  * grado que pidió la familia, viendo cuántos estudiantes tiene cada uno.
  */
-export default function ElegirGrupo({ solicitud: s, padres, matricula, anio, gradoNumero, grupos: gruposServidor }: Props) {
+export default function ElegirGrupo({ solicitud: s, padres, documentos, matricula, anio, gradoNumero, grupos: gruposServidor }: Props) {
     const form = useForm<{ grupo_id: number | null }>({ grupo_id: null });
     const listos = padresListos(padres);
     const nombre = nombreInscrito(s);
@@ -69,13 +69,19 @@ export default function ElegirGrupo({ solicitud: s, padres, matricula, anio, gra
             <div className="relative">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <Link
-                        href={`/inscritos/${s.id}`}
+                        href={`/inscritos/${s.id}/documentos`}
                         className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white/75 pr-3 pl-2 text-[14px] font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-white focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none"
                     >
                         <ArrowLeft className="size-4" />
-                        Madre y padre
+                        Documentos
                     </Link>
-                    <Pasos solicitudId={s.id} actual={2} padresListos={listos} matriculado={!!matricula} />
+                    <Pasos
+                        solicitudId={s.id}
+                        actual={3}
+                        padresListos={listos}
+                        documentosListos={documentosListos(documentos)}
+                        matriculado={!!matricula}
+                    />
                 </div>
 
                 <EncabezadoInscrito solicitud={s} matricula={matricula} />
@@ -117,6 +123,28 @@ export default function ElegirGrupo({ solicitud: s, padres, matricula, anio, gra
                                     antes de matricular.
                                 </span>
                             </p>
+                        )}
+
+                        {listos && !documentosListos(documentos) && (
+                            <div className="mt-4 flex items-start gap-3 rounded-[16px] bg-[#FFF7E8] px-4 py-3 text-[14px] text-[#6B4A0E]">
+                                <CircleAlert className="mt-0.5 size-[18px] shrink-0 text-[#B7862C]" />
+                                <div className="min-w-0">
+                                    <p>
+                                        <b className="font-semibold">
+                                            Falta{documentos.faltan.length === 1 ? '' : 'n'} {documentos.faltan.length} documento
+                                            {documentos.faltan.length === 1 ? '' : 's'}.
+                                        </b>{' '}
+                                        Se puede matricular igual: quedan anotados en su ficha para pedirlos después.
+                                    </p>
+                                    <p className="mt-1 text-[13px] text-[#8A5A0B]">{documentos.faltan.join(' · ')}</p>
+                                    <Link
+                                        href={`/inscritos/${s.id}/documentos`}
+                                        className="mt-1.5 inline-block font-semibold underline underline-offset-4"
+                                    >
+                                        Revisar documentos
+                                    </Link>
+                                </div>
+                            </div>
                         )}
 
                         {grupos.length === 0 ? (

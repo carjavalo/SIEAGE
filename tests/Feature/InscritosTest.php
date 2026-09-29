@@ -182,11 +182,82 @@ class InscritosTest extends TestCase
         return ['7-1' => $grupo(7, 1), '7-2' => $grupo(7, 2), '8-1' => $grupo(8, 1)];
     }
 
-    public function test_guardar_los_padres_lleva_a_elegir_el_grupo()
+    public function test_guardar_los_padres_lleva_a_los_documentos()
     {
         $this->actingAs(User::factory()->create())
             ->put("/inscritos/{$this->solicitud->id}/padres", $this->padres())
+            ->assertRedirect("/inscritos/{$this->solicitud->id}/documentos");
+    }
+
+    public function test_la_lista_de_documentos_es_la_de_bachillerato_o_la_de_primaria()
+    {
+        $usuario = User::factory()->create();
+
+        // 7.º: bachillerato, sin carné de vacunas y con notas desde 5.º.
+        $this->actingAs($usuario)
+            ->get("/inscritos/{$this->solicitud->id}/documentos")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('inscritos/documentos')
+                ->where('nivel', 'bachillerato')
+                ->has('requisitos', 7)
+                ->where('requisitos.1.nombre', 'Fotocopia de la tarjeta de identidad del estudiante')
+                ->where('requisitos.2.nombre', 'Certificado de notas de 5.º al último grado aprobado')
+                ->where('requisitos.2.noAplica', true)
+                ->where('requisitos.3.ayuda', 'La familia escribió: Emssanar.')
+                ->where('registro', null));
+
+        // Transición usa la de primaria: con carné de vacunas.
+        $this->solicitud->forceFill([
+            'grado_id' => DB::table('grados')->where('numero', 0)->value('id'),
+            'tipo_documento' => 'R.C.',
+        ])->save();
+        $this->actingAs($usuario)
+            ->get("/inscritos/{$this->solicitud->id}/documentos")
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('nivel', 'primaria')
+                ->has('requisitos', 8)
+                ->where('requisitos.1.nombre', 'Fotocopia del registro civil del estudiante')
+                ->where('requisitos.4.clave', 'vacunas'));
+    }
+
+    public function test_marca_los_documentos_y_sigue_al_grupo_aunque_falten()
+    {
+        $usuario = User::factory()->create();
+
+        $this->actingAs($usuario)
+            ->put("/inscritos/{$this->solicitud->id}/documentos", [
+                'documentos' => ['fotos' => 'entregado', 'simat' => 'no_aplica', 'eps' => null],
+            ])
+            ->assertSessionHasNoErrors()
             ->assertRedirect("/inscritos/{$this->solicitud->id}/grupo");
+
+        $this->solicitud->refresh();
+        $this->assertSame(['fotos' => 'entregado', 'simat' => 'no_aplica'], $this->solicitud->documentos);
+        $this->assertSame($usuario->id, $this->solicitud->documentos_por);
+        $this->assertNotNull($this->solicitud->documentos_en);
+
+        // La ficha dice cuántos están listos y cuáles faltan.
+        $this->actingAs($usuario)
+            ->get("/inscritos/{$this->solicitud->id}")
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('documentos.listos', 2)
+                ->where('documentos.total', 7)
+                ->has('documentos.faltan', 5)
+                ->where('documentos.faltan.0', 'Fotocopia de la tarjeta de identidad del estudiante'));
+    }
+
+    public function test_solo_acepta_documentos_de_su_lista_y_no_aplica_donde_corresponde()
+    {
+        $usuario = User::factory()->create();
+        $url = "/inscritos/{$this->solicitud->id}/documentos";
+
+        // El carné de vacunas es de primaria: en 7.º no está en la lista.
+        $this->actingAs($usuario)->put($url, ['documentos' => ['vacunas' => 'entregado']])->assertSessionHasErrors('documentos');
+        // Las fotos no pueden ser "no aplica".
+        $this->actingAs($usuario)->put($url, ['documentos' => ['fotos' => 'no_aplica']])->assertSessionHasErrors('documentos.fotos');
+
+        $this->assertNull($this->solicitud->fresh()->documentos);
     }
 
     public function test_el_paso_del_grupo_muestra_los_grupos_del_grado_con_su_ocupacion()

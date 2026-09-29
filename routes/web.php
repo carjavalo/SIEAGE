@@ -35,6 +35,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('inscritos', [InscritoController::class, 'index'])->name('inscritos.index');
     Route::get('inscritos/{solicitud}', [InscritoController::class, 'show'])->whereNumber('solicitud')->name('inscritos.show');
     Route::put('inscritos/{solicitud}/padres', [InscritoController::class, 'guardarPadres'])->whereNumber('solicitud')->name('inscritos.padres');
+    Route::get('inscritos/{solicitud}/documentos', [InscritoController::class, 'documentos'])->whereNumber('solicitud')->name('inscritos.documentos');
+    Route::put('inscritos/{solicitud}/documentos', [InscritoController::class, 'guardarDocumentos'])->whereNumber('solicitud')->name('inscritos.documentos.guardar');
     Route::get('inscritos/{solicitud}/grupo', [InscritoController::class, 'grupo'])->whereNumber('solicitud')->name('inscritos.grupo');
     Route::post('inscritos/{solicitud}/matricular', [InscritoController::class, 'matricular'])->whereNumber('solicitud')->name('inscritos.matricular');
 
