@@ -49,9 +49,26 @@ export function Columnas({ datos, ancho, alto, rejilla = 3 }: { datos: Columna[]
                         {d.partes.map((p, j) => {
                             const h = (p.valor / tope) * zona;
                             y -= h;
-                            return <rect key={j} x={x} y={y} width={barra} height={Math.max(0, h)} fill={p.color} rx={j === d.partes.length - 1 ? 3 : 0} />;
+                            return (
+                                <rect
+                                    key={j}
+                                    x={x}
+                                    y={y}
+                                    width={barra}
+                                    height={Math.max(0, h)}
+                                    fill={p.color}
+                                    rx={j === d.partes.length - 1 ? 3 : 0}
+                                />
+                            );
                         })}
-                        <text x={x + barra / 2} y={zona - (total / tope) * zona - 5} textAnchor="middle" fontSize={10} fontWeight={600} fill="#16223F">
+                        <text
+                            x={x + barra / 2}
+                            y={zona - (total / tope) * zona - 5}
+                            textAnchor="middle"
+                            fontSize={10}
+                            fontWeight={600}
+                            fill="#16223F"
+                        >
                             {cifra(total)}
                         </text>
                         <text x={x + barra / 2} y={alto - 6} textAnchor="middle" fontSize={10.5} fill={colores.texto}>

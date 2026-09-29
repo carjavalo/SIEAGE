@@ -98,6 +98,8 @@ export type Informe = {
     porMes: { mes: string; n: number }[];
     sinFecha: number;
     inscripciones: { total: number; porEstado: Partial<Record<'pendiente' | 'aprobada' | 'rechazada', number>> | [] };
+    /** Datos que faltan para la mayoría de los activos (no se muestran). */
+    sinRegistrar: string[];
     anexo: { grupo: number; estudiantes: EstudianteInforme[] }[];
 };
 
@@ -125,7 +127,7 @@ export const fechaCorta = (iso: string) =>
     new Date(iso).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }).replace(/\./g, '').replace(/ de /g, ' ');
 
 export const fechaLarga = (iso: string) =>
-    new Date(iso).toLocaleString('es-CO', { day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' }).replace(',', ',');
+    new Date(iso).toLocaleString('es-CO', { day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 
 /** "2025-03" → "mar 2025". */
 export const mesCorto = (mes: string) =>
