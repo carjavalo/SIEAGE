@@ -9,6 +9,7 @@ import {
     decimal,
     fechaLarga,
     gradoCorto,
+    mesConAnio,
     mesCorto,
     pct,
     porcentaje,
@@ -68,7 +69,7 @@ export function Portada({ informe: i, indice }: { informe: Informe; indice: { ti
                     </li>
                 ))}
             </ol>
-            <p className="mt-[22px] text-[10.5px] text-[#8C97B3]">Datos con corte al {fechaLarga(i.corte)}.</p>
+            <p className="mt-[22px] text-[10.5px] text-[#8C97B3]">Datos con corte al {fechaLarga(i.corte)}</p>
         </div>
     );
 }
@@ -166,6 +167,21 @@ export function Resumen({ informe: i }: { informe: Informe }) {
                     </div>
                 </Bloque>
             </div>
+
+            <Bloque titulo="Por nivel" nota="estudiantes activos y grupos">
+                <Barra100 className="h-[12px]" partes={i.niveles.map((n) => ({ valor: n.activos, color: colorNivel[n.clave] }))} />
+                <div className="mt-[12px] grid" style={{ gridTemplateColumns: `repeat(${i.niveles.length}, minmax(0, 1fr))` }}>
+                    {i.niveles.map((n) => (
+                        <div key={n.clave} className="flex items-start gap-[8px]">
+                            <span className="mt-[5px] size-[9px] shrink-0 rounded-full" style={{ background: colorNivel[n.clave] }} />
+                            <span className="text-[11px] leading-[1.4] text-[#56627F]">
+                                <b className="block text-[16px] font-bold text-[#16223F] tabular-nums">{cifra(n.activos)}</b>
+                                {n.nombre} · {pct(n.activos, t.activos)} % · {cantidad(n.grupos, 'grupo', 'grupos')}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            </Bloque>
         </>
     );
 }
@@ -510,8 +526,10 @@ export function Grupos({ informe: i, filas, primera }: { informe: Informe; filas
 export function Perfil({ informe: i }: { informe: Informe }) {
     const t = i.totales;
     const maxExtra = Math.max(1, ...i.grados.map((g) => g.extraedad));
-    const parentescos = i.parentescos.slice(0, 6);
-    const otros = i.parentescos.slice(6).reduce((s, p) => s + p.n, 0);
+    // "Otro" (así se llama en la base) va junto con los parentescos poco frecuentes.
+    const conNombre = i.parentescos.filter((p) => p.nombre !== 'Otro');
+    const parentescos = conNombre.slice(0, 5);
+    const otros = conNombre.slice(5).reduce((s, p) => s + p.n, 0) + (i.parentescos.find((p) => p.nombre === 'Otro')?.n ?? 0);
     const maxParentesco = Math.max(1, ...i.parentescos.map((p) => p.n));
 
     return (
@@ -616,7 +634,13 @@ export function Perfil({ informe: i }: { informe: Informe }) {
                         />
                     ))}
                     {otros > 0 && (
-                        <FilaBarra etiqueta="Otros" valor={otros} max={maxParentesco} detalle={porcentaje(otros, t.activos)} anchoEtiqueta={96} />
+                        <FilaBarra
+                            etiqueta="Otros parentescos"
+                            valor={otros}
+                            max={maxParentesco}
+                            detalle={porcentaje(otros, t.activos)}
+                            anchoEtiqueta={96}
+                        />
                     )}
                 </Bloque>
             </div>
@@ -677,7 +701,7 @@ export function Retiros({ informe: i }: { informe: Informe }) {
                         ancho={682}
                         alto={150}
                         rejilla={2}
-                        datos={i.porMes.map((m) => ({ etiqueta: mesCorto(m.mes).split(' ')[0], partes: [{ valor: m.n, color: colores.fuerte }] }))}
+                        datos={i.porMes.map((m) => ({ etiqueta: mesConAnio(m.mes), partes: [{ valor: m.n, color: colores.fuerte }] }))}
                     />
                     <p className="mt-[4px] text-[10px] text-[#6B7690]">
                         De {mesCorto(i.porMes[0].mes)} a {mesCorto(i.porMes[i.porMes.length - 1].mes)} · {cifra(conFecha)} matrículas con fecha.
@@ -702,7 +726,7 @@ export function Retiros({ informe: i }: { informe: Informe }) {
                 </Bloque>
                 <Bloque titulo="Sobre los datos">
                     <ul className="space-y-[4px] text-[10.5px] leading-[1.45] text-[#56627F]">
-                        <li>Corte: {fechaLarga(i.corte)}. Las cifras cambian con cada matrícula, retiro o promoción.</li>
+                        <li>Las cifras son las del {fechaLarga(i.corte)} y cambian con cada matrícula, retiro o promoción.</li>
                         <li>Activos: matrículas del año en estado activo. Nuevo: primer año en el colegio.</li>
                         {i.sinRegistrar.length > 0 && <li>No se muestran {i.sinRegistrar.join(', ')}: faltan para la mayoría de los estudiantes.</li>}
                     </ul>
@@ -810,15 +834,14 @@ export function AnexoGrupo({
             <table className={cn(tabla, 'mt-[4px]')}>
                 <thead>
                     <tr>
-                        <th className={cn(th, num, 'w-[26px]')}>#</th>
+                        <th className={cn(th, num, 'w-[24px]')}>#</th>
                         <th className={th}>Estudiante</th>
-                        <th className={cn(th, 'w-[112px]')}>Documento</th>
-                        <th className={cn(th, num, 'w-[34px]')}>Edad</th>
-                        <th className={cn(th, 'w-[32px] text-center')}>Sexo</th>
-                        <th className={cn(th, 'w-[58px]')} />
-                        {conModalidad && <th className={cn(th, 'w-[84px]')}>Modalidad</th>}
-                        <th className={cn(th, conModalidad ? 'w-[128px]' : 'w-[160px]')}>Acudiente</th>
-                        <th className={cn(th, num, 'w-[84px]')}>Teléfono</th>
+                        <th className={cn(th, 'w-[100px]')}>Documento</th>
+                        <th className={cn(th, num, 'w-[30px]')}>Edad</th>
+                        <th className={cn(th, 'w-[52px]')} />
+                        {conModalidad && <th className={cn(th, 'w-[80px]')}>Modalidad</th>}
+                        <th className={cn(th, conModalidad ? 'w-[136px]' : 'w-[200px]')}>Acudiente</th>
+                        <th className={cn(th, num, 'w-[78px]')}>Teléfono</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -828,7 +851,6 @@ export function AnexoGrupo({
                             <td className={cn(td, 'truncate font-medium')}>{e.nombre}</td>
                             <td className={cn(td, 'truncate text-[#56627F] tabular-nums')}>{e.documento}</td>
                             <td className={cn(td, num, e.extraedad && 'font-semibold text-[#8A5A0B]')}>{e.edad ?? '—'}</td>
-                            <td className={cn(td, 'text-center text-[#56627F]')}>{e.sexo ?? '—'}</td>
                             <td className={cn(td, 'text-[9.5px] font-semibold')}>
                                 {e.condicion === 'nuevo' ? (
                                     <span className="text-[#4863B8]">Nuevo</span>

@@ -133,6 +133,9 @@ export const fechaLarga = (iso: string) =>
 export const mesCorto = (mes: string) =>
     new Date(`${mes}-01T00:00:00`).toLocaleDateString('es-CO', { month: 'short', year: 'numeric' }).replace(/\./g, '').replace(/ de /g, ' ');
 
+/** "2025-03" → "mar 25": corto para los ejes; con el año, porque la matrícula empieza en diciembre del año anterior. */
+export const mesConAnio = (mes: string) => `${mesCorto(mes).split(' ')[0]} ${mes.slice(2, 4)}`;
+
 /** Parte una lista en trozos: la primera hoja lleva menos filas (tiene el titular). */
 export function enHojas<T>(filas: T[], primera: number, siguientes: number): T[][] {
     if (filas.length <= primera) return [filas];
