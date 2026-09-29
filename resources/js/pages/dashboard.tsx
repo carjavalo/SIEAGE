@@ -79,7 +79,7 @@ export default function ImportarDatos() {
             {/* Ocupa del encabezado al borde de abajo (82px = encabezado + margen de arriba de <main>;
                 -mb-10 anula el de abajo) y centra el contenido; el pb lo sube un poco del centro exacto. */}
             <div className="relative mx-auto flex w-full max-w-[640px] flex-col justify-center py-6 md:-mb-10 md:min-h-[calc(100dvh-82px)] [@media(min-height:720px)]:md:pb-[6vh]">
-                <h1 className="text-center text-[28px] leading-8 font-semibold tracking-[-0.025em]">Importar datos</h1>
+                <h1 className="text-center text-[28px] leading-8 font-bold tracking-[-0.025em]">Importar datos</h1>
                 <p className="mx-auto mt-2 max-w-[520px] text-center text-[15px] text-balance text-[#56627F]">
                     Sube el libro de Excel de matrículas, el mismo con el que se trabaja cada año. Queda guardado en el servidor para cargar
                     estudiantes, acudientes y grupos.
@@ -113,7 +113,7 @@ export default function ImportarDatos() {
                             >
                                 <span
                                     className={cn(
-                                        'mb-4 flex size-14 items-center justify-center rounded-2xl bg-white text-[#1E3A7B] shadow-[0_8px_20px_-12px_rgba(30,58,123,0.5)] ring-1 ring-[#DCE5F8] transition-transform',
+                                        'mb-4 flex size-14 items-center justify-center rounded-2xl bg-white text-[#1E3A7B] ring-1 ring-[#DCE5F8] transition-transform',
                                         arrastrando ? 'scale-110' : 'group-hover:scale-105',
                                     )}
                                 >

@@ -16,7 +16,7 @@ export default function ConfiguracionLayout({ titulo, children }: { titulo: stri
     return (
         <PanelLayout titulo={titulo}>
             <div className="relative max-w-[880px]">
-                <h1 className="text-[28px] leading-8 font-semibold tracking-[-0.025em]">Configuración</h1>
+                <h1 className="text-[28px] leading-8 font-bold tracking-[-0.025em]">Configuración</h1>
                 <p className="mt-1 text-[15px] text-[#56627F]">Tu cuenta en SIEAGE: tus datos y tu clave para ingresar.</p>
 
                 <nav

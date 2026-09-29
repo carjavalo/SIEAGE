@@ -81,7 +81,7 @@ export default function Inscritos({ estado, conteos, inscritos, detalle }: Props
             <section className="relative flex shrink-0 flex-wrap items-center gap-x-6 gap-y-3 xl:flex-nowrap">
                 <div className="shrink-0">
                     <div className="flex items-center gap-2">
-                        <h1 className={`text-[24px] leading-[26px] font-semibold tracking-[-0.025em] ${alto}:text-[28px] ${alto}:leading-8`}>
+                        <h1 className={`text-[24px] leading-[26px] font-bold tracking-[-0.025em] ${alto}:text-[28px] ${alto}:leading-8`}>
                             Inscritos
                         </h1>
                         <a

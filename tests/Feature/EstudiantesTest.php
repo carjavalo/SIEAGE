@@ -70,4 +70,69 @@ class EstudiantesTest extends TestCase
 
         $this->actingAs(User::first())->get('/estudiantes/999999')->assertNotFound();
     }
+
+    public function test_el_filtro_de_sede_limita_grados_grupos_lista_y_totales()
+    {
+        $this->seed(DatosInicialesSeeder::class);
+        $lf = DB::table('sedes')->where('codigo', 'LF')->value('id');
+        $activosLf = DB::table('matriculas')->where('anio_lectivo_id', 12)->where('sede_id', $lf)->where('estado', 'activo')->count();
+        $sexto = DB::table('grados')->where('numero', 6)->value('id');
+        $primero = DB::table('grados')->where('numero', 1)->value('id');
+
+        // Primero no existe en Los Farallones: abre en el primer grado que sí tiene (sexto).
+        $this->actingAs(User::first())
+            ->get("/estudiantes?anio=2026&sede=LF&grado={$primero}")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('sede', 'LF')
+                ->has('sedes', 5)
+                ->where('sedes', fn ($sedes) => collect($sedes)->firstWhere('codigo', 'LF')['activos'] === $activosLf)
+                ->where('gradoId', $sexto)
+                ->where('totales.activos', $activosLf)
+                ->where('grados', fn ($grados) => collect($grados)->firstWhere('numero', 1)['activos'] === 0)
+                ->where('grupos', fn ($grupos) => collect($grupos)->every(fn ($g) => $g['sede_codigo'] === 'LF'))
+                ->where('estudiantes', fn ($lista) => count($lista) > 0 && collect($lista)->every(fn ($e) => $e['sede_codigo'] === 'LF')));
+
+        // Primaria en Rafael Pombo: solo sus grupos, aunque el grado exista en otras sedes.
+        $this->actingAs(User::first())
+            ->get("/estudiantes?anio=2026&sede=RP&grado={$primero}")
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('gradoId', $primero)
+                ->where('grupos', fn ($grupos) => count($grupos) > 0 && collect($grupos)->every(fn ($g) => $g['sede_codigo'] === 'RP')));
+
+        // Sede desconocida: como si no hubiera filtro.
+        $this->actingAs(User::first())->get('/estudiantes?anio=2026&sede=XX')
+            ->assertInertia(fn (Assert $page) => $page->where('sede', null));
+    }
+
+    public function test_promover_con_sede_solo_toca_esa_sede()
+    {
+        $this->seed(DatosInicialesSeeder::class);
+        $primero = DB::table('grados')->where('numero', 1)->value('id');
+        $rp = DB::table('sedes')->where('codigo', 'RP')->value('id');
+        $activosRp = DB::table('matriculas')->where('anio_lectivo_id', 12)->where('grado_id', $primero)->where('sede_id', $rp)->where('estado', 'activo')->count();
+
+        $this->actingAs(User::first())->post('/promociones', ['anio' => 2026, 'grado_id' => $primero, 'sede' => 'RP'])->assertSessionHasNoErrors();
+
+        $this->assertSame($activosRp, session('promocion')['promovidos']);
+        $this->assertSame($activosRp, DB::table('matriculas as m')->join('anios_lectivos as al', 'al.id', '=', 'm.anio_lectivo_id')->where('al.anio', 2027)->count());
+    }
+
+    public function test_los_cupos_de_cada_grupo_se_pueden_cambiar()
+    {
+        $this->seed(DatosInicialesSeeder::class);
+        [$a, $b] = DB::table('grupos')->where('anio_lectivo_id', 12)->limit(2)->pluck('id')->all();
+
+        $this->actingAs(User::first())->put('/grupos/cupos', ['cupos' => [$a => 40, $b => 28]])->assertSessionHasNoErrors();
+        $this->assertSame(40, (int) DB::table('grupos')->where('id', $a)->value('cupos_proyectados'));
+        $this->assertSame(28, (int) DB::table('grupos')->where('id', $b)->value('cupos_proyectados'));
+
+        // Fuera de rango: no se guarda nada.
+        $this->actingAs(User::first())->put('/grupos/cupos', ['cupos' => [$a => 0, $b => 150]])->assertSessionHasErrors(["cupos.{$a}", "cupos.{$b}"]);
+        $this->assertSame(40, (int) DB::table('grupos')->where('id', $a)->value('cupos_proyectados'));
+
+        // Los docentes no pueden.
+        $docente = User::factory()->create(['rol_id' => DB::table('roles')->where('nombre', 'docente')->value('id')]);
+        $this->actingAs($docente)->put('/grupos/cupos', ['cupos' => [$a => 20]])->assertForbidden();
+    }
 }

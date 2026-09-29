@@ -30,6 +30,8 @@ type Props = {
     onQuitarGrupo: () => void;
     onQuitarFiltros: () => void;
     onFila: (id: number) => void;
+    /** Botones al final de la barra (p. ej. Promover). */
+    acciones?: ReactNode;
 };
 
 const opcionesEstado: { clave: FiltroEstado; nombre: string; titulo?: string }[] = [
@@ -56,7 +58,7 @@ export function ListaEstudiantes(p: Props) {
         <section
             aria-label="Lista de estudiantes"
             aria-busy={p.cargando}
-            className="flex min-h-[420px] min-w-0 flex-1 flex-col overflow-hidden rounded-[24px] border border-[#E3E9F6] bg-white shadow-[0_1px_2px_rgba(22,34,63,0.04),0_12px_32px_-20px_rgba(22,34,63,0.18)] lg:min-h-0"
+            className="flex min-h-[420px] min-w-0 flex-1 flex-col overflow-hidden rounded-[28px] border border-[#E6EBF4] bg-white lg:min-h-0"
         >
             <div
                 className={`flex shrink-0 flex-col gap-2.5 border-b border-[#EEF2F9] px-4 py-2.5 md:h-[42px] md:flex-row md:items-center md:gap-4 md:px-5 md:py-0 ${alto}:md:h-12`}
@@ -136,6 +138,7 @@ export function ListaEstudiantes(p: Props) {
                         </button>
                     )}
                 </div>
+                {p.acciones}
             </div>
 
             <div
@@ -293,14 +296,21 @@ function armarColumnas(c: Columnas): Columna[] {
             ancho: '',
             extra: 'max-sm:pl-4',
             celda: (e, _i, elegida, b) => (
-                <span
-                    className={cn(
-                        'block truncate font-medium',
-                        elegida ? 'text-[#1E3A7B]' : e.estado !== 'activo' ? 'text-[#56627F]' : 'text-[#16223F]',
+                <span className="flex min-w-0 items-baseline gap-2">
+                    <span
+                        className={cn(
+                            'block truncate font-medium',
+                            elegida ? 'text-[#1E3A7B]' : e.estado !== 'activo' ? 'text-[#56627F]' : 'text-[#16223F]',
+                        )}
+                        title={e.nombre}
+                    >
+                        <Resaltado texto={e.nombre} buscadas={b} />
+                    </span>
+                    {e.promovido_a && (
+                        <span className="shrink-0 text-[12px] font-medium text-[#4863B8] tabular-nums" title={`Promovido a ${e.promovido_a}`}>
+                            → {e.promovido_a}
+                        </span>
                     )}
-                    title={e.nombre}
-                >
-                    <Resaltado texto={e.nombre} buscadas={b} />
                 </span>
             ),
         },
