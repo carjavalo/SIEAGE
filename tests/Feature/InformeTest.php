@@ -7,6 +7,7 @@ use Database\Seeders\DatosInicialesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Tests\TestCase;
 
 class InformeTest extends TestCase
@@ -65,5 +66,60 @@ class InformeTest extends TestCase
         $this->seed(DatosInicialesSeeder::class);
 
         $this->actingAs(User::first())->get('/informes/matricula?anio=1990')->assertNotFound();
+    }
+
+    public function test_el_excel_solo_con_sesion()
+    {
+        $this->get('/informes/matricula/excel?anio=2026&sede=P')->assertRedirect('/login');
+    }
+
+    public function test_el_excel_de_una_sede_trae_sus_grupos_y_el_consolidado()
+    {
+        $this->seed(DatosInicialesSeeder::class);
+        $anioId = DB::table('anios_lectivos')->where('anio', 2026)->value('id');
+        $sedeId = DB::table('sedes')->where('codigo', 'P')->value('id');
+        $grupos = DB::table('grupos')->where(['anio_lectivo_id' => $anioId, 'sede_id' => $sedeId])->pluck('codigo');
+
+        $respuesta = $this->actingAs(User::first())->get('/informes/matricula/excel?anio=2026&sede=P');
+        $respuesta->assertOk()->assertDownload('PRINCIPAL-2026.xlsx');
+
+        $archivo = tempnam(sys_get_temp_dir(), 'libro');
+        file_put_contents($archivo, $respuesta->streamedContent());
+        $libro = IOFactory::load($archivo);
+        unlink($archivo);
+
+        $hojas = $libro->getSheetNames();
+        foreach ($grupos as $codigo) {
+            $this->assertContains($codigo, $hojas);
+        }
+        foreach (['CONSOLIDADO', 'DIRECTORES DE GRUPO', 'NO TOCAR'] as $hoja) {
+            $this->assertContains($hoja, $hojas);
+        }
+        $this->assertNotContains('PEGAR AQUÍ', $hojas);
+
+        // Cada hoja de grupo: una fila por matrícula del grupo y sus totales con las fórmulas del colegio.
+        $primero = DB::table('grupos')->where(['anio_lectivo_id' => $anioId, 'sede_id' => $sedeId, 'codigo' => $grupos->first()])->first();
+        $matriculas = DB::table('matriculas as m')->join('estudiantes as e', 'e.id', '=', 'm.estudiante_id')
+            ->where('m.grupo_id', $primero->id)->whereNull('e.deleted_at');
+        $hoja = $libro->getSheetByName($primero->codigo);
+        $ultima = 2 + $matriculas->count() + 5;
+        $this->assertSame('=SUM(A3:A'.$ultima.')-A'.($ultima + 7), $hoja->getCell('A'.($ultima + 5))->getValue());
+        $this->assertSame('=COUNTIF(A3:A'.$ultima.',"R")', $hoja->getCell('A'.($ultima + 9))->getValue());
+        $this->assertSame('=B1-A'.($ultima + 3), $hoja->getCell('A1')->getValue());
+        $unos = collect(range(3, $ultima))->filter(fn ($r) => $hoja->getCell("A{$r}")->getValue() === 1)->count();
+        $this->assertSame((clone $matriculas)->where('m.estado', 'activo')->count(), $unos);
+
+        // CONSOLIDADO apunta a los totales de cada hoja.
+        $consolidado = $libro->getSheetByName('CONSOLIDADO');
+        $this->assertSame('SEDE PRINCIPAL', $consolidado->getCell('B3')->getValue());
+        $this->assertSame("='{$primero->codigo}'!A".($ultima + 5), $consolidado->getCell('E8')->getValue());
+    }
+
+    public function test_el_excel_de_una_sede_que_no_existe_da_404()
+    {
+        $this->seed(DatosInicialesSeeder::class);
+
+        $this->actingAs(User::first())->get('/informes/matricula/excel?anio=2026&sede=XX')->assertNotFound();
+        $this->actingAs(User::first())->get('/informes/matricula/excel?anio=1990&sede=P')->assertNotFound();
     }
 }

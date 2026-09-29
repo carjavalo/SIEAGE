@@ -35,6 +35,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Informe de matrícula del año (vista previa para guardar como PDF).
     Route::get('informes/matricula', [InformeController::class, 'matricula'])->name('informes.matricula');
+    Route::get('informes/matricula/excel', [InformeController::class, 'excel'])->name('informes.matricula.excel');
 
     Route::get('inscritos', [InscritoController::class, 'index'])->name('inscritos.index');
     Route::get('inscritos/{solicitud}', [InscritoController::class, 'show'])->whereNumber('solicitud')->name('inscritos.show');
