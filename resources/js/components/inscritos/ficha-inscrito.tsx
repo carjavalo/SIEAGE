@@ -15,6 +15,7 @@ import {
     padresListos,
     parentescoAcudiente,
 } from '@/lib/inscritos';
+import { Link } from '@inertiajs/react';
 import { Check, FileCheck2, GraduationCap, MapPin, UserPen } from 'lucide-react';
 import { type ReactNode, type RefObject } from 'react';
 
@@ -140,12 +141,12 @@ export function BloquesSolicitud({
                                     </li>
                                 ))}
                             </ul>
-                            <a
+                            <Link
                                 href={`/inscritos/${s.id}/documentos`}
                                 className="mt-2 inline-block text-[14px] font-semibold text-[#1E3A7B] underline-offset-4 hover:underline"
                             >
                                 Marcar documentos
-                            </a>
+                            </Link>
                         </>
                     )}
                 </Bloque>
