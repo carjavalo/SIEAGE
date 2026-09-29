@@ -160,6 +160,24 @@ html.panel {
    ese espacio ya está reservado, así que el margen sobra: correría el contenido.
    Y como el velo del diálogo no alcanza ese espacio, se oscurece aparte con el
    mismo tono: #16223F al 40 % sobre blanco (ver DialogOverlay en ui/dialog.tsx). */
+/* Informe de matrícula: cada .hoja es una página A4 sin márgenes (el diseño ya
+   los trae). Página con nombre: no cambia cómo se imprime el resto de la app. */
+@page informe {
+    size: A4;
+    margin: 0;
+}
+
+@media print {
+    .hoja {
+        page: informe;
+        break-after: page;
+    }
+
+    .hoja:last-child {
+        break-after: auto;
+    }
+}
+
 html.panel body[data-scroll-locked] {
     margin-right: 0 !important;
 }
