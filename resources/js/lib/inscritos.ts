@@ -123,7 +123,22 @@ export type PadreGuardado = { [K in keyof DatosPadre]: DatosPadre[K] | null };
 /** Dónde quedó matriculado, cuando ya se aprobó. */
 export type MatriculaInscrito = { estudiante_id: number; grado_id: number; grupo: string | null; anio: number };
 
-export type FichaInscrito = { solicitud: Solicitud; padres: Partial<Record<Rol, PadreGuardado>>; matricula: MatriculaInscrito | null };
+/** Cuántos documentos están listos (entregados o "no aplica") y cuáles faltan (App\Support\Documentos::resumen). */
+export type ResumenDocumentos = { listos: number; total: number; faltan: string[] };
+
+export type FichaInscrito = {
+    solicitud: Solicitud;
+    padres: Partial<Record<Rol, PadreGuardado>>;
+    documentos: ResumenDocumentos;
+    matricula: MatriculaInscrito | null;
+};
+
+/** Un documento de la lista del procedimiento de matrícula. */
+export type Requisito = { clave: string; nombre: string; ayuda: string | null; noAplica: boolean };
+
+export type EstadoDocumento = 'entregado' | 'no_aplica';
+
+export const documentosListos = (d: ResumenDocumentos) => d.listos === d.total;
 
 /** Ya se sabe algo de los dos (datos, fallecido o no registra): se puede matricular. */
 export const padresListos = (padres: FichaInscrito['padres']) => !!padres.madre && !!padres.padre;

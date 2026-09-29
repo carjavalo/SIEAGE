@@ -12,6 +12,7 @@ import {
     type Rol,
     type Situacion,
     type Solicitud,
+    documentosListos,
     hace,
     nombreInscrito,
     padresListos,
@@ -104,7 +105,7 @@ function Campo({
 }
 
 /** Revisión de un inscrito y registro de los datos de la madre y el padre. */
-export default function Inscrito({ solicitud: s, padres, matricula }: FichaInscrito) {
+export default function Inscrito({ solicitud: s, padres, documentos, matricula }: FichaInscrito) {
     const form = useForm<Record<Rol, DatosPadre>>({
         madre: inicial(ROLES[0], s, padres.madre),
         padre: inicial(ROLES[1], s, padres.padre),
@@ -125,7 +126,7 @@ export default function Inscrito({ solicitud: s, padres, matricula }: FichaInscr
         setVivenJuntos(si);
         if (si) form.setData('padre', { ...form.data.padre, direccion: form.data.madre.direccion, barrio: form.data.madre.barrio });
     };
-    // Mientras esté pendiente, guardar lleva al segundo paso: elegir el grupo.
+    // Mientras esté pendiente, guardar lleva al segundo paso: los documentos.
     const pendiente = s.estado === 'pendiente';
 
     const cambiar = (rol: Rol, cambios: Partial<DatosPadre>) => {
@@ -162,7 +163,7 @@ export default function Inscrito({ solicitud: s, padres, matricula }: FichaInscr
                 form.setDefaults();
                 sileo.success({
                     title: 'Madre y padre guardados',
-                    description: pendiente ? 'Ahora elige el grupo en que queda.' : 'Los datos quedaron actualizados.',
+                    description: pendiente ? 'Ahora marca los documentos que trajo.' : 'Los datos quedaron actualizados.',
                 });
             },
             onError: () => sileo.warning({ title: 'Revisa los datos', description: 'Marcamos en rojo lo que falta o está mal.' }),
@@ -180,7 +181,13 @@ export default function Inscrito({ solicitud: s, padres, matricula }: FichaInscr
                         <ArrowLeft className="size-4" />
                         Inscritos
                     </Link>
-                    <Pasos solicitudId={s.id} actual={1} padresListos={padresListos(padres)} matriculado={!!matricula} />
+                    <Pasos
+                        solicitudId={s.id}
+                        actual={1}
+                        padresListos={padresListos(padres)}
+                        documentosListos={documentosListos(documentos)}
+                        matriculado={!!matricula}
+                    />
                 </div>
 
                 <EncabezadoInscrito solicitud={s} matricula={matricula} />
@@ -417,7 +424,7 @@ export default function Inscrito({ solicitud: s, padres, matricula }: FichaInscr
                                 className="flex h-11 cursor-pointer items-center gap-2 rounded-[13px] bg-[#1E3A7B] px-5 text-[15px] font-semibold text-white transition hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.99] disabled:cursor-default disabled:opacity-70"
                             >
                                 {form.processing && <LoaderCircle className="size-4 animate-spin" />}
-                                {pendiente ? 'Guardar y elegir grupo' : 'Guardar madre y padre'}
+                                {pendiente ? 'Guardar y seguir a documentos' : 'Guardar madre y padre'}
                                 {pendiente && !form.processing && <ArrowRight className="size-[18px]" />}
                             </button>
                         </div>
