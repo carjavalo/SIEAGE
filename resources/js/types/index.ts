@@ -1,30 +1,14 @@
-import { LucideIcon } from 'lucide-react';
-
+/** Lo que HandleInertiaRequests::share() manda en todas las páginas. */
 export interface Auth {
     user: User;
-}
-
-export interface BreadcrumbItem {
-    title: string;
-    href: string;
-}
-
-export interface NavGroup {
-    title: string;
-    items: NavItem[];
-}
-
-export interface NavItem {
-    title: string;
-    url: string;
-    icon?: LucideIcon | null;
-    isActive?: boolean;
+    /** Para mostrar el menú "Usuarios" solo a quien puede usarlo. */
+    puedeGestionarUsuarios: boolean;
 }
 
 export interface SharedData {
-    name: string;
-    quote: { message: string; author: string };
     auth: Auth;
+    /** Aviso del menú "Inscritos" (0 sin sesión). */
+    inscritosPendientes: number;
     flash: { success: string | null };
     [key: string]: unknown;
 }
