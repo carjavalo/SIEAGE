@@ -1,5 +1,6 @@
 import { Desplegable } from '@/components/desplegable';
 import { botonPrimario } from '@/components/formulario';
+import { ExportarExcel } from '@/components/informe/exportar-excel';
 import { Hoja } from '@/components/informe/hoja';
 import { AnexoGrupo, Grados, Grupos, IndiceAnexo, Perfil, Portada, Resumen, Retiros, Sedes } from '@/components/informe/secciones';
 import { type Informe, cifra, enHojas, fechaCorta, fechaLarga, institucionCorta } from '@/lib/informe';
@@ -20,7 +21,7 @@ type Pieza = { clave: string; contenido: ReactNode; sinMarco?: boolean };
  */
 export default function InformeMatricula(informe: Informe) {
     const hojas = useMemo(() => armar(informe), [informe]);
-    const { anio, anios, totales, corte, institucion } = informe;
+    const { anio, anios, totales, corte, institucion, sedes } = informe;
 
     const encabezado: [ReactNode, ReactNode] = [
         <>
@@ -46,7 +47,7 @@ export default function InformeMatricula(informe: Informe) {
                         </Link>
                         <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                                <h1 className="truncate text-[17px] font-semibold tracking-[-0.01em]">Informe de matrícula</h1>
+                                <h1 className="truncate text-[17px] font-semibold tracking-[-0.01em] max-sm:sr-only">Informe de matrícula</h1>
                                 <Desplegable
                                     etiqueta="Año lectivo"
                                     valor={anio}
@@ -62,10 +63,16 @@ export default function InformeMatricula(informe: Informe) {
                         <p className="ml-auto hidden max-w-[260px] text-right text-[12.5px] leading-snug text-[#56627F] xl:block">
                             En el cuadro que se abre, elige <b className="font-semibold text-[#16223F]">«Guardar como PDF»</b> como destino.
                         </p>
-                        <button type="button" onClick={() => window.print()} className={`${botonPrimario} ml-auto shrink-0 xl:ml-0`}>
-                            <Download className="size-[18px]" />
-                            Guardar PDF
-                        </button>
+                        <div className="ml-auto flex shrink-0 items-center gap-2 xl:ml-0">
+                            <ExportarExcel anio={anio} sedes={sedes} />
+                            <button type="button" onClick={() => window.print()} className={botonPrimario}>
+                                <Download className="size-[18px]" />
+                                {/* En el celular, solo «PDF», para que quepa el título. */}
+                                <span>
+                                    <span className="max-sm:sr-only">Guardar </span>PDF
+                                </span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
