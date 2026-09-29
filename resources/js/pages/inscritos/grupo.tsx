@@ -17,7 +17,7 @@ type Props = FichaInscrito & {
     grupos: Grupo[];
 };
 
-const tarjeta = 'rounded-[24px] border border-[#E3E9F6] bg-white shadow-[0_1px_2px_rgba(22,34,63,0.04),0_12px_32px_-20px_rgba(22,34,63,0.18)]';
+const tarjeta = 'rounded-[28px] bg-[#F2F5FA]';
 
 /** Cómo va el cupo del grupo, en palabras. */
 function cupo(libres: number) {
@@ -90,7 +90,7 @@ export default function ElegirGrupo({ solicitud: s, padres, matricula, anio, gra
                         </p>
                         <Link
                             href={enlaceEstudiante(matricula)}
-                            className="mt-1 flex h-11 items-center gap-2 rounded-[13px] bg-[#1E3A7B] px-5 text-[15px] font-semibold text-white shadow-[0_12px_24px_-12px_rgba(30,58,123,0.6)] transition hover:bg-[#172E63]"
+                            className="mt-1 flex h-11 items-center gap-2 rounded-[13px] bg-[#1E3A7B] px-5 text-[15px] font-semibold text-white transition hover:bg-[#172E63]"
                         >
                             <GraduationCap className="size-[18px]" />
                             Verlo en Estudiantes
@@ -145,10 +145,10 @@ export default function ElegirGrupo({ solicitud: s, padres, matricula, anio, gra
                                             aria-checked={activo}
                                             onClick={() => form.setData('grupo_id', g.id)}
                                             className={cn(
-                                                'relative flex cursor-pointer flex-col rounded-[22px] bg-white p-4 text-left shadow-[0_1px_2px_rgba(22,34,63,0.06),0_10px_24px_-18px_rgba(22,34,63,0.35)] transition duration-200 focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none',
+                                                'relative flex cursor-pointer flex-col rounded-[22px] bg-white p-4 text-left transition duration-200 focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none',
                                                 activo
                                                     ? 'bg-[#F7F9FF] ring-2 ring-[#1E3A7B]'
-                                                    : 'ring-1 ring-[#E3E9F6] hover:-translate-y-0.5 hover:shadow-[0_1px_2px_rgba(22,34,63,0.06),0_16px_28px_-16px_rgba(22,34,63,0.35)] hover:ring-[#C4D2F1]',
+                                                    : 'ring-1 ring-[#E3E9F6] hover:-translate-y-0.5 hover:ring-[#C4D2F1]',
                                             )}
                                         >
                                             {activo && (
@@ -217,7 +217,7 @@ export default function ElegirGrupo({ solicitud: s, padres, matricula, anio, gra
                         )}
 
                         {grupos.length > 0 && (
-                            <div className="sticky bottom-4 z-10 mt-6 flex flex-wrap items-center justify-end gap-3 rounded-[18px] border border-[#E3E9F6] bg-white/90 p-2.5 pl-4 shadow-[0_12px_32px_-16px_rgba(22,34,63,0.35)] backdrop-blur">
+                            <div className="sticky bottom-4 z-10 mt-6 flex flex-wrap items-center justify-end gap-3 rounded-[18px] border border-[#E3E9F6] bg-white/90 p-2.5 pl-4 backdrop-blur">
                                 <p className="mr-auto min-w-0 text-[14px] text-[#56627F]">
                                     {form.errors.grupo_id ? (
                                         <span className="font-medium text-[#B42318]">{form.errors.grupo_id}</span>
@@ -244,7 +244,7 @@ export default function ElegirGrupo({ solicitud: s, padres, matricula, anio, gra
                                     type="button"
                                     onClick={matricular}
                                     disabled={!elegido || !listos || form.processing}
-                                    className="flex h-11 cursor-pointer items-center gap-2 rounded-[13px] bg-[#1E3A7B] px-5 text-[15px] font-semibold text-white shadow-[0_12px_24px_-12px_rgba(30,58,123,0.6)] transition hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.99] disabled:cursor-default disabled:opacity-50 disabled:shadow-none"
+                                    className="flex h-11 cursor-pointer items-center gap-2 rounded-[13px] bg-[#1E3A7B] px-5 text-[15px] font-semibold text-white transition hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.99] disabled:cursor-default disabled:opacity-50"
                                 >
                                     {form.processing ? <LoaderCircle className="size-4 animate-spin" /> : <GraduationCap className="size-[18px]" />}
                                     {elegido ? `Matricular en ${elegido.codigo}` : 'Matricular'}

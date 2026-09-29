@@ -3,6 +3,10 @@ export interface Auth {
     user: User;
     /** Para mostrar el menú "Usuarios" solo a quien puede usarlo. */
     puedeGestionarUsuarios: boolean;
+    /** Promover al grado siguiente (todos menos docentes). */
+    puedePromover: boolean;
+    /** Deshabilitar o habilitar matrículas y editar cupos (todos menos docentes). */
+    puedeDeshabilitar: boolean;
 }
 
 export interface SharedData {

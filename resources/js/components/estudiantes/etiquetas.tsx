@@ -63,6 +63,7 @@ const situaciones: Record<string, { texto: string; color: string; punto: string 
     retirado: { texto: 'Retirado', color: 'text-[#A12B2B]', punto: 'bg-[#D05454]' },
     cancelado: { texto: 'Cancelado', color: 'text-[#4E566B]', punto: 'bg-[#8C97B3]' },
     trasladado: { texto: 'Trasladado', color: 'text-[#8A5A0B]', punto: 'bg-[#D99A2B]' },
+    reprobado: { texto: 'Perdió el año', color: 'text-[#A12B2B]', punto: 'bg-[#D05454]' },
     graduado: { texto: 'Graduado', color: 'text-[#1E3A7B]', punto: 'bg-[#5B7BD0]' },
     repitente: { texto: 'Repitente', color: 'text-[#8A5A0B]', punto: 'bg-[#D99A2B]' },
     nuevo: { texto: 'Nuevo', color: 'text-[#2F56B0]', punto: 'bg-[#5B7BD0]' },

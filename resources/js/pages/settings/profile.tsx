@@ -32,7 +32,7 @@ export default function Perfil({ rol }: Props) {
         <ConfiguracionLayout titulo="Mi perfil">
             <form onSubmit={guardar} className={tarjeta}>
                 <div className="flex items-center gap-4 border-b border-[#EEF2F9] px-6 py-5">
-                    <span className="flex size-14 shrink-0 items-center justify-center rounded-[18px] bg-[#1E3A7B] text-[18px] font-semibold text-white shadow-[0_12px_24px_-12px_rgba(30,58,123,0.7)]">
+                    <span className="flex size-14 shrink-0 items-center justify-center rounded-[18px] bg-[#1E3A7B] text-[18px] font-semibold text-white">
                         {inicialesPersona(yo.name)}
                     </span>
                     <div className="min-w-0">

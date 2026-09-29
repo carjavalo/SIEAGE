@@ -52,6 +52,7 @@ class InscritosTest extends TestCase
                 'primer_nombre' => 'Martha', 'segundo_nombre' => '', 'primer_apellido' => 'Rentería', 'segundo_apellido' => 'Mier',
                 'tipo_documento' => 'C.C.', 'numero_documento' => '67.038.408', 'fecha_nacimiento' => '1986-07-02',
                 'telefono' => '318 718 4003', 'correo' => '', 'ocupacion' => 'Comerciante',
+                'direccion' => 'Calle 73 # 7M-18', 'barrio' => 'Alfonso López',
             ], $madre),
             'padre' => array_merge([
                 'situacion' => 'desconocido', 'es_acudiente' => true, 'primer_nombre' => 'Quedó escrito',
@@ -141,9 +142,11 @@ class InscritosTest extends TestCase
         $this->actingAs($usuario)->put("/inscritos/{$this->solicitud->id}/padres", $this->padres(padre: [
             'situacion' => 'registrado', 'es_acudiente' => false,
             'primer_nombre' => 'Carlos', 'primer_apellido' => 'Gómez', 'telefono' => '3100000000',
+            'direccion' => 'Calle 73 # 7M-18', 'barrio' => 'Alfonso López', // viven juntos: la misma
         ]))->assertSessionHasNoErrors();
 
         $this->assertDatabaseCount('padres', 2);
+        $this->assertSame(2, DB::table('padres')->where('direccion', 'Calle 73 # 7M-18')->where('barrio', 'Alfonso López')->count());
         $this->assertDatabaseHas('padres', ['parentesco' => 'padre', 'situacion' => 'registrado', 'primer_nombre' => 'Carlos']);
 
         $this->actingAs($usuario)->get('/inscritos')
@@ -154,9 +157,9 @@ class InscritosTest extends TestCase
     {
         $this->actingAs(User::factory()->create())
             ->put("/inscritos/{$this->solicitud->id}/padres", $this->padres(madre: [
-                'es_acudiente' => false, 'primer_nombre' => '', 'primer_apellido' => '', 'numero_documento' => '12',
+                'es_acudiente' => false, 'primer_nombre' => '', 'primer_apellido' => '', 'numero_documento' => '12', 'direccion' => '',
             ]))
-            ->assertSessionHasErrors(['madre.primer_nombre', 'madre.primer_apellido', 'madre.numero_documento']);
+            ->assertSessionHasErrors(['madre.primer_nombre', 'madre.primer_apellido', 'madre.numero_documento', 'madre.direccion']);
 
         $this->assertDatabaseCount('padres', 0);
     }

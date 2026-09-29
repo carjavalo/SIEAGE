@@ -312,6 +312,8 @@ class InscritoController extends Controller
                 "{$p}.fecha_nacimiento" => [$conDatos, 'nullable', 'date_format:Y-m-d', 'before:today', 'after:1900-01-01'],
                 "{$p}.telefono" => [$conDatos, 'nullable', 'digits_between:7,10'],
                 "{$p}.correo" => [$conDatos, 'nullable', 'email', 'max:120'],
+                "{$p}.direccion" => [$conDatos, 'required', 'string', 'max:150'],
+                "{$p}.barrio" => [$conDatos, 'nullable', 'string', 'max:80'],
                 "{$p}.ocupacion" => [$conDatos, 'nullable', 'string', 'max:80'],
             ];
         }
