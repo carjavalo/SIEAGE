@@ -23,7 +23,8 @@ import {
     palabras,
 } from '@/lib/estudiantes';
 import { type SharedData } from '@/types';
-import { router, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { FileText } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 
 type Props = {
@@ -207,6 +208,14 @@ export default function Estudiantes({
                         grado &&
                         !navegando && (
                             <>
+                                {/* Informe de todo el colegio en el año que se está viendo (vista previa para guardar en PDF). */}
+                                <Link
+                                    href={`/informes/matricula?anio=${anio}`}
+                                    className="flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none"
+                                >
+                                    <FileText className="size-4" />
+                                    Informe
+                                </Link>
                                 {/* Los cupos se editan en cualquier año (también en el planeado, después de promover). */}
                                 {puedeEditarCupos(auth) && <BotonCupos grado={grado} grupos={grupos} anio={anio} />}
                                 {promueve && (
