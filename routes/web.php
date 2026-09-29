@@ -4,6 +4,7 @@ use App\Http\Controllers\DeshabilitacionController;
 use App\Http\Controllers\EstudianteController;
 use App\Http\Controllers\GrupoController;
 use App\Http\Controllers\ImportacionController;
+use App\Http\Controllers\InformeController;
 use App\Http\Controllers\InscripcionController;
 use App\Http\Controllers\InscritoController;
 use App\Http\Controllers\PromocionController;
@@ -31,6 +32,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('estudiantes', [EstudianteController::class, 'index'])->name('estudiantes.index');
     Route::get('estudiantes/{estudiante}', [EstudianteController::class, 'show'])->whereNumber('estudiante')->name('estudiantes.show');
+
+    // Informe de matrícula del año (vista previa para guardar como PDF).
+    Route::get('informes/matricula', [InformeController::class, 'matricula'])->name('informes.matricula');
 
     Route::get('inscritos', [InscritoController::class, 'index'])->name('inscritos.index');
     Route::get('inscritos/{solicitud}', [InscritoController::class, 'show'])->whereNumber('solicitud')->name('inscritos.show');
