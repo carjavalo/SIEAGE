@@ -110,7 +110,7 @@ export default function Documentos({ solicitud: s, padres, documentos, matricula
                             type="button"
                             onClick={marcarTodos}
                             disabled={faltan === 0}
-                            className="h-9 shrink-0 cursor-pointer rounded-full px-3.5 text-[14px] font-semibold text-[#1E3A7B] transition hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none disabled:cursor-default disabled:text-[#5E6983] disabled:hover:bg-transparent"
+                            className="-ml-3.5 h-9 shrink-0 cursor-pointer rounded-full px-3.5 text-[14px] font-semibold text-[#1E3A7B] transition hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none disabled:cursor-default disabled:text-[#5E6983] disabled:hover:bg-transparent sm:ml-0"
                         >
                             Trajo todo
                         </button>
@@ -135,11 +135,11 @@ export default function Documentos({ solicitud: s, padres, documentos, matricula
                         ))}
                     </ul>
 
-                    <div className="sticky bottom-4 z-10 mt-5 flex flex-wrap items-center justify-end gap-3 rounded-[18px] border border-[#E3E9F6] bg-white/90 p-2.5 pl-4 backdrop-blur">
+                    <div className="sticky bottom-4 z-10 mt-5 flex items-center justify-end gap-3 rounded-[18px] border border-[#E3E9F6] bg-white/90 p-2.5 pl-4 backdrop-blur">
                         <div className="mr-auto flex min-w-0 items-center gap-3 text-[14px]">
                             <span
                                 aria-hidden
-                                className="h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-[#E9EEF8]"
+                                className="h-1.5 w-10 shrink-0 overflow-hidden rounded-full bg-[#E9EEF8] sm:w-20"
                                 title={`${listos} de ${requisitos.length}`}
                             >
                                 <span
@@ -155,16 +155,20 @@ export default function Documentos({ solicitud: s, padres, documentos, matricula
                                     <b className="font-semibold text-[#1C6B4A]">Documentos completos</b>
                                 ) : (
                                     <>
-                                        <b className="font-semibold text-[#16223F] tabular-nums">
+                                        <b className="font-semibold whitespace-nowrap text-[#16223F] tabular-nums">
                                             {listos} de {requisitos.length}
-                                        </b>{' '}
-                                        · falta{faltan === 1 ? '' : 'n'} {faltan}, se pueden entregar después
+                                        </b>
+                                        {/* En celular, solo la cuenta: la barra no debe tapar la lista. */}
+                                        <span className="hidden sm:inline">
+                                            {' '}
+                                            · falta{faltan === 1 ? '' : 'n'} {faltan}, se pueden entregar después
+                                        </span>
                                     </>
                                 )}
-                                {form.isDirty && <span className="text-[#8A5A0B]"> · sin guardar</span>}
+                                {form.isDirty && <span className="hidden text-[#8A5A0B] sm:inline"> · sin guardar</span>}
                             </span>
                         </div>
-                        <button type="submit" disabled={form.processing} className={cn(botonPrimario, 'rounded-[13px]')}>
+                        <button type="submit" disabled={form.processing} className={cn(botonPrimario, 'shrink-0 rounded-[13px]')}>
                             {form.processing && <LoaderCircle className="size-4 animate-spin" />}
                             {pendiente ? 'Guardar y elegir grupo' : 'Guardar documentos'}
                             {pendiente && !form.processing && <ArrowRight className="size-[18px]" />}
