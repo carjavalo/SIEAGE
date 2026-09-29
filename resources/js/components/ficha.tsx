@@ -130,7 +130,9 @@ export function EncabezadoFicha({
 }) {
     return (
         <div className="relative shrink-0 overflow-hidden bg-[#EEF2FB] px-5 pt-3.5 pb-3.5">
-            <div className="absolute top-3 right-3 flex items-center gap-1.5">
+            {/* z-10: la fila del título (relative, más abajo en el código) ocupa todo el ancho y,
+                sin esto, quedaba encima de la X y se tragaba casi todos los clics. */}
+            <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
                 {cargando && <LoaderCircle className="size-4 animate-spin text-[#5B7BD0]" aria-label="Cargando" />}
                 <button
                     type="button"
