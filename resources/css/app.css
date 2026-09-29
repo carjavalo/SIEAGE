@@ -152,4 +152,18 @@
 html.panel {
     scrollbar-gutter: stable;
     background-color: #fff;
+    transition: background-color 0.2s ease-out;
+}
+
+/* Con un diálogo abierto, Radix bloquea el scroll (marca body[data-scroll-locked])
+   y le suma a la página un margen del ancho de la barra para "compensarla". Aquí
+   ese espacio ya está reservado, así que el margen sobra: correría el contenido.
+   Y como el velo del diálogo no alcanza ese espacio, se oscurece aparte con el
+   mismo tono: #16223F al 40 % sobre blanco (ver DialogOverlay en ui/dialog.tsx). */
+html.panel body[data-scroll-locked] {
+    margin-right: 0 !important;
+}
+
+html.panel:has(body[data-scroll-locked]) {
+    background-color: #a2a7b2;
 }
