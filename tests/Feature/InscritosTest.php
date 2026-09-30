@@ -193,7 +193,7 @@ class InscritosTest extends TestCase
     {
         $usuario = User::factory()->create();
 
-        // 7.º: bachillerato, sin carné de vacunas y con notas desde 5.º.
+        // 7.º: bachillerato, sin carné de vacunas y con las notas del grado anterior (6.º) hacia atrás.
         $this->actingAs($usuario)
             ->get("/inscritos/{$this->solicitud->id}/documentos")
             ->assertOk()
@@ -202,7 +202,7 @@ class InscritosTest extends TestCase
                 ->where('nivel', 'bachillerato')
                 ->has('requisitos', 7)
                 ->where('requisitos.1.nombre', 'Fotocopia de la tarjeta de identidad del estudiante')
-                ->where('requisitos.2.nombre', 'Certificado de notas de 5.º al último grado aprobado')
+                ->where('requisitos.2.nombre', 'Certificados de notas de 6.º y de todos los grados anteriores')
                 ->where('requisitos.2.noAplica', true)
                 ->where('requisitos.3.ayuda', 'La familia escribió: Emssanar.')
                 ->where('registro', null));
@@ -218,7 +218,17 @@ class InscritosTest extends TestCase
                 ->where('nivel', 'primaria')
                 ->has('requisitos', 8)
                 ->where('requisitos.1.nombre', 'Fotocopia del registro civil del estudiante')
+                ->where('requisitos.2.nombre', 'Certificado de notas del último grado aprobado')
                 ->where('requisitos.4.clave', 'vacunas'));
+
+        // A 6.º, el grado anterior es 5.º; a 11.º, 10.º.
+        foreach ([6 => '5.º', 11 => '10.º'] as $entra => $anterior) {
+            $this->solicitud->forceFill(['grado_id' => DB::table('grados')->where('numero', $entra)->value('id')])->save();
+            $this->actingAs($usuario)
+                ->get("/inscritos/{$this->solicitud->id}/documentos")
+                ->assertInertia(fn (Assert $page) => $page
+                    ->where('requisitos.2.nombre', "Certificados de notas de {$anterior} y de todos los grados anteriores"));
+        }
     }
 
     public function test_marca_los_documentos_y_sigue_al_grupo_aunque_falten()
