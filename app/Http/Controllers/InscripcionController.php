@@ -28,6 +28,16 @@ class InscripcionController extends Controller
             'grados' => DB::table('grados')->orderBy('numero')->get(['id', 'numero', 'nombre']),
             'parentescos' => DB::table('parentescos')->orderBy('id')->pluck('nombre'),
             'barrios' => DB::table('barrios')->orderBy('nombre')->pluck('nombre'),
+            // Sedes que tienen grupos de transición a quinto este año: las que puede elegir primaria.
+            'sedesPrimaria' => DB::table('sedes as s')
+                ->whereExists(fn ($q) => $q->from('grupos as g')
+                    ->join('grados as gr', 'gr.id', '=', 'g.grado_id')
+                    ->join('anios_lectivos as al', 'al.id', '=', 'g.anio_lectivo_id')
+                    ->whereColumn('g.sede_id', 's.id')
+                    ->where('al.estado', 'activo')
+                    ->where('gr.numero', '<=', 5))
+                ->orderBy('s.nombre')
+                ->get(['s.id', 's.nombre']),
             // Hora en que se abrió el formulario, cifrada: ver esRobot().
             'sello' => Crypt::encryptString((string) now()->getTimestamp()),
         ])->withViewData(['meta' => [

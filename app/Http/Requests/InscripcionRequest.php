@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\SolicitudInscripcion;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -22,6 +23,11 @@ class InscripcionRequest extends FormRequest
     private const NUMERICOS = [
         'numero_documento', 'telefono_1', 'telefono_2',
         'acudiente_numero_documento', 'acudiente_telefono_1', 'acudiente_telefono_2',
+    ];
+
+    private const DOCUMENTOS_COMO_OTRO = [
+        'P.E.P.' => 'Permiso Especial de Permanencia',
+        'Acta' => 'Acta',
     ];
 
     private const NOMBRES = [
@@ -63,11 +69,25 @@ class InscripcionRequest extends FormRequest
             }
         }
 
+        // El formulario ofrece "Acta" y "Permiso Especial de Permanencia" como opciones
+        // propias; se guardan como "Otro" con su nombre, sin cambiar el resto del sistema.
+        if ($nombre = self::DOCUMENTOS_COMO_OTRO[$this->input('tipo_documento')] ?? null) {
+            $limpios['tipo_documento'] = 'Otro';
+            $limpios['tipo_documento_otro'] = $nombre;
+        }
+
+        // "Vive con el estudiante": su dirección es la de la residencia. Se copia aquí
+        // para validar y guardar lo mismo aunque el navegador no la haya enviado.
+        if ($this->boolean('acudiente_misma_direccion')) {
+            $limpios['acudiente_direccion'] = $this->input('direccion');
+            $limpios['acudiente_barrio'] = $this->input('barrio');
+        }
+
         $this->merge($limpios);
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -107,6 +127,8 @@ class InscripcionRequest extends FormRequest
 
             // 2. Grado y salud
             'grado_id' => ['required', 'integer', 'exists:grados,id'],
+            'jornada' => ['required', Rule::in(['Mañana', 'Tarde'])],
+            'sede_preferida_id' => ['nullable', 'integer', 'exists:sedes,id'],
             'tipo_sangre' => ['required', Rule::in(['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'])],
             // 'string' obligatorio: si llegara el número 2 en vez del texto '2',
             // MariaDB lo tomaría como posición del ENUM y guardaría '1' sin avisar.
@@ -133,6 +155,9 @@ class InscripcionRequest extends FormRequest
             'acudiente_ciudad_expedicion' => ['required', 'string', 'max:80'],
             'acudiente_parentesco' => ['required', Rule::in(DB::table('parentescos')->pluck('nombre'))],
             'acudiente_parentesco_otro' => $cual('acudiente_parentesco', 40),
+            'acudiente_misma_direccion' => ['nullable', 'boolean'],
+            'acudiente_direccion' => ['required', 'string', 'max:150'],
+            'acudiente_barrio' => ['required', 'string', 'max:80'],
             'acudiente_telefono_1' => $telefono,
             'acudiente_telefono_2' => $telefono,
             'acudiente_correo' => ['nullable', 'email', 'max:120'],
@@ -201,6 +226,11 @@ class InscripcionRequest extends FormRequest
             'ciudad_expedicion' => $d['ciudad_expedicion'],
 
             'grado_id' => (int) $d['grado_id'],
+            'jornada' => $d['jornada'],
+            // La sede solo se pregunta en primaria (transición a quinto).
+            'sede_preferida_id' => ! empty($d['sede_preferida_id']) && DB::table('grados')->where('id', $d['grado_id'])->value('numero') <= 5
+                ? (int) $d['sede_preferida_id']
+                : null,
             'tipo_sangre' => $d['tipo_sangre'],
             'sisben' => (string) $d['sisben'],
             'eps' => $d['eps'],
@@ -222,6 +252,8 @@ class InscripcionRequest extends FormRequest
             'acudiente_ciudad_expedicion' => $d['acudiente_ciudad_expedicion'],
             'acudiente_parentesco_id' => DB::table('parentescos')->where('nombre', $d['acudiente_parentesco'])->value('id'),
             'acudiente_parentesco_otro' => $cual('acudiente_parentesco'),
+            'acudiente_direccion' => $d['acudiente_direccion'],
+            'acudiente_barrio' => $d['acudiente_barrio'],
             'acudiente_telefono_1' => $d['acudiente_telefono_1'],
             'acudiente_telefono_2' => $d['acudiente_telefono_2'],
             'acudiente_correo' => $d['acudiente_correo'] ?? null,

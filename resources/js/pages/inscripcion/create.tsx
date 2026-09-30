@@ -42,6 +42,8 @@ type Props = {
     grados: Grado[];
     parentescos: string[];
     barrios: string[];
+    /** Sedes con primaria, para la pregunta "¿en qué sede quiere estudiar?". */
+    sedesPrimaria: { id: number; nombre: string }[];
     /** Hora de apertura cifrada por el servidor: ver InscripcionController::esRobot(). */
     sello: string;
 };
@@ -51,6 +53,11 @@ const REVISION = PASOS.length - 1;
 const ENVIADO = PASOS.length;
 
 /** "3001234567" -> "300 123 4567"; "3852436" -> "385 2436". */
+const JORNADAS = [
+    { valor: 'Mañana', etiqueta: 'Mañana' },
+    { valor: 'Tarde', etiqueta: 'Tarde' },
+];
+
 function telefono(t: string) {
     if (t.length === 10) return `${t.slice(0, 3)} ${t.slice(3, 6)} ${t.slice(6)}`;
     if (t.length === 7) return `${t.slice(0, 3)} ${t.slice(3)}`;
@@ -99,7 +106,7 @@ type CampoDeTexto = { [K in Campo]: DatosInscripcion[K] extends string ? K : nev
 /** Sileo, cuando haga falta (ver `aviso` en la página). */
 const avisos = () => import('sileo').then((m) => m.sileo);
 
-export default function Inscripcion({ anioLectivo, grados, parentescos, barrios, sello }: Props) {
+export default function Inscripcion({ anioLectivo, grados, parentescos, barrios, sedesPrimaria, sello }: Props) {
     const form = useForm<DatosInscripcion>({ ...DATOS_VACIOS, sello });
     const { data, errors, processing } = form;
 
@@ -127,6 +134,8 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios,
         () => grados.map((g) => ({ valor: String(g.id), etiqueta: g.nombre, detalle: g.numero === 0 ? 'Preescolar' : `${g.numero}º` })),
         [grados],
     );
+    // La sede solo se pregunta de transición a quinto.
+    const esPrimaria = (grados.find((g) => String(g.id) === data.grado_id)?.numero ?? 99) <= 5;
     const opcionesParentesco = useMemo<OpcionVisual[]>(() => parentescos.map((p) => ({ valor: p, etiqueta: etiquetaParentesco(p) })), [parentescos]);
 
     // ------------------------------------------------------------ edición --
@@ -464,6 +473,22 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios,
                                                             opciones={opcionesGrado}
                                                             columnas="grid-cols-2 sm:grid-cols-3"
                                                         />
+                                                        <Opciones
+                                                            {...props('jornada')}
+                                                            etiqueta="Jornada de clases"
+                                                            opciones={JORNADAS}
+                                                            columnas="grid-cols-2"
+                                                            ayuda="La jornada definitiva depende de los cupos disponibles al momento de asentar la matrícula."
+                                                        />
+                                                        {esPrimaria && sedesPrimaria.length > 0 && (
+                                                            <Opciones
+                                                                {...props('sede_preferida_id')}
+                                                                etiqueta="Sede donde desea estudiar"
+                                                                opciones={sedesPrimaria.map((s) => ({ valor: String(s.id), etiqueta: s.nombre }))}
+                                                                columnas="grid-cols-1 sm:grid-cols-3"
+                                                                ayuda="Opcional, solo para primaria. Si no eliges, el colegio asigna la sede."
+                                                            />
+                                                        )}
                                                     </Seccion>
 
                                                     <Seccion titulo="Salud">
@@ -629,6 +654,53 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios,
                                                         />
                                                     </Seccion>
 
+                                                    <Seccion titulo="Residencia del acudiente">
+                                                        <label
+                                                            className={cn(
+                                                                'col-span-full flex cursor-pointer items-center gap-3 rounded-[16px] border-[1.5px] px-4 py-3 transition',
+                                                                data.acudiente_misma_direccion
+                                                                    ? 'border-[#6E8BD6] bg-[#EEF2FB]'
+                                                                    : 'border-[#E3E9F6] hover:border-[#B9C8EC]',
+                                                            )}
+                                                        >
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={data.acudiente_misma_direccion}
+                                                                onChange={(e) => {
+                                                                    form.setData('acudiente_misma_direccion', e.target.checked);
+                                                                    form.clearErrors('acudiente_direccion', 'acudiente_barrio');
+                                                                }}
+                                                                className="size-[18px] shrink-0 accent-[#1E3A7B]"
+                                                            />
+                                                            <span className="text-[15px]">
+                                                                <span className="font-medium">Vive con el estudiante</span>
+                                                                <span className="block text-[13px] text-[#56627F]">
+                                                                    {data.acudiente_misma_direccion
+                                                                        ? `Su dirección es la misma: ${[data.direccion, data.barrio].filter(Boolean).join(' · ') || 'la de la residencia'}`
+                                                                        : 'Desmarcada: escribe la dirección y el barrio del acudiente.'}
+                                                                </span>
+                                                            </span>
+                                                        </label>
+                                                        {!data.acudiente_misma_direccion && (
+                                                            <>
+                                                                <CampoTexto
+                                                                    {...props('acudiente_direccion')}
+                                                                    etiqueta="Dirección de residencia"
+                                                                    placeholder="Ej. Carrera 8 # 70-12"
+                                                                    autoComplete="off"
+                                                                    ancho="completo"
+                                                                />
+                                                                <Buscador
+                                                                    {...props('acudiente_barrio')}
+                                                                    etiqueta="Barrio"
+                                                                    sugerencias={barrios}
+                                                                    placeholder="Escribe el nombre del barrio"
+                                                                    ancho="completo"
+                                                                />
+                                                            </>
+                                                        )}
+                                                    </Seccion>
+
                                                     <Seccion titulo="Contacto">
                                                         <CampoTexto
                                                             {...props('acudiente_telefono_1')}
@@ -663,6 +735,7 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios,
                                                 <Revision
                                                     data={data}
                                                     grados={grados}
+                                                    sedesPrimaria={sedesPrimaria}
                                                     error={errors.autorizacion_datos}
                                                     onEditar={irA}
                                                     onAutorizar={autorizar}
@@ -792,18 +865,22 @@ type Fila = [string, ReactNode];
 function Revision({
     data,
     grados,
+    sedesPrimaria,
     error,
     onEditar,
     onAutorizar,
 }: {
     data: DatosInscripcion;
     grados: Grado[];
+    sedesPrimaria: Props['sedesPrimaria'];
     error?: string;
     onEditar: (paso: number) => void;
     onAutorizar: (valor: boolean) => void;
 }) {
     const otro = (valor: string, cual: string) => (valor === 'Otro' ? cual : valor);
-    const grado = grados.find((g) => String(g.id) === data.grado_id)?.nombre ?? '';
+    const elegido = grados.find((g) => String(g.id) === data.grado_id);
+    const grado = elegido?.nombre ?? '';
+    const esPrimaria = (elegido?.numero ?? 99) <= 5;
 
     const bloques: { paso: number; filas: Fila[] }[] = [
         {
@@ -824,6 +901,10 @@ function Revision({
             paso: 1,
             filas: [
                 ['Grado', grado],
+                ['Jornada', data.jornada],
+                ...(esPrimaria && data.sede_preferida_id
+                    ? [['Sede', sedesPrimaria.find((s) => String(s.id) === data.sede_preferida_id)?.nombre ?? ''] as Fila]
+                    : []),
                 ['Tipo de sangre', data.tipo_sangre],
                 ['EPS', data.eps],
                 ['SISBÉN', etiquetaDe(NIVELES_SISBEN, data.sisben)],
@@ -855,6 +936,12 @@ function Revision({
                 ['Parentesco', data.acudiente_parentesco === 'Otro' ? data.acudiente_parentesco_otro : etiquetaParentesco(data.acudiente_parentesco)],
                 ['Documento', `${data.acudiente_numero_documento} · ${data.acudiente_ciudad_expedicion}`],
                 ['Fecha de nacimiento', fechaLarga(data.acudiente_fecha_nacimiento)],
+                [
+                    'Dirección',
+                    data.acudiente_misma_direccion
+                        ? 'Vive con el estudiante'
+                        : [data.acudiente_direccion, data.acudiente_barrio].filter(Boolean).join(' · '),
+                ],
                 ['Teléfonos', `${telefono(data.acudiente_telefono_1)} · ${telefono(data.acudiente_telefono_2)}`],
                 ['Correo', data.acudiente_correo || 'No registrado'],
             ],

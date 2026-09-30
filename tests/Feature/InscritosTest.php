@@ -31,12 +31,12 @@ class InscritosTest extends TestCase
             'sexo' => 'F', 'pais_nacimiento' => 'Colombia', 'ciudad_nacimiento' => 'Cali', 'fecha_nacimiento' => '2014-03-12',
             'tipo_documento' => 'T.I.', 'numero_documento' => '1109555001', 'ciudad_expedicion' => 'Cali',
             'grado_id' => (string) DB::table('grados')->where('numero', 7)->value('id'),
-            'tipo_sangre' => 'O+', 'sisben' => '1', 'eps' => 'Emssanar', 'grupo_etnico' => 'Mestizo', 'discapacidad' => '',
+            'jornada' => 'Mañana', 'tipo_sangre' => 'O+', 'sisben' => '1', 'eps' => 'Emssanar', 'grupo_etnico' => 'Mestizo', 'discapacidad' => '',
             'direccion' => 'Calle 73 # 7M-18', 'barrio' => 'Alfonso López', 'telefono_1' => '3001234567', 'telefono_2' => '3852436',
             'correo' => 'familia@correo.com',
             'acudiente_primer_nombre' => 'Martha', 'acudiente_segundo_nombre' => '', 'acudiente_primer_apellido' => 'Rentería',
             'acudiente_segundo_apellido' => 'Mier', 'acudiente_fecha_nacimiento' => '1986-07-02', 'acudiente_numero_documento' => '67038408',
-            'acudiente_ciudad_expedicion' => 'Cali', 'acudiente_parentesco' => 'Madre', 'acudiente_telefono_1' => '3187184003',
+            'acudiente_ciudad_expedicion' => 'Cali', 'acudiente_parentesco' => 'Madre', 'acudiente_misma_direccion' => true, 'acudiente_telefono_1' => '3187184003',
             'acudiente_telefono_2' => '3852436', 'acudiente_correo' => '', 'autorizacion_datos' => true,
         ])->assertSessionHasNoErrors();
 

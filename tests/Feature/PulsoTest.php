@@ -32,12 +32,12 @@ class PulsoTest extends TestCase
             'primer_nombre' => 'Ana', 'segundo_nombre' => '', 'primer_apellido' => 'Prueba', 'segundo_apellido' => 'Uno', 'sexo' => 'F',
             'pais_nacimiento' => 'Colombia', 'pais_nacimiento_otro' => '', 'ciudad_nacimiento' => 'Cali, Valle', 'fecha_nacimiento' => '2014-03-12',
             'tipo_documento' => 'T.I.', 'tipo_documento_otro' => '', 'numero_documento' => '99000222', 'ciudad_expedicion' => 'Cali',
-            'grado_id' => (string) DB::table('grados')->where('numero', 7)->value('id'), 'tipo_sangre' => 'O+', 'sisben' => '1', 'eps' => 'Prueba',
+            'grado_id' => (string) DB::table('grados')->where('numero', 7)->value('id'), 'jornada' => 'Mañana', 'tipo_sangre' => 'O+', 'sisben' => '1', 'eps' => 'Prueba',
             'grupo_etnico' => 'Mestizo', 'grupo_etnico_otro' => '', 'discapacidad' => '', 'direccion' => 'Calle 1 # 2-3', 'barrio' => 'Prueba',
             'telefono_1' => '3005550101', 'telefono_2' => '3005550102', 'correo' => 'prueba@correo.com',
             'acudiente_primer_nombre' => 'Rosa', 'acudiente_segundo_nombre' => '', 'acudiente_primer_apellido' => 'Prueba', 'acudiente_segundo_apellido' => '',
             'acudiente_fecha_nacimiento' => '1986-07-02', 'acudiente_numero_documento' => '99000333', 'acudiente_ciudad_expedicion' => 'Cali',
-            'acudiente_parentesco' => 'Madre', 'acudiente_parentesco_otro' => '', 'acudiente_telefono_1' => '3005550101',
+            'acudiente_parentesco' => 'Madre', 'acudiente_parentesco_otro' => '', 'acudiente_misma_direccion' => true, 'acudiente_telefono_1' => '3005550101',
             'acudiente_telefono_2' => '3005550102', 'acudiente_correo' => '', 'autorizacion_datos' => true,
         ])->assertSessionHasNoErrors();
     }

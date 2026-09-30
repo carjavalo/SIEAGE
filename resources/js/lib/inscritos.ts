@@ -86,6 +86,9 @@ export type Solicitud = Nombres & {
     enviada: string;
     grado_id: number;
     grado: string;
+    /** Lo que pidió la familia; vacíos en las solicitudes anteriores. */
+    jornada: string | null;
+    sede_preferida: string | null;
     sexo: 'F' | 'M';
     fecha_nacimiento: string;
     pais_nacimiento: string;
@@ -113,6 +116,9 @@ export type Solicitud = Nombres & {
     acudiente_ciudad_expedicion: string;
     acudiente_parentesco: string;
     acudiente_parentesco_otro: string | null;
+    /** Vacías en las solicitudes anteriores a este campo: entonces vale la de la residencia. */
+    acudiente_direccion: string | null;
+    acudiente_barrio: string | null;
     acudiente_telefono_1: string;
     acudiente_telefono_2: string;
     acudiente_correo: string | null;

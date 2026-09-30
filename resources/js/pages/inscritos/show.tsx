@@ -51,7 +51,10 @@ const datosDelAcudiente = (s: Solicitud): Partial<DatosPadre> => ({
 });
 
 /** Con quien vive el estudiante: si la madre o el padre es el acudiente, su dirección suele ser esta. */
-const direccionDeLaFamilia = (s: Solicitud) => ({ direccion: s.direccion ?? '', barrio: s.barrio ?? '' });
+const direccionDeLaFamilia = (s: Solicitud) => ({
+    direccion: s.acudiente_direccion ?? s.direccion ?? '',
+    barrio: s.acudiente_barrio ?? s.barrio ?? '',
+});
 
 /** Lo guardado; si no hay nada y el acudiente es esta persona, ya viene con sus datos. */
 function inicial(rol: (typeof ROLES)[number], s: Solicitud, guardado?: PadreGuardado): DatosPadre {

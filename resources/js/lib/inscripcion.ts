@@ -23,6 +23,10 @@ export type DatosInscripcion = {
     ciudad_expedicion: string;
     // 2. Grado y salud
     grado_id: string;
+    /** Jornada que prefiere; la definitiva depende del cupo. */
+    jornada: string;
+    /** Solo primaria (transición a quinto). Vacío: sin preferencia. */
+    sede_preferida_id: string;
     tipo_sangre: string;
     sisben: string;
     eps: string;
@@ -45,6 +49,10 @@ export type DatosInscripcion = {
     acudiente_ciudad_expedicion: string;
     acudiente_parentesco: string;
     acudiente_parentesco_otro: string;
+    /** Vive con el estudiante: su dirección es la de la residencia (paso 3). */
+    acudiente_misma_direccion: boolean;
+    acudiente_direccion: string;
+    acudiente_barrio: string;
     acudiente_telefono_1: string;
     acudiente_telefono_2: string;
     acudiente_correo: string;
@@ -74,6 +82,8 @@ export const DATOS_VACIOS: DatosInscripcion = {
     numero_documento: '',
     ciudad_expedicion: '',
     grado_id: '',
+    jornada: '',
+    sede_preferida_id: '',
     tipo_sangre: '',
     sisben: '',
     eps: '',
@@ -95,6 +105,9 @@ export const DATOS_VACIOS: DatosInscripcion = {
     acudiente_parentesco: '',
     acudiente_parentesco_otro: '',
     acudiente_telefono_1: '',
+    acudiente_misma_direccion: true,
+    acudiente_direccion: '',
+    acudiente_barrio: '',
     acudiente_telefono_2: '',
     acudiente_correo: '',
     autorizacion_datos: false,
@@ -117,6 +130,9 @@ export const CAMPOS_COMPARTIDOS_ENTRE_HERMANOS: Campo[] = [
     'acudiente_ciudad_expedicion',
     'acudiente_parentesco',
     'acudiente_parentesco_otro',
+    'acudiente_misma_direccion',
+    'acudiente_direccion',
+    'acudiente_barrio',
     'acudiente_telefono_1',
     'acudiente_telefono_2',
     'acudiente_correo',
@@ -142,6 +158,8 @@ export const TIPOS_DOCUMENTO: Opcion[] = [
     { valor: 'C.C.', etiqueta: 'Cédula de ciudadanía' },
     { valor: 'C.E.', etiqueta: 'Cédula de extranjería' },
     { valor: 'P.P.T.', etiqueta: 'Permiso de protección' },
+    { valor: 'P.E.P.', etiqueta: 'Permiso especial de permanencia' },
+    { valor: 'Acta', etiqueta: 'Acta' },
     { valor: 'Otro', etiqueta: 'Otro' },
 ];
 
@@ -202,7 +220,7 @@ export const PASOS: Paso[] = [
         titulo: 'Grado y salud',
         descripcion: 'Nos ayuda a ubicar al estudiante y a atenderlo bien si algo pasa en el colegio.',
         icono: HeartPulse,
-        campos: ['grado_id', 'tipo_sangre', 'sisben', 'eps', 'grupo_etnico', 'grupo_etnico_otro', 'discapacidad'],
+        campos: ['grado_id', 'jornada', 'sede_preferida_id', 'tipo_sangre', 'sisben', 'eps', 'grupo_etnico', 'grupo_etnico_otro', 'discapacidad'],
     },
     {
         corto: 'Residencia y contacto',
@@ -226,6 +244,8 @@ export const PASOS: Paso[] = [
             'acudiente_ciudad_expedicion',
             'acudiente_parentesco',
             'acudiente_parentesco_otro',
+            'acudiente_direccion',
+            'acudiente_barrio',
             'acudiente_telefono_1',
             'acudiente_telefono_2',
             'acudiente_correo',
@@ -328,6 +348,7 @@ export function validarPaso(paso: number, d: DatosInscripcion): Errores {
 
     if (paso === 1) {
         poner('grado_id', elegido(d.grado_id));
+        poner('jornada', elegido(d.jornada));
         poner('tipo_sangre', elegido(d.tipo_sangre));
         poner('sisben', elegido(d.sisben));
         poner('eps', texto(d.eps, 80));
@@ -357,6 +378,10 @@ export function validarPaso(paso: number, d: DatosInscripcion): Errores {
         poner('acudiente_ciudad_expedicion', texto(d.acudiente_ciudad_expedicion, 80));
         poner('acudiente_parentesco', elegido(d.acudiente_parentesco));
         poner('acudiente_parentesco_otro', cual(d.acudiente_parentesco, d.acudiente_parentesco_otro, 40));
+        if (!d.acudiente_misma_direccion) {
+            poner('acudiente_direccion', texto(d.acudiente_direccion, 150));
+            poner('acudiente_barrio', texto(d.acudiente_barrio, 80));
+        }
         poner('acudiente_telefono_1', digitos(d.acudiente_telefono_1, 7, 10));
         poner('acudiente_telefono_2', digitos(d.acudiente_telefono_2, 7, 10));
         poner('acudiente_correo', correo(d.acudiente_correo, false));

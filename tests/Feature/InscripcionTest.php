@@ -45,6 +45,7 @@ class InscripcionTest extends TestCase
             'numero_documento' => '1.109.555.001',
             'ciudad_expedicion' => 'Cali',
             'grado_id' => (string) DB::table('grados')->where('numero', 7)->value('id'),
+            'jornada' => 'Mañana',
             'tipo_sangre' => 'O+',
             'sisben' => '1',
             'eps' => 'Emssanar',
@@ -65,6 +66,7 @@ class InscripcionTest extends TestCase
             'acudiente_ciudad_expedicion' => 'Cali',
             'acudiente_parentesco' => 'Madre',
             'acudiente_parentesco_otro' => '',
+            'acudiente_misma_direccion' => true,
             'acudiente_telefono_1' => '318 718 4003',
             'acudiente_telefono_2' => '3852436',
             'acudiente_correo' => '',
@@ -337,5 +339,57 @@ class InscripcionTest extends TestCase
         DB::table('solicitudes_inscripcion')->update(['estado' => SolicitudInscripcion::APROBADA]);
 
         $this->assertSame('2026-09-23 10:00:00', SolicitudInscripcion::sole()->autorizo_datos_en->format('Y-m-d H:i:s'));
+    }
+
+    public function test_la_direccion_del_acudiente_es_la_de_la_residencia_o_la_suya()
+    {
+        // Vive con el estudiante: queda con la dirección y el barrio de la residencia.
+        $this->post('/inscripcion', $this->datos())->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('solicitudes_inscripcion', [
+            'numero_documento' => '1109555001', 'acudiente_direccion' => 'Calle 73 # 7M-18', 'acudiente_barrio' => 'Alfonso López',
+        ]);
+
+        // Vive en otra parte: se guarda la que escribió.
+        $this->post('/inscripcion', $this->datos([
+            'numero_documento' => '1109555002', 'acudiente_misma_direccion' => false,
+            'acudiente_direccion' => 'Carrera 8 # 70-12', 'acudiente_barrio' => 'Petecuy',
+        ]))->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('solicitudes_inscripcion', [
+            'numero_documento' => '1109555002', 'direccion' => 'Calle 73 # 7M-18', 'acudiente_direccion' => 'Carrera 8 # 70-12', 'acudiente_barrio' => 'Petecuy',
+        ]);
+
+        // Sin marcar la casilla y sin escribirla: se pide.
+        $this->post('/inscripcion', $this->datos(['numero_documento' => '1109555003', 'acudiente_misma_direccion' => false]))
+            ->assertSessionHasErrors(['acudiente_direccion', 'acudiente_barrio']);
+    }
+
+    public function test_jornada_sede_de_primaria_y_documentos_del_formulario_del_colegio()
+    {
+        // La sede es de otra tabla: basta una para probar la preferencia.
+        DB::table('instituciones')->insert(['id' => 1, 'nombre' => 'I.E.']);
+        DB::table('sedes')->insert(['id' => 4, 'institucion_id' => 1, 'codigo' => 'RP', 'nombre' => 'Rafael Pombo']);
+        $grado = fn (int $n) => (string) DB::table('grados')->where('numero', $n)->value('id');
+
+        // La jornada es obligatoria.
+        $this->post('/inscripcion', $this->datos(['jornada' => '']))->assertSessionHasErrors('jornada');
+
+        // Primaria: se guarda la sede que pidió. "Permiso Especial de Permanencia" queda como Otro con su nombre.
+        $this->post('/inscripcion', $this->datos([
+            'numero_documento' => '1109555010', 'grado_id' => $grado(3), 'jornada' => 'Tarde', 'sede_preferida_id' => '4',
+            'tipo_documento' => 'P.E.P.',
+        ]))->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('solicitudes_inscripcion', [
+            'numero_documento' => '1109555010', 'jornada' => 'Tarde', 'sede_preferida_id' => 4,
+            'tipo_documento' => 'Otro', 'tipo_documento_otro' => 'Permiso Especial de Permanencia',
+        ]);
+
+        // Bachillerato: la sede no aplica aunque llegue. "Acta" también queda como Otro.
+        $this->post('/inscripcion', $this->datos([
+            'numero_documento' => '1109555011', 'grado_id' => $grado(7), 'sede_preferida_id' => '4', 'tipo_documento' => 'Acta',
+        ]))->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('solicitudes_inscripcion', [
+            'numero_documento' => '1109555011', 'jornada' => 'Mañana', 'sede_preferida_id' => null,
+            'tipo_documento' => 'Otro', 'tipo_documento_otro' => 'Acta',
+        ]);
     }
 }
