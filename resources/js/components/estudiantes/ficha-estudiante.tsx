@@ -1,8 +1,9 @@
 import { EstadoMatricula, puedeDeshabilitar } from '@/components/estudiantes/deshabilitar';
+import { AgregarAcudiente, EditarAcudiente, EditarEstudiante } from '@/components/estudiantes/editar-datos';
 import { Marca, PuntoSede, iniciales, sedeInfo, textoSituacion } from '@/components/estudiantes/etiquetas';
 import { PromocionEstudiante, puedePromover } from '@/components/estudiantes/promocion';
 import { Bloque, ContenidoFicha, PanelFicha, Sep, TarjetaContacto } from '@/components/ficha';
-import { type FichaDetalle, type Grado, edad, fecha } from '@/lib/estudiantes';
+import { type FichaDetalle, type Grado, edad, fecha, parentescoDe } from '@/lib/estudiantes';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
@@ -38,6 +39,8 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
     const { estudiante: e, actual: m, historia, acudientes } = ficha;
     const { auth } = usePage<SharedData>().props;
     const enCurso = !!m && anioEnCurso === m.anio;
+    // Los datos de la persona no son de un año: se corrigen desde cualquiera.
+    const editable = auth.puedeEditarDatos;
     const anios = edad(e.fecha_nacimiento);
     const retirado = m && m.estado !== 'activo';
     // La sede solo se repite en la historia si el estudiante ha pasado por más de una.
@@ -66,6 +69,7 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
                 )
             }
             accion={{ href: `/estudiantes/${e.id}`, texto: 'Ficha completa e impresión', icono: FileText }}
+            acciones={editable && <EditarEstudiante estudiante={e} />}
         >
             {retirado && (m.fecha_retiro || m.motivo_retiro) && (
                 <div className="mx-5 mt-3.5 flex items-start gap-3 rounded-[16px] bg-[#FDECEC] px-4 py-3 text-[14px] text-[#8E2323]">
@@ -86,7 +90,10 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
             )}
 
             <div>
-                <Bloque titulo={acudientes.length > 1 ? `Acudientes · ${acudientes.length}` : 'Acudiente'}>
+                <Bloque
+                    titulo={acudientes.length > 1 ? `Acudientes · ${acudientes.length}` : 'Acudiente'}
+                    accion={editable && <AgregarAcudiente estudianteId={e.id} parentescos={ficha.parentescos} primero={acudientes.length === 0} />}
+                >
                     {acudientes.length === 0 ? (
                         <p className="text-sm text-[#56627F]">Sin acudiente registrado</p>
                     ) : (
@@ -95,14 +102,24 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
                                 .sort((a, b) => b.es_principal - a.es_principal)
                                 .map((a) => (
                                     <TarjetaContacto
-                                        key={`${a.numero_documento}-${a.parentesco}`}
+                                        key={a.id}
                                         nombre={a.nombre}
-                                        detalle={`${a.parentesco} · ${a.tipo_documento} ${a.numero_documento}`}
+                                        detalle={`${parentescoDe(a)} · ${a.tipo_documento} ${a.numero_documento}`}
                                         insignia={a.es_principal ? 'Principal' : undefined}
                                         celular={a.telefono_celular}
                                         fijo={a.telefono_fijo}
                                         correo={a.email}
                                         direccion={[a.direccion, a.barrio].filter(Boolean).join(' · ') || null}
+                                        accion={
+                                            editable && (
+                                                <EditarAcudiente
+                                                    estudianteId={e.id}
+                                                    acudiente={a}
+                                                    total={acudientes.length}
+                                                    parentescos={ficha.parentescos}
+                                                />
+                                            )
+                                        }
                                     />
                                 ))}
                         </div>

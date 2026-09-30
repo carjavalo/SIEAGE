@@ -58,6 +58,8 @@ type Encabezado = {
     /** Grupo o grado y marcas de situación. */
     marcas?: ReactNode;
     accion: { href: string; texto: string; icono: LucideIcon };
+    /** Botones junto a la X (p. ej. el lápiz para editar). */
+    acciones?: ReactNode;
     cargando: boolean;
     posicion: number;
     total: number;
@@ -67,7 +69,20 @@ type Encabezado = {
 };
 
 /** Ficha completa: encabezado con degradado, acción principal, posición en la lista y el cuerpo desplazable. */
-export function ContenidoFicha({ iniciales, titulo, detalle, marcas, accion, cargando, posicion, total, onCerrar, onMover, children }: Encabezado) {
+export function ContenidoFicha({
+    iniciales,
+    titulo,
+    detalle,
+    marcas,
+    accion,
+    acciones,
+    cargando,
+    posicion,
+    total,
+    onCerrar,
+    onMover,
+    children,
+}: Encabezado) {
     const { icono: Icono } = accion;
 
     return (
@@ -79,7 +94,15 @@ export function ContenidoFicha({ iniciales, titulo, detalle, marcas, accion, car
             )}
             aria-busy={cargando}
         >
-            <EncabezadoFicha avatar={iniciales} titulo={titulo} detalle={detalle} marcas={marcas} cargando={cargando} onCerrar={onCerrar}>
+            <EncabezadoFicha
+                avatar={iniciales}
+                titulo={titulo}
+                detalle={detalle}
+                marcas={marcas}
+                acciones={acciones}
+                cargando={cargando}
+                onCerrar={onCerrar}
+            >
                 <div className="flex items-center gap-2">
                     <Link
                         href={accion.href}
@@ -116,6 +139,7 @@ export function EncabezadoFicha({
     titulo,
     detalle,
     marcas,
+    acciones,
     cargando,
     onCerrar,
     children,
@@ -124,6 +148,7 @@ export function EncabezadoFicha({
     titulo: string;
     detalle?: ReactNode;
     marcas?: ReactNode;
+    acciones?: ReactNode;
     cargando?: boolean;
     onCerrar: () => void;
     children?: ReactNode;
@@ -134,6 +159,7 @@ export function EncabezadoFicha({
                 sin esto, quedaba encima de la X y se tragaba casi todos los clics. */}
             <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
                 {cargando && <LoaderCircle className="size-4 animate-spin text-[#5B7BD0]" aria-label="Cargando" />}
+                {acciones}
                 <button
                     type="button"
                     onClick={onCerrar}
@@ -145,7 +171,7 @@ export function EncabezadoFicha({
                 </button>
             </div>
 
-            <div className="relative flex items-start gap-3.5 pr-8">
+            <div className={cn('relative flex items-start gap-3.5', acciones ? 'pr-[76px]' : 'pr-8')}>
                 <span className="flex size-12 shrink-0 items-center justify-center rounded-[15px] bg-[#1E3A7B] text-[16px] font-semibold text-white">
                     {avatar}
                 </span>
@@ -162,10 +188,13 @@ export function EncabezadoFicha({
 }
 
 /** Una sección del cuerpo de la ficha. Van dentro de un mismo contenedor para que la primera no lleve línea. */
-export function Bloque({ titulo, children }: { titulo: string; children: ReactNode }) {
+export function Bloque({ titulo, accion, children }: { titulo: string; accion?: ReactNode; children: ReactNode }) {
     return (
         <section className={`border-t border-[#EEF2F9] px-5 py-3.5 first:border-t-0 ${alto}:py-4`}>
-            <h3 className="mb-2.5 text-[12px] font-semibold tracking-[0.08em] text-[#5E6983] uppercase">{titulo}</h3>
+            <div className="mb-2.5 flex items-center justify-between gap-3">
+                <h3 className="text-[12px] font-semibold tracking-[0.08em] text-[#5E6983] uppercase">{titulo}</h3>
+                {accion}
+            </div>
             {children}
         </section>
     );
@@ -179,10 +208,12 @@ type Contacto = {
     fijo?: string | null;
     correo?: string | null;
     direccion?: string | null;
+    /** Botón a la derecha del nombre (p. ej. el lápiz para editar). */
+    accion?: ReactNode;
 };
 
 /** Tarjeta de una persona de contacto (acudiente, madre, padre) con botones para llamar y escribir. */
-export function TarjetaContacto({ nombre, detalle, insignia, celular, fijo, correo, direccion }: Contacto) {
+export function TarjetaContacto({ nombre, detalle, insignia, celular, fijo, correo, direccion, accion }: Contacto) {
     const telefonos = [
         { numero: celular, Icono: Smartphone, titulo: 'Celular' },
         // El formulario pide dos teléfonos; si son el mismo, se muestra una vez.
@@ -196,10 +227,15 @@ export function TarjetaContacto({ nombre, detalle, insignia, celular, fijo, corr
                     <p className="text-[15px] leading-snug font-semibold text-[#16223F]">{nombre}</p>
                     <p className="text-[13px] text-[#56627F]">{detalle}</p>
                 </div>
-                {insignia && (
-                    <span className="shrink-0 rounded-full bg-white px-2.5 py-0.5 text-[12px] font-medium text-[#1E3A7B] ring-1 ring-[#D3DDF3]">
-                        {insignia}
-                    </span>
+                {(insignia || accion) && (
+                    <div className="flex shrink-0 items-center gap-2">
+                        {insignia && (
+                            <span className="rounded-full bg-white px-2.5 py-0.5 text-[12px] font-medium text-[#1E3A7B] ring-1 ring-[#D3DDF3]">
+                                {insignia}
+                            </span>
+                        )}
+                        {accion}
+                    </div>
                 )}
             </div>
             {telefonos.length || correo ? (

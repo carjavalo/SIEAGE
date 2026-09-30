@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\CambiosFicha;
 use App\Support\Grupos;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -167,9 +168,20 @@ class EstudianteController extends Controller
             ->where('ea.estudiante_id', $alumno->id)
             ->orderByDesc('ea.es_principal')
             ->get([
-                'a.nombre_completo as nombre', 'a.tipo_documento', 'a.numero_documento', 'p.nombre as parentesco',
+                'a.id', 'a.nombre_completo as nombre', 'a.primer_nombre', 'a.segundo_nombre', 'a.primer_apellido', 'a.segundo_apellido',
+                'a.tipo_documento', 'a.numero_documento', 'p.nombre as parentesco', 'ea.parentesco_id', 'ea.parentesco_otro',
                 'a.direccion', 'b.nombre as barrio', 'a.telefono_fijo', 'a.telefono_celular', 'a.email', 'ea.es_principal',
             ]);
+
+        // Para corregir los datos desde la ficha: con quién más comparte acudiente y quién los editó por última vez.
+        $alumno->barrio = $alumno->barrio_id ? DB::table('barrios')->where('id', $alumno->barrio_id)->value('nombre') : null;
+        $hermanos = CambiosFicha::otrosEstudiantes($acudientes->pluck('id'), $alumno->id);
+        $ediciones = CambiosFicha::ultimas($alumno->id, $acudientes->pluck('id'));
+        $alumno->ultima_edicion = $ediciones['estudiante'];
+        foreach ($acudientes as $a) {
+            $a->otros_estudiantes = $hermanos->get($a->id, collect())->values();
+            $a->ultima_edicion = $ediciones['acudientes'][$a->id] ?? null;
+        }
 
         $boletines = $actual
             ? DB::table('boletines_excel')->where('matricula_id', $actual->id)->orderBy('numero')->get(['numero', 'valor'])
@@ -202,6 +214,7 @@ class EstudianteController extends Controller
             'historia' => $historia,
             'acudientes' => $acudientes,
             'boletines' => $boletines,
+            'parentescos' => DB::table('parentescos')->orderBy('id')->get(['id', 'nombre']),
         ];
     }
 

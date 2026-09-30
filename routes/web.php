@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DatosEstudianteController;
 use App\Http\Controllers\DeshabilitacionController;
 use App\Http\Controllers\EstudianteController;
 use App\Http\Controllers\GrupoController;
@@ -49,6 +50,14 @@ Route::middleware(['auth'])->group(function () {
         Route::post('estudiantes/{estudiante}/deshabilitar', [DeshabilitacionController::class, 'deshabilitar'])->whereNumber('estudiante')->name('estudiantes.deshabilitar');
         Route::post('estudiantes/{estudiante}/habilitar', [DeshabilitacionController::class, 'habilitar'])->whereNumber('estudiante')->name('estudiantes.habilitar');
         Route::put('grupos/cupos', [GrupoController::class, 'cupos'])->name('grupos.cupos');
+
+        // Corregir los datos del estudiante y de sus acudientes desde la ficha.
+        Route::put('estudiantes/{estudiante}', [DatosEstudianteController::class, 'estudiante'])->whereNumber('estudiante')->name('estudiantes.actualizar');
+        // POST y no GET: el documento no debe quedar en la dirección ni en los registros del servidor.
+        Route::post('acudientes/buscar', [DatosEstudianteController::class, 'buscarAcudiente'])->name('acudientes.buscar');
+        Route::post('estudiantes/{estudiante}/acudientes', [DatosEstudianteController::class, 'agregarAcudiente'])->whereNumber('estudiante')->name('estudiantes.acudientes.agregar');
+        Route::put('estudiantes/{estudiante}/acudientes/{acudiente}', [DatosEstudianteController::class, 'acudiente'])->whereNumber(['estudiante', 'acudiente'])->name('estudiantes.acudientes.actualizar');
+        Route::delete('estudiantes/{estudiante}/acudientes/{acudiente}', [DatosEstudianteController::class, 'quitarAcudiente'])->whereNumber(['estudiante', 'acudiente'])->name('estudiantes.acudientes.quitar');
     });
 
     Route::post('promociones', [PromocionController::class, 'store'])->middleware('can:promover-estudiantes')->name('promociones.store');

@@ -70,29 +70,70 @@ export type Matricula = {
     motivo_retiro: string | null;
 };
 
-export type Acudiente = {
+/** Quién corrigió por última vez esos datos desde la ficha. */
+export type UltimaEdicion = { usuario: string | null; fecha: string } | null;
+
+/** El nombre en cuatro partes solo lo tienen quienes llegaron por el formulario; del Excel viene en una. */
+type NombreEnPartes = {
+    primer_nombre: string | null;
+    segundo_nombre: string | null;
+    primer_apellido: string | null;
+    segundo_apellido: string | null;
+};
+
+export type Acudiente = NombreEnPartes & {
+    id: number;
     nombre: string;
     tipo_documento: string;
     numero_documento: string;
     parentesco: string;
+    parentesco_id: number;
+    parentesco_otro: string | null;
     direccion: string | null;
     barrio: string | null;
     telefono_fijo: string | null;
     telefono_celular: string | null;
     email: string | null;
     es_principal: number;
+    /** Sus otros estudiantes (hermanos…): lo que se le cambie vale también para ellos. */
+    otros_estudiantes: { nombre: string; grupo: string | null }[];
+    ultima_edicion: UltimaEdicion;
 };
+
+export type DatosEstudiante = NombreEnPartes & {
+    id: number;
+    tipo_documento: string;
+    tipo_documento_otro: string | null;
+    numero_documento: string;
+    nombre_completo: string;
+    fecha_nacimiento: string | null;
+    genero: 'F' | 'M' | 'O' | null;
+    tiene_foto: number;
+    ciudad_expedicion: string | null;
+    pais_nacimiento: string | null;
+    ciudad_nacimiento: string | null;
+    tipo_sangre: string | null;
+    sisben: string | null;
+    eps: string | null;
+    grupo_etnico: string | null;
+    discapacidad: string | null;
+    direccion: string | null;
+    barrio: string | null;
+    telefono_1: string | null;
+    telefono_2: string | null;
+    correo: string | null;
+    ultima_edicion: UltimaEdicion;
+};
+
+export type Parentesco = { id: number; nombre: string };
+
+/** "Otro" con lo que se escribió, y "Tía(o)" con su tilde. */
+export const parentescoDe = (a: Pick<Acudiente, 'parentesco' | 'parentesco_otro'>) =>
+    a.parentesco === 'Otro' && a.parentesco_otro ? a.parentesco_otro : a.parentesco.replace(/^Tia\(o\)$/, 'Tía(o)');
 
 /** Los mismos datos que usa la página de ficha completa (EstudianteController::ficha). */
 export type FichaDetalle = {
-    estudiante: {
-        id: number;
-        tipo_documento: string;
-        numero_documento: string;
-        nombre_completo: string;
-        fecha_nacimiento: string | null;
-        genero: 'F' | 'M' | 'O' | null;
-    };
+    estudiante: DatosEstudiante;
     actual: Matricula | null;
     /** Matrícula del año siguiente (planeado), si ya fue promovido. */
     promocion: {
@@ -109,6 +150,7 @@ export type FichaDetalle = {
     novedades: import('@/components/estudiantes/deshabilitar').Novedad[];
     acudientes: Acudiente[];
     boletines: { numero: number; valor: string }[];
+    parentescos: Parentesco[];
 };
 
 /** Filtro de estado de la lista: "inactivo" agrupa retirados, cancelados y trasladados. */

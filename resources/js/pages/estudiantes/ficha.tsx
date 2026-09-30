@@ -1,60 +1,16 @@
+import { AgregarAcudiente, EditarAcudiente, EditarEstudiante } from '@/components/estudiantes/editar-datos';
 import { Condicion, Estado, Sede, iniciales } from '@/components/estudiantes/etiquetas';
 import PanelLayout from '@/layouts/panel-layout';
+import { type FichaDetalle, parentescoDe, telefono } from '@/lib/estudiantes';
 import { cn } from '@/lib/utils';
-import { Link } from '@inertiajs/react';
+import { type SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
 import { ArrowLeft, Camera, Home, Mail, MessageSquareText, Phone, Printer, ShieldCheck } from 'lucide-react';
 import { type ReactNode } from 'react';
 
-type Estudiante = {
-    id: number;
-    tipo_documento: string;
-    numero_documento: string;
-    nombre_completo: string;
-    fecha_nacimiento: string | null;
-    genero: 'F' | 'M' | 'O' | null;
-    tiene_foto: number;
-};
-type Matricula = {
-    id: number;
-    anio: number;
-    grado_id: number;
-    grado: string;
-    grado_numero: number;
-    grupo: string | null;
-    sede: string;
-    sede_codigo: string;
-    jornada: string | null;
-    modalidad: string | null;
-    fecha_matricula: string | null;
-    condicion: string;
-    estado: string;
-    es_historico: number;
-    observaciones: string | null;
-    fecha_retiro: string | null;
-    motivo_retiro: string | null;
-};
-type Acudiente = {
-    nombre: string;
-    tipo_documento: string;
-    numero_documento: string;
-    parentesco: string;
-    direccion: string | null;
-    barrio: string | null;
-    telefono_fijo: string | null;
-    telefono_celular: string | null;
-    email: string | null;
-    es_principal: number;
-};
 type Institucion = { nombre: string; nit: string | null; codigo_dane: string | null; resolucion: string | null; municipio: string | null };
 
-type Props = {
-    estudiante: Estudiante;
-    actual: Matricula | null;
-    historia: Matricula[];
-    acudientes: Acudiente[];
-    boletines: { numero: number; valor: string }[];
-    institucion: Institucion | null;
-};
+type Props = FichaDetalle & { institucion: Institucion | null };
 
 const generos = { F: 'Femenino', M: 'Masculino', O: 'Otro' };
 
@@ -72,7 +28,20 @@ function edad(valor: string | null) {
     return anios;
 }
 
-function Tarjeta({ titulo, icono, children, className }: { titulo: string; icono?: ReactNode; children: ReactNode; className?: string }) {
+function Tarjeta({
+    titulo,
+    icono,
+    accion,
+    children,
+    className,
+}: {
+    titulo: string;
+    icono?: ReactNode;
+    /** A la derecha del título (p. ej. «Agregar»). */
+    accion?: ReactNode;
+    children: ReactNode;
+    className?: string;
+}) {
     return (
         <section
             className={cn(
@@ -80,10 +49,13 @@ function Tarjeta({ titulo, icono, children, className }: { titulo: string; icono
                 className,
             )}
         >
-            <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold tracking-wide text-[#1E3A7B] uppercase print:mb-2 print:text-xs">
-                {icono}
-                {titulo}
-            </h2>
+            <div className="mb-4 flex items-center justify-between gap-3 print:mb-2">
+                <h2 className="flex items-center gap-2 text-sm font-semibold tracking-wide text-[#1E3A7B] uppercase print:text-xs">
+                    {icono}
+                    {titulo}
+                </h2>
+                {accion}
+            </div>
             {children}
         </section>
     );
@@ -98,8 +70,12 @@ function Dato({ etiqueta, children }: { etiqueta: string; children: ReactNode })
     );
 }
 
-export default function Ficha({ estudiante, actual, historia, acudientes, boletines, institucion }: Props) {
+const sisben = (nivel: string) => (nivel === 'ninguno' ? 'No tiene' : `Nivel ${nivel}`);
+
+export default function Ficha({ estudiante, actual, historia, acudientes, boletines, parentescos, institucion }: Props) {
+    const editable = usePage<SharedData>().props.auth.puedeEditarDatos;
     const anios = edad(estudiante.fecha_nacimiento);
+    const telefonos = [estudiante.telefono_1, estudiante.telefono_2].filter((t, i, todos): t is string => !!t && todos.indexOf(t) === i);
     const cronologia = [...historia].reverse();
     const principal = acudientes.find((a) => a.es_principal) ?? acudientes[0];
     const volver = actual ? `/estudiantes?anio=${actual.anio}&grado=${actual.grado_id}` : '/estudiantes';
@@ -127,14 +103,17 @@ export default function Ficha({ estudiante, actual, historia, acudientes, boleti
                     <ArrowLeft className="size-4" />
                     {actual ? `${actual.grado} · ${actual.grupo ?? 'sin grupo'}` : 'Estudiantes'}
                 </Link>
-                <button
-                    type="button"
-                    onClick={() => window.print()}
-                    className="flex h-10 items-center gap-2 rounded-xl bg-[#1E3A7B] px-4 text-sm font-semibold text-white transition hover:bg-[#172E63]"
-                >
-                    <Printer className="size-4" />
-                    Imprimir ficha
-                </button>
+                <div className="flex items-center gap-2">
+                    {editable && <EditarEstudiante estudiante={estudiante} variante="boton" />}
+                    <button
+                        type="button"
+                        onClick={() => window.print()}
+                        className="flex h-10 items-center gap-2 rounded-xl bg-[#1E3A7B] px-4 text-sm font-semibold text-white transition hover:bg-[#172E63]"
+                    >
+                        <Printer className="size-4" />
+                        Imprimir ficha
+                    </button>
+                </div>
             </div>
 
             {/* Resumen del estudiante */}
@@ -185,19 +164,35 @@ export default function Ficha({ estudiante, actual, historia, acudientes, boleti
                         )}
                     </Tarjeta>
 
-                    <Tarjeta titulo="Datos del acudiente" icono={<Home className="size-4 print:hidden" />}>
+                    <Tarjeta
+                        titulo="Datos del acudiente"
+                        icono={<Home className="size-4 print:hidden" />}
+                        accion={
+                            editable && <AgregarAcudiente estudianteId={estudiante.id} parentescos={parentescos} primero={acudientes.length === 0} />
+                        }
+                    >
                         {acudientes.length === 0 ? (
                             <p className="text-sm text-[#56627F]">No hay acudiente registrado.</p>
                         ) : (
                             <div className="space-y-4">
                                 {acudientes.map((a) => (
-                                    <div key={a.numero_documento} className="grid gap-x-6 gap-y-4 sm:grid-cols-3 print:grid-cols-4 print:gap-y-2">
+                                    <div key={a.id} className="grid gap-x-6 gap-y-4 sm:grid-cols-3 print:grid-cols-4 print:gap-y-2">
                                         <div className="sm:col-span-2 print:col-span-2">
                                             <p className="text-xs text-[#56627F]">
-                                                {a.parentesco}
+                                                {parentescoDe(a)}
                                                 {a.es_principal ? ' · principal' : ''}
                                             </p>
-                                            <p className="mt-0.5 font-medium">{a.nombre}</p>
+                                            <p className="mt-0.5 flex items-center gap-2.5 font-medium">
+                                                {a.nombre}
+                                                {editable && (
+                                                    <EditarAcudiente
+                                                        estudianteId={estudiante.id}
+                                                        acudiente={a}
+                                                        total={acudientes.length}
+                                                        parentescos={parentescos}
+                                                    />
+                                                )}
+                                            </p>
                                             <p className="text-sm text-[#3E4A68]">
                                                 {a.tipo_documento} {a.numero_documento}
                                             </p>
@@ -271,6 +266,23 @@ export default function Ficha({ estudiante, actual, historia, acudientes, boleti
                                     {estudiante.tiene_foto ? 'Entregó fotos' : 'Pendiente'}
                                 </span>
                             </Dato>
+                            {/* Lo que llega por el formulario de inscripción o se completa al editar: solo si está. */}
+                            {estudiante.ciudad_nacimiento && (
+                                <Dato etiqueta="Nació en">
+                                    {[estudiante.ciudad_nacimiento, estudiante.pais_nacimiento].filter(Boolean).join(', ')}
+                                </Dato>
+                            )}
+                            {estudiante.ciudad_expedicion && <Dato etiqueta="Documento expedido en">{estudiante.ciudad_expedicion}</Dato>}
+                            {estudiante.tipo_sangre && <Dato etiqueta="Tipo de sangre">{estudiante.tipo_sangre}</Dato>}
+                            {estudiante.eps && <Dato etiqueta="EPS">{estudiante.eps}</Dato>}
+                            {estudiante.sisben && <Dato etiqueta="SISBÉN">{sisben(estudiante.sisben)}</Dato>}
+                            {estudiante.grupo_etnico && <Dato etiqueta="Grupo étnico">{estudiante.grupo_etnico}</Dato>}
+                            {estudiante.discapacidad && <Dato etiqueta="Discapacidad">{estudiante.discapacidad}</Dato>}
+                            {estudiante.direccion && (
+                                <Dato etiqueta="Dirección">{[estudiante.direccion, estudiante.barrio].filter(Boolean).join(' · ')}</Dato>
+                            )}
+                            {telefonos.length > 0 && <Dato etiqueta="Teléfono">{telefonos.map(telefono).join(' · ')}</Dato>}
+                            {estudiante.correo && <Dato etiqueta="Correo">{estudiante.correo}</Dato>}
                         </dl>
                     </Tarjeta>
 
