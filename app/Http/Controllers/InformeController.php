@@ -36,8 +36,9 @@ class InformeController extends Controller
 
         return response()->streamDownload(function () use ($libro) {
             $escritor = new Xlsx($libro);
-            // Las fórmulas se calculan al abrir el libro; así la descarga no espera a PhpSpreadsheet.
-            $escritor->setPreCalculateFormulas(false);
+            // Cada fórmula va con su resultado ya calculado: Excel abre lo descargado en «Vista
+            // protegida», donde no calcula nada, y sin esto los totales se veían en blanco.
+            $escritor->setPreCalculateFormulas(true);
             $escritor->save('php://output');
             $libro->disconnectWorksheets();
         }, $archivo, [
