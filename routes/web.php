@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AyudaController;
+use App\Http\Controllers\ConstanciaController;
 use App\Http\Controllers\DatosEstudianteController;
 use App\Http\Controllers\DeshabilitacionController;
 use App\Http\Controllers\EstudianteController;
@@ -42,6 +43,10 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('estudiantes', [EstudianteController::class, 'index'])->name('estudiantes.index');
     Route::get('estudiantes/{estudiante}', [EstudianteController::class, 'show'])->whereNumber('estudiante')->name('estudiantes.show');
+
+    // Constancias de matrícula para imprimir: la de un estudiante o las de un grupo, grado, sede o todo el colegio.
+    Route::get('estudiantes/{estudiante}/constancia', [ConstanciaController::class, 'estudiante'])->whereNumber('estudiante')->name('constancias.estudiante');
+    Route::get('constancias', [ConstanciaController::class, 'lote'])->name('constancias.lote');
 
     // Informe de matrícula del año (vista previa para guardar como PDF).
     Route::get('informes/matricula', [InformeController::class, 'matricula'])->name('informes.matricula');

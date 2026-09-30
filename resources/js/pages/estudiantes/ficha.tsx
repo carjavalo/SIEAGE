@@ -5,7 +5,7 @@ import { type FichaDetalle, parentescoDe, telefono } from '@/lib/estudiantes';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { ArrowLeft, Camera, Home, Mail, MessageSquareText, Phone, Printer, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Camera, FileBadge, Home, Mail, MessageSquareText, Phone, Printer, ShieldCheck } from 'lucide-react';
 import { type ReactNode } from 'react';
 
 type Institucion = { nombre: string; nit: string | null; codigo_dane: string | null; resolucion: string | null; municipio: string | null };
@@ -84,7 +84,7 @@ export default function Ficha({ estudiante, actual, historia, acudientes, boleti
         <PanelLayout titulo={`Ficha · ${estudiante.nombre_completo}`}>
             {/* Encabezado institucional (solo impresión) */}
             <div className="mb-4 hidden items-center gap-4 border-b-2 border-[#1E3A7B] pb-3 print:flex">
-                <img src="/sieage-logo.webp" alt="" className="h-16 w-auto" />
+                <img src="/constancia/ealp.png" alt="" className="h-14 w-auto" />
                 <div className="flex-1 text-center text-xs leading-snug">
                     <p className="text-sm font-bold uppercase">{institucion?.nombre}</p>
                     <p>{institucion?.resolucion}</p>
@@ -93,7 +93,7 @@ export default function Ficha({ estudiante, actual, historia, acudientes, boleti
                     </p>
                 </div>
                 <div className="text-right text-xs">
-                    <p className="font-bold">CONSTANCIA DE MATRÍCULA</p>
+                    <p className="font-bold">FICHA DE MATRÍCULA</p>
                     <p>Año lectivo {actual?.anio}</p>
                 </div>
             </div>
@@ -108,11 +108,20 @@ export default function Ficha({ estudiante, actual, historia, acudientes, boleti
                     <button
                         type="button"
                         onClick={() => window.print()}
-                        className="flex h-10 items-center gap-2 rounded-xl bg-[#1E3A7B] px-4 text-sm font-semibold text-white transition hover:bg-[#172E63]"
+                        className="flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB]"
                     >
                         <Printer className="size-4" />
                         Imprimir ficha
                     </button>
+                    {actual && (
+                        <Link
+                            href={`/estudiantes/${estudiante.id}/constancia?anio=${actual.anio}`}
+                            className="flex h-10 items-center gap-2 rounded-xl bg-[#1E3A7B] px-4 text-sm font-semibold text-white transition hover:bg-[#172E63]"
+                        >
+                            <FileBadge className="size-4" />
+                            Constancia de matrícula
+                        </Link>
+                    )}
                 </div>
             </div>
 

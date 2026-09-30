@@ -181,7 +181,34 @@ html.panel {
     margin: 0;
 }
 
+/* Constancias de matrícula: dos copias por hoja, en carta o en oficio (8,5 × 13 in). */
+@page constancia-carta {
+    size: 215.9mm 279.4mm;
+    margin: 0;
+}
+
+@page constancia-oficio {
+    size: 215.9mm 330.2mm;
+    margin: 0;
+}
+
 @media print {
+    .pliego {
+        break-after: page;
+    }
+
+    .pliego:last-child {
+        break-after: auto;
+    }
+
+    .pliego[data-papel='carta'] {
+        page: constancia-carta;
+    }
+
+    .pliego[data-papel='oficio'] {
+        page: constancia-oficio;
+    }
+
     .hoja {
         page: informe;
         break-after: page;

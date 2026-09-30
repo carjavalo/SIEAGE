@@ -1,5 +1,6 @@
 import { TarjetasEsqueleto } from '@/components/esqueleto';
 import { Cabecera } from '@/components/estudiantes/cabecera';
+import { BotonConstancias } from '@/components/estudiantes/constancias';
 import { BotonCupos, puedeEditarCupos } from '@/components/estudiantes/cupos';
 import { sedeInfo } from '@/components/estudiantes/etiquetas';
 import { FichaEstudiante } from '@/components/estudiantes/ficha-estudiante';
@@ -216,6 +217,7 @@ export default function Estudiantes({
                                     <FileText className="size-4" />
                                     Informe
                                 </Link>
+                                <BotonConstancias anio={anio} grado={grado} grupo={grupo} sede={sede} sedes={sedes} />
                                 {/* Los cupos se editan en cualquier año (también en el planeado, después de promover). */}
                                 {puedeEditarCupos(auth) && <BotonCupos grado={grado} grupos={grupos} anio={anio} />}
                                 {promueve && (
