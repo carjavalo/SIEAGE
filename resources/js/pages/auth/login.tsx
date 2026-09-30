@@ -1,6 +1,7 @@
+import { AyudaInscripcion } from '@/components/ayuda-inscripcion';
 import { cn } from '@/lib/utils';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowRight, CalendarDays, Eye, EyeOff, FileText, LoaderCircle, Pointer, User, UserPlus, Users } from 'lucide-react';
+import { ArrowRight, CalendarDays, Eye, EyeOff, FileText, LoaderCircle, Play, Pointer, User, UserPlus, Users } from 'lucide-react';
 import { type CSSProperties, FormEventHandler, useState } from 'react';
 
 type LoginForm = {
@@ -202,22 +203,41 @@ export default function Login({ status }: { status?: string }) {
                                     </div>
                                 </div>
 
-                                <div className="group mt-3.5 flex items-center gap-2.5">
-                                    {/* La mano señala el botón; al pasar el cursor se acerca y se queda quieta. */}
-                                    <span
-                                        aria-hidden
-                                        className="animate-senalar shrink-0 text-[#5B7BD0] transition-transform duration-300 group-hover:translate-x-1.5 group-hover:animate-none motion-reduce:animate-none"
-                                    >
-                                        <Pointer className="size-7 rotate-90" strokeWidth={1.75} />
-                                    </span>
-                                    <Link
-                                        href={route('inscripcion.create')}
-                                        prefetch
-                                        className="flex h-12 flex-1 items-center justify-center gap-2 rounded-[16px] border-[1.5px] border-[#6E8BD6] bg-white text-[15px] font-semibold text-[#1E3A7B] transition-all duration-200 hover:border-[#1E3A7B] hover:bg-[#1E3A7B] hover:text-white focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.98]"
-                                    >
-                                        Inscribir estudiante
-                                        <ArrowRight className="size-[18px] transition-transform duration-200 group-hover:translate-x-0.5" />
-                                    </Link>
+                                {/* En un celular angosto la ayuda baja a su propia fila. */}
+                                <div className="mt-3.5 flex flex-wrap items-center gap-2.5">
+                                    <div className="group flex flex-1 items-center gap-2.5 max-[429px]:basis-full">
+                                        {/* La mano señala el botón; al pasar el cursor se acerca y se queda quieta. */}
+                                        <span
+                                            aria-hidden
+                                            className="animate-senalar shrink-0 text-[#5B7BD0] transition-transform duration-300 group-hover:translate-x-1.5 group-hover:animate-none motion-reduce:animate-none"
+                                        >
+                                            <Pointer className="size-7 rotate-90" strokeWidth={1.75} />
+                                        </span>
+                                        <Link
+                                            href={route('inscripcion.create')}
+                                            prefetch
+                                            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-[16px] border-[1.5px] border-[#6E8BD6] bg-white text-[15px] font-semibold whitespace-nowrap text-[#1E3A7B] transition-all duration-200 hover:border-[#1E3A7B] hover:bg-[#1E3A7B] hover:text-white focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.98]"
+                                        >
+                                            Inscribir estudiante
+                                            <ArrowRight className="size-[18px] transition-transform duration-200 group-hover:translate-x-0.5" />
+                                        </Link>
+                                    </div>
+
+                                    <AyudaInscripcion>
+                                        <button
+                                            type="button"
+                                            title="Mira en un minuto cómo es la inscripción"
+                                            className="flex h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[16px] bg-[#DCE5F8] pr-4 pl-2.5 text-[15px] font-semibold whitespace-nowrap text-[#1E3A7B] transition-all duration-200 hover:bg-[#CBD8F4] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.98] max-[429px]:basis-full"
+                                        >
+                                            <span className="flex size-7 items-center justify-center rounded-full bg-[#1E3A7B] text-white">
+                                                <Play className="size-3 translate-x-px fill-current" />
+                                            </span>
+                                            {/* En pantallas anchas el botón dice solo «Ayuda»; el resto lo oye el lector de pantalla. */}
+                                            <span>
+                                                Ayuda<span className="min-[430px]:sr-only"> · video de 1 min</span>
+                                            </span>
+                                        </button>
+                                    </AyudaInscripcion>
                                 </div>
                             </div>
                         </div>

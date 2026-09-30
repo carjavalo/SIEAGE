@@ -13,7 +13,7 @@ return [
     // Sin sesión solo se publican las de las páginas públicas: el formulario de
     // inscripción y el login no tienen por qué anunciar las rutas del panel.
     'groups' => [
-        'publico' => ['home', 'login', 'inscripcion.*'],
+        'publico' => ['home', 'login', 'inscripcion.*', 'ayuda.*'],
     ],
 
 ];
