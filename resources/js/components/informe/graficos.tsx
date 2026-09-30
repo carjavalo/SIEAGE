@@ -19,7 +19,6 @@ export const colores = {
 };
 
 /** Color de cada sede (los mismos puntos de la página de Estudiantes). */
-export const colorSede: Record<string, string> = { P: '#1E3A7B', LF: '#5B7BD0', CP: '#23948C', RP: '#D08A1E', PT: '#C04E83' };
 
 /** Del más claro al más fuerte: preescolar, primaria, secundaria, media. */
 export const colorNivel: Record<string, string> = { preescolar: '#B3C4EE', primaria: '#6E8BD6', secundaria: '#1E3A7B', media: '#0E1D45' };
