@@ -155,6 +155,20 @@ html.panel {
     transition: background-color 0.2s ease-out;
 }
 
+/* En ancho de celular la barra de desplazamiento de la página no se dibuja (se
+   desplaza igual, con el dedo o la rueda). Un teléfono ya la oculta solo; esto
+   lo iguala cuando el navegador la pinta fija —una ventana angosta en el
+   computador— y le quitaba 15 px al contenido. */
+@media (max-width: 767px) {
+    html {
+        scrollbar-width: none;
+    }
+
+    html::-webkit-scrollbar {
+        display: none;
+    }
+}
+
 /* Con un diálogo abierto, Radix bloquea el scroll (marca body[data-scroll-locked])
    y le suma a la página un margen del ancho de la barra para "compensarla". Aquí
    ese espacio ya está reservado, así que el margen sobra: correría el contenido.
