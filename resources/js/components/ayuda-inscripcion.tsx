@@ -4,11 +4,18 @@ import * as Dialogo from '@radix-ui/react-dialog';
 import { ArrowRight, X } from 'lucide-react';
 import { type ReactNode, useRef, useState } from 'react';
 
+const BOTON =
+    'group flex h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[16px] bg-[#1E3A7B] px-5 text-[15px] font-semibold whitespace-nowrap text-white transition-all duration-200 hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.98]';
+const FLECHA = 'size-[18px] transition-transform duration-200 group-hover:translate-x-0.5';
+
 /**
- * La ayuda del login: un video de un minuto que les muestra a las familias cómo es la
- * inscripción. Envuelve al botón que la abre. El video solo se pide al abrir.
+ * La ayuda del login y del formulario de inscripción: un video de un minuto que les muestra a
+ * las familias cómo es la inscripción. Envuelve al botón que la abre. El video solo se pide al abrir.
+ *
+ * Al pie, el paso siguiente: desde el login lleva al formulario; dentro del formulario
+ * (`alComenzar`) cierra la ayuda y arranca el primer paso.
  */
-export function AyudaInscripcion({ children }: { children: ReactNode }) {
+export function AyudaInscripcion({ children, alComenzar }: { children: ReactNode; alComenzar?: () => void }) {
     const video = useRef<HTMLVideoElement>(null);
     // La carátula solo hace falta si el video no arranca solo: si arranca, taparía un instante el primer cuadro.
     const [caratula, setCaratula] = useState(false);
@@ -59,13 +66,17 @@ export function AyudaInscripcion({ children }: { children: ReactNode }) {
                         <Dialogo.Description className="text-sm leading-snug text-pretty text-[#56627F]">
                             Son 5 pasos y toma unos 5 minutos. Ten a mano el documento del estudiante, el tuyo y los datos de EPS y tipo de sangre.
                         </Dialogo.Description>
-                        <Link
-                            href={route('inscripcion.create')}
-                            className="group flex h-12 shrink-0 items-center justify-center gap-2 rounded-[16px] bg-[#1E3A7B] px-5 text-[15px] font-semibold whitespace-nowrap text-white transition-all duration-200 hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.98]"
-                        >
-                            Inscribir estudiante
-                            <ArrowRight className="size-[18px] transition-transform duration-200 group-hover:translate-x-0.5" />
-                        </Link>
+                        {alComenzar ? (
+                            <Dialogo.Close type="button" onClick={alComenzar} className={BOTON}>
+                                Comenzar
+                                <ArrowRight className={FLECHA} />
+                            </Dialogo.Close>
+                        ) : (
+                            <Link href={route('inscripcion.create')} className={BOTON}>
+                                Inscribir estudiante
+                                <ArrowRight className={FLECHA} />
+                            </Link>
+                        )}
                     </div>
                 </Dialogo.Content>
             </DialogPortal>

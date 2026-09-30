@@ -1,3 +1,4 @@
+import { AyudaInscripcion } from '@/components/ayuda-inscripcion';
 import { AvisoSalir } from '@/components/inscripcion/aviso-salir';
 import {
     BotonPrincipal,
@@ -34,7 +35,7 @@ import {
 } from '@/lib/inscripcion';
 import { cn } from '@/lib/utils';
 import { Head, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, ArrowRight, Check, Clock, HeartPulse, IdCard, Pencil, UserPlus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Clock, HeartPulse, IdCard, Pencil, Play, UserPlus } from 'lucide-react';
 import { type FormEvent, type ReactNode, type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 
 type Props = {
@@ -815,10 +816,24 @@ function Bienvenida({ anio, titulo, onComenzar }: ConTitulo & { anio: number; on
                 </p>
             </div>
 
-            <BotonPrincipal type="button" onClick={onComenzar} className="mt-8 w-full sm:w-auto sm:min-w-[220px]">
-                Comenzar
-                <ArrowRight className="size-[18px]" />
-            </BotonPrincipal>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <BotonPrincipal type="button" onClick={onComenzar} className="sm:min-w-[220px]">
+                    Comenzar
+                    <ArrowRight className="size-[18px]" />
+                </BotonPrincipal>
+                {/* El mismo video del login, para quien llega directo al formulario. */}
+                <AyudaInscripcion alComenzar={onComenzar}>
+                    <button
+                        type="button"
+                        className="flex h-14 cursor-pointer items-center justify-center gap-2.5 rounded-[18px] bg-[#EEF2FB] pr-6 pl-4 text-base font-semibold text-[#1E3A7B] transition-all duration-200 hover:bg-[#DCE5F8] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.98]"
+                    >
+                        <span className="flex size-8 items-center justify-center rounded-full bg-[#1E3A7B] text-white">
+                            <Play className="size-3.5 translate-x-px fill-current" />
+                        </span>
+                        Ayuda · video de 1 min
+                    </button>
+                </AyudaInscripcion>
+            </div>
 
             <p className="mt-6 rounded-[14px] bg-[#EEF2FB] px-4 py-3.5 text-sm leading-relaxed text-[#1E3A7B]">
                 ¿Vas a inscribir a varios hijos? Al terminar podrás inscribir al siguiente sin volver a escribir tus datos.
