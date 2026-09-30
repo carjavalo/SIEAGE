@@ -7,6 +7,8 @@ export interface Auth {
     puedePromover: boolean;
     /** Deshabilitar o habilitar matrículas y editar cupos (todos menos docentes). */
     puedeDeshabilitar: boolean;
+    /** Corregir los datos del estudiante y de sus acudientes (todos menos docentes). */
+    puedeEditarDatos: boolean;
 }
 
 export interface SharedData {

@@ -4,6 +4,13 @@ import { type RefObject, useCallback, useEffect, useRef, useState } from 'react'
 /** En 2xl la ficha es una columna más al lado de la tabla: no se cierra al pulsar fuera. */
 const esAncha = () => window.matchMedia('(min-width: 1536px)').matches;
 
+/**
+ * Un diálogo modal (Radix) encima de la página, abierto o todavía cerrándose: el
+ * mismo Esc o el mismo clic que lo cierra llega después hasta aquí. La ficha
+ * lateral también es role=dialog, pero no lleva data-state.
+ */
+const hayDialogo = () => !!document.querySelector('[role="dialog"][data-state]');
+
 type Opciones = {
     /** Ids de las filas en el orden en que se ven. */
     visibles: number[];
@@ -98,6 +105,8 @@ export function useListaConFicha({
         const alTeclear = (ev: KeyboardEvent) => {
             const t = ev.target;
             if (!(t instanceof HTMLElement) || ev.ctrlKey || ev.metaKey || ev.altKey || t === campoPropio?.current) return;
+            // Con un diálogo abierto encima (editar, deshabilitar…), el teclado es suyo: ni Esc cierra la ficha ni las flechas cambian de estudiante.
+            if (ev.defaultPrevented || hayDialogo()) return;
             const enCampo = t.matches('input, select, textarea');
             const enFiltro = t === campoFiltro.current;
 
@@ -129,7 +138,14 @@ export function useListaConFicha({
         if (!abierta) return;
         const alPulsar = (ev: MouseEvent) => {
             const t = ev.target;
-            if (!(t instanceof Element) || esAncha() || panel.current?.contains(t) || t.closest('[data-fila], header, [data-busqueda], [role=menu]'))
+            // Un diálogo abierto desde la ficha vive fuera del panel: pulsar en él no es «pulsar fuera».
+            if (
+                !(t instanceof Element) ||
+                esAncha() ||
+                hayDialogo() ||
+                panel.current?.contains(t) ||
+                t.closest('[data-fila], header, [data-busqueda], [role=menu]')
+            )
                 return;
             setAbierta(false);
         };

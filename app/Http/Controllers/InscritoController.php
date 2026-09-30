@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Padre;
 use App\Models\SolicitudInscripcion;
+use App\Support\Barrios;
 use App\Support\Documentos;
 use App\Support\Grupos;
 use Illuminate\Http\RedirectResponse;
@@ -198,7 +199,7 @@ class InscritoController extends Controller
         DB::transaction(function () use ($request, $solicitud, $anioId, $grupoId) {
             $s = $solicitud;
             $grupo = DB::table('grupos')->find($grupoId);
-            $barrioId = $this->barrio($s->barrio);
+            $barrioId = Barrios::id($s->barrio);
             $ahora = now();
 
             $estudianteId = $this->guardarPersona('estudiantes', $s->numero_documento, [
@@ -325,18 +326,6 @@ class InscritoController extends Controller
         }
 
         return $existente->id;
-    }
-
-    /** El barrio que escribió la familia; si no está en el catálogo, se agrega. */
-    private function barrio(?string $nombre): ?int
-    {
-        $nombre = mb_substr(trim((string) $nombre), 0, 80);
-        if ($nombre === '') {
-            return null;
-        }
-
-        // La columna es única sin distinguir tildes ni mayúsculas: se reutiliza el que ya exista.
-        return DB::table('barrios')->where('nombre', $nombre)->value('id') ?? DB::table('barrios')->insertGetId(['nombre' => $nombre]);
     }
 
     private function nombre(?string ...$partes): string
