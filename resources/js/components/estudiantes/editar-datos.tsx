@@ -819,7 +819,7 @@ function FormularioAcudiente({
                                 <button
                                     type="button"
                                     onClick={() => setConfirmando(true)}
-                                    className="cursor-pointer rounded-full font-semibold text-[#A12B2B] underline-offset-4 hover:underline focus-visible:ring-4 focus-visible:ring-[#F6D5D2] focus-visible:outline-none"
+                                    className="-my-0.5 flex h-7 cursor-pointer items-center rounded-full font-semibold text-[#A12B2B] underline-offset-4 hover:underline focus-visible:ring-4 focus-visible:ring-[#F6D5D2] focus-visible:outline-none"
                                 >
                                     Quitar de este estudiante
                                 </button>
@@ -865,7 +865,7 @@ export function AgregarAcudiente(props: PropsAgregar) {
             <button
                 type="button"
                 onClick={() => setAbierto(true)}
-                className="flex cursor-pointer items-center gap-1 rounded-full text-[13px] font-semibold text-[#1E3A7B] underline-offset-4 hover:underline focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none print:hidden"
+                className="-my-1.5 flex h-7 cursor-pointer items-center gap-1 rounded-full px-1 text-[13px] font-semibold text-[#1E3A7B] underline-offset-4 hover:underline focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none print:hidden"
             >
                 <Plus className="size-3.5" strokeWidth={2.5} />
                 Agregar

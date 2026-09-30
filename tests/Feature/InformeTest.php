@@ -107,12 +107,20 @@ class InformeTest extends TestCase
         $this->assertSame('=COUNTIF(A3:A'.$ultima.',"R")', $hoja->getCell('A'.($ultima + 9))->getValue());
         $this->assertSame('=B1-A'.($ultima + 3), $hoja->getCell('A1')->getValue());
         $unos = collect(range(3, $ultima))->filter(fn ($r) => $hoja->getCell("A{$r}")->getValue() === 1)->count();
-        $this->assertSame((clone $matriculas)->where('m.estado', 'activo')->count(), $unos);
+        $activos = (clone $matriculas)->where('m.estado', 'activo')->count();
+        $this->assertSame($activos, $unos);
+
+        // Las fórmulas viajan con su resultado: en la «Vista protegida» de Excel no se calculan y se verían en blanco.
+        $this->assertEquals($activos, $hoja->getCell('A'.($ultima + 3))->getOldCalculatedValue());
+        $this->assertEquals((clone $matriculas)->where('m.estado', 'retirado')->count(), $hoja->getCell('A'.($ultima + 9))->getOldCalculatedValue());
+        $this->assertEquals($primero->cupos_proyectados - $activos, $hoja->getCell('A1')->getOldCalculatedValue());
 
         // CONSOLIDADO apunta a los totales de cada hoja.
         $consolidado = $libro->getSheetByName('CONSOLIDADO');
         $this->assertSame('SEDE PRINCIPAL', $consolidado->getCell('B3')->getValue());
         $this->assertSame("='{$primero->codigo}'!A".($ultima + 5), $consolidado->getCell('E8')->getValue());
+        $this->assertIsNumeric($consolidado->getCell('E8')->getOldCalculatedValue());
+        $this->assertIsNumeric($consolidado->getCell('B4')->getOldCalculatedValue());
     }
 
     public function test_el_excel_de_una_sede_que_no_existe_da_404()

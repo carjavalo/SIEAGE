@@ -40,6 +40,7 @@ export default function InformeMatricula(informe: Informe) {
                     <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-4 px-4 md:px-8">
                         <Link
                             href={`/estudiantes?anio=${anio}`}
+                            aria-label="Volver a Estudiantes"
                             className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full pr-3.5 pl-2.5 text-[14px] font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none"
                         >
                             <ArrowLeft className="size-4" />
