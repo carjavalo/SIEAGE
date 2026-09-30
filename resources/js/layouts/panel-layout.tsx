@@ -1,6 +1,7 @@
 import { Lavado } from '@/components/lavado';
 import { MenuUsuario } from '@/components/menu-usuario';
 import { SaltarAlContenido } from '@/components/saltar-al-contenido';
+import { usePulso } from '@/hooks/use-pulso';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
@@ -25,6 +26,8 @@ let paginaAnterior: string | null = null;
  */
 export default function PanelLayout({ titulo, completa, children }: { titulo: string; completa?: boolean; children: ReactNode }) {
     const pagina = usePage<SharedData>();
+    // Lo que cambien otros (una inscripción nueva, una matrícula) llega sin recargar.
+    usePulso();
 
     // Antes de pintar: ver html.panel en app.css (la barra de desplazamiento no corre nada).
     useLayoutEffect(() => {

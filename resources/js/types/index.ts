@@ -13,10 +13,20 @@ export interface Auth {
     puedeGestionarSedes: boolean;
 }
 
+/** Cómo están los datos (App\Support\Pulso): dos firmas que cambian cuando alguien más toca algo. */
+export interface Pulso {
+    inscritos: string;
+    datos: string;
+    pendientes: number;
+    ultima_inscripcion: number;
+}
+
 export interface SharedData {
     auth: Auth;
     /** Aviso del menú "Inscritos" (0 sin sesión). */
     inscritosPendientes: number;
+    /** Los datos tal como estaban al armar la página; null sin sesión. */
+    pulso: Pulso | null;
     flash: { success: string | null };
     [key: string]: unknown;
 }

@@ -11,6 +11,7 @@ use App\Http\Controllers\InscritoController;
 use App\Http\Controllers\PromocionController;
 use App\Http\Controllers\SedeController;
 use App\Http\Controllers\UsuarioController;
+use App\Support\Pulso;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -31,6 +32,9 @@ Route::middleware(['auth'])->group(function () {
     })->name('dashboard');
 
     Route::post('importaciones', [ImportacionController::class, 'store'])->name('importaciones.store');
+
+    // El navegador lo consulta cada pocos segundos para enterarse de lo que cambió (ver App\Support\Pulso).
+    Route::get('pulso', fn () => response()->json(Pulso::firma())->header('Cache-Control', 'no-store'))->name('pulso');
 
     Route::get('estudiantes', [EstudianteController::class, 'index'])->name('estudiantes.index');
     Route::get('estudiantes/{estudiante}', [EstudianteController::class, 'show'])->whereNumber('estudiante')->name('estudiantes.show');

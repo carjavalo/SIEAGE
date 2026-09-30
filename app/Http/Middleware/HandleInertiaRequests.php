@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Pulso;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Middleware;
@@ -52,6 +53,8 @@ class HandleInertiaRequests extends Middleware
             'inscritosPendientes' => fn () => $request->user()
                 ? DB::table('solicitudes_inscripcion')->where('estado', 'pendiente')->count()
                 : 0,
+            // Cómo estaban los datos cuando se armó esta página: el navegador lo compara con GET /pulso.
+            'pulso' => fn () => $request->user() ? Pulso::firma() : null,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 // Resumen de la última promoción, para el aviso (toast) en pantalla.
