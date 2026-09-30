@@ -86,12 +86,17 @@ class InscritoController extends Controller
                     'direccion', 'barrio', 'telefono_1', 'telefono_2', 'correo',
                     'acudiente_primer_nombre', 'acudiente_segundo_nombre', 'acudiente_primer_apellido', 'acudiente_segundo_apellido',
                     'acudiente_numero_documento', 'acudiente_ciudad_expedicion', 'acudiente_parentesco_otro',
+                    'acudiente_direccion', 'acudiente_barrio',
                     'acudiente_telefono_1', 'acudiente_telefono_2', 'acudiente_correo',
                 ]),
                 'fecha_nacimiento' => $solicitud->fecha_nacimiento?->format('Y-m-d'),
                 'acudiente_fecha_nacimiento' => $solicitud->acudiente_fecha_nacimiento?->format('Y-m-d'),
                 'enviada' => $solicitud->created_at?->toIso8601String(),
                 'grado' => DB::table('grados')->where('id', $solicitud->grado_id)->value('nombre'),
+                'jornada' => $solicitud->jornada,
+                'sede_preferida' => $solicitud->sede_preferida_id
+                    ? DB::table('sedes')->where('id', $solicitud->sede_preferida_id)->value('nombre')
+                    : null,
                 'acudiente_parentesco' => DB::table('parentescos')->where('id', $solicitud->acudiente_parentesco_id)->value('nombre'),
             ],
             'padres' => $solicitud->padres()->get()->keyBy('parentesco'),
@@ -253,8 +258,8 @@ class InscritoController extends Controller
                 'telefono_celular' => $s->acudiente_telefono_1,
                 'telefono_fijo' => $s->acudiente_telefono_2 !== $s->acudiente_telefono_1 ? $s->acudiente_telefono_2 : null,
                 'email' => $s->acudiente_correo,
-                'direccion' => $s->direccion,
-                'barrio_id' => $barrioId,
+                'direccion' => $s->acudiente_direccion ?? $s->direccion,
+                'barrio_id' => $s->acudiente_barrio ? Barrios::id($s->acudiente_barrio) : $barrioId,
             ]);
 
             // El acudiente de la inscripción queda como el principal.

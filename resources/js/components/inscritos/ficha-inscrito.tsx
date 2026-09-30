@@ -104,6 +104,7 @@ export function BloquesSolicitud({
                     celular={s.acudiente_telefono_1}
                     fijo={s.acudiente_telefono_2}
                     correo={s.acudiente_correo}
+                    direccion={[s.acudiente_direccion, s.acudiente_barrio].filter(Boolean).join(' · ') || null}
                 />
             </Bloque>
 
@@ -160,6 +161,15 @@ export function BloquesSolicitud({
                     <Dato etiqueta="Documento expedido en">{s.ciudad_expedicion}</Dato>
                 </Datos>
             </Bloque>
+
+            {(s.jornada || s.sede_preferida) && (
+                <Bloque titulo="Lo que pidió la familia">
+                    <Datos>
+                        <Dato etiqueta="Jornada">{s.jornada}</Dato>
+                        <Dato etiqueta="Sede">{s.sede_preferida ?? 'Sin preferencia'}</Dato>
+                    </Datos>
+                </Bloque>
+            )}
 
             <Bloque titulo="Salud">
                 <Datos>
