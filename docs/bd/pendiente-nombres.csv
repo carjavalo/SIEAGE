@@ -1,0 +1,140 @@
+﻿tabla;id;documento;nombre_completo;primer_apellido;segundo_apellido;primer_nombre;segundo_nombre
+estudiantes;1884;1062340742;"Alvarado Paez Daniangela Del Valle";Alvarado;Paez;Daniangela;"Del Valle"
+estudiantes;1126;1111683636;"Angulo Gamboa Maria De Los Angeles";Angulo;Gamboa;Maria;"De Los Angeles"
+estudiantes;477;1109678485;"Arboleda Castillo Maria de los Angeles";Arboleda;Castillo;Maria;"de los Angeles"
+estudiantes;917;1111685274;"Benitez Cruz Maria Del Mar";Benitez;Cruz;Maria;"Del Mar"
+estudiantes;1925;1232806291;"Borrero Mejia Maria De Los Angeles";Borrero;Mejia;Maria;"De Los Angeles"
+estudiantes;1677;1110052822;"Borrero Yuliana";Borrero;;Yuliana;
+estudiantes;2389;5769795;"Calvo Avila Keiner De Jesus";Calvo;Avila;Keiner;"De Jesus"
+estudiantes;11;1104821685;"Camilo Magaña Maria De Los Angeles";Camilo;Magaña;Maria;"De Los Angeles"
+estudiantes;925;1109676840;"Caro Caro Maria Del Mar";Caro;Caro;Maria;"Del Mar"
+estudiantes;1597;1110056565;"Castro Sofia";Castro;;Sofia;
+estudiantes;1708;1109195724;"Chepe Vidal Maria Del Mar";Chepe;Vidal;Maria;"Del Mar"
+estudiantes;630;1085327525;"De Hoyos Castro Oscar Santiago";"De Hoyos";Castro;Oscar;Santiago
+estudiantes;313;1107053069;"De La Cruz Quintero Silvia Maria";"De La Cruz";Quintero;Silvia;Maria
+estudiantes;281;1110370982;"De la Cruz Quintero Victor Manuel";"De la Cruz";Quintero;Victor;Manuel
+estudiantes;1404;1104844299;"Del Valle Castillo Alexandra";"Del Valle";Castillo;Alexandra;
+estudiantes;47;1107860496;"Echandia Zapata Maria de los Angeles";Echandia;Zapata;Maria;"de los Angeles"
+estudiantes;78;1113703887;"Florez Guaje Reinner Samuel Yaninn";Florez;Guaje;Reinner;"Samuel Yaninn"
+estudiantes;2344;4635951;"Garcia Medina Marcelo De Jesus";Garcia;Medina;Marcelo;"De Jesus"
+estudiantes;724;1109678236;"Gil Esneider";Gil;;Esneider;
+estudiantes;2533;1062339623;"Hoyos Jaramillo Jeannireth Del Carmen";Hoyos;Jaramillo;Jeannireth;"Del Carmen"
+estudiantes;1821;1059918133;"Idrobo Velasco Maria Del Mar";Idrobo;Velasco;Maria;"Del Mar"
+estudiantes;675;6583894;"Indriago Martinez Keyler de Jesus";Indriago;Martinez;Keyler;"de Jesus"
+estudiantes;2152;1109682178;"Joaqui Giraldo Maria De Los Angeles";Joaqui;Giraldo;Maria;"De Los Angeles"
+estudiantes;2197;1109931905;"Lopez Montes De Oca Jordan Camilo";Lopez;Montes;"De Oca";"Jordan Camilo"
+estudiantes;1602;1080066871;"Lozano De La Rosa Emily Sofia";Lozano;"De La Rosa";Emily;Sofia
+estudiantes;2040;7790745;"Maita Rojas Aleuzenev De Los Angeles";Maita;Rojas;Aleuzenev;"De Los Angeles"
+estudiantes;1021;7790734;"Maita Rojas Osnaylin De Los Angeles";Maita;Rojas;Osnaylin;"De Los Angeles"
+estudiantes;322;1057757882;"Montoya Velez Samuel de Jesus";Montoya;Velez;Samuel;"de Jesus"
+estudiantes;1291;1143999320;"Ordoñez Jeronimo";Ordoñez;;Jeronimo;
+estudiantes;324;1150688286;"Oviedo Cuero Moises de Jesus";Oviedo;Cuero;Moises;"de Jesus"
+estudiantes;352;1111681558;"Perdomo Hernandez Maria Del Mar";Perdomo;Hernandez;Maria;"Del Mar"
+estudiantes;2355;5634728;"Perez Carvajal Enmanuel Jose Luis";Perez;Carvajal;Enmanuel;"Jose Luis"
+estudiantes;1110;1104827314;"Ramos Mondragon Maria Del Mar";Ramos;Mondragon;Maria;"Del Mar"
+estudiantes;647;1110374991;"Reyes Montoya Maria De Los Angeles";Reyes;Montoya;Maria;"De Los Angeles"
+estudiantes;1869;1109198201;"Rivas Valencia Maria Del Carmen";Rivas;Valencia;Maria;"Del Carmen"
+estudiantes;1480;6493864;"Rivera Ollarves Adriana Del Carmen";Rivera;Ollarves;Adriana;"Del Carmen"
+estudiantes;2448;1110055597;"Ruiz De La Cruz Nicolas";Ruiz;"De La Cruz";Nicolas;
+estudiantes;512;1151971254;"San Miguel Bermudez Gabriel Alejandro";"San Miguel";Bermudez;Gabriel;Alejandro
+estudiantes;1114;1139835675;"Santa Ledesma Maria camila";"Santa Ledesma";Maria;camila;
+estudiantes;2261;1144215516;"Santa Ortiz Cristian Alexander";"Santa Ortiz";Cristian;Alexander;
+estudiantes;2416;1109684163;"Santa Ortiz Maria Luciana";"Santa Ortiz";Maria;Luciana;
+estudiantes;2328;7996673;"Urdaneta Medina Eliad De Jesus";Urdaneta;Medina;Eliad;"De Jesus"
+estudiantes;1230;1109673143;"Yepes Solis Roger Smith Spoth";Yepes;Solis;Roger;"Smith Spoth"
+estudiantes;2103;7237818;"Zapata Hernandez Giomar Jean Carlos";Zapata;Hernandez;Giomar;"Jean Carlos"
+estudiantes;1729;1107542255;"Zapata Obando Brighny Karitza Nileth";Zapata;Obando;Brighny;"Karitza Nileth"
+acudientes;1625;31852605;"Aída Leonor García De Benitez";García;"De Benitez";Aída;Leonor
+acudientes;1264;1144163472;"Alex Mario Del Valle Arias";"Del Valle";Arias;Alex;Mario
+acudientes;461;1130651132;"Alexandra Mamian";Mamian;;Alexandra;
+acudientes;1573;66849649;"Ana De Jesus Cuenu Valverde";Cuenu;Valverde;Ana;"De Jesus"
+acudientes;1825;1151968646;"Ana Isabel Santa Ortiz";Isabel;"Santa Ortiz";Ana;
+acudientes;1954;1151968649;"Ana Lucia Santa Ortiz";Lucia;"Santa Ortiz";Ana;
+acudientes;939;26313818;"Anays De Los Angeles Rojas Fajardo";Rojas;Fajardo;Anays;"De Los Angeles"
+acudientes;400;31145325;"Andrea Cuero";Cuero;;Andrea;
+acudientes;1415;1085331355;"Angie Paola De La Rosa Recalde";"De La Rosa";Recalde;Angie;Paola
+acudientes;1946;16929719;"Arley Bustos";Bustos;;Arley;
+acudientes;18;6955748;"Carlimar Del Valle Ríos Bolivar";Ríos;Bolivar;Carlimar;"Del Valle"
+acudientes;573;38885880;"Carolina Monedero";Monedero;;Carolina;
+acudientes;1105;1130639946;"Carolina Quintero";Quintero;;Carolina;
+acudientes;565;1143937602;"Claudia Armijo";Armijo;;Claudia;
+acudientes;880;38567556;"Cleotilde Quejada";Quejada;;Cleotilde;
+acudientes;1056;16289835;"Dagoberto Martinez";Martinez;;Dagoberto;
+acudientes;1822;5841256;"Damarys Del Carmen Rosales Trejo";Rosales;Trejo;Damarys;"Del Carmen"
+acudientes;1511;1144076471;"Daniela Murillo";Murillo;;Daniela;
+acudientes;1842;1289999;"Desiree Del Valle Piña Romero";Piña;Romero;Desiree;"Del Valle"
+acudientes;2031;20342165;"Desirée Del Valle Piña Romero";Piña;Romero;Desirée;"Del Valle"
+acudientes;797;1080836941;"Doris Del Carmen Valencia Diaz";Valencia;Diaz;Doris;"Del Carmen"
+acudientes;171;38468964;"Doris No Tengo Valencia Rengifo";Valencia;Rengifo;Doris;"No Tengo"
+acudientes;927;16610304;"Dumar Abella";Abella;;Dumar;
+acudientes;275;94441668;"Edwar de la Cruz";"de la Cruz";;Edwar;
+acudientes;307;9441668;"Edward De La Cruz";"De La Cruz";;Edward;
+acudientes;1820;28297824;"Eliannys De Los Angeles Lopez Paredes";Lopez;Paredes;Eliannys;"De Los Angeles"
+acudientes;802;1086044631;"Eloisa Solis";Solis;;Eloisa;
+acudientes;1579;6015006;"Esmary Del Valle Gonzalez Perez";Gonzalez;Perez;Esmary;"Del Valle"
+acudientes;436;1128488;"Estefani Del Valle Acuña Portillo";Acuña;Portillo;Estefani;"Del Valle"
+acudientes;1492;38682545;"Fabiola Moncayo";Moncayo;;Fabiola;
+acudientes;60;66875461;"Flor de Maria Pabon";"de Maria";Pabon;Flor;
+acudientes;1686;6203616;"Francelis Del Valle Ramos Diaz";Ramos;Diaz;Francelis;"Del Valle"
+acudientes;1990;1130661421;"Gely Reyes";Reyes;;Gely;
+acudientes;1251;6321747;"Genesis De Los Angeles Rojas Rojas";Rojas;Rojas;Genesis;"De Los Angeles"
+acudientes;952;1143956870;"Geraldine Landázuri";Landázuri;;Geraldine;
+acudientes;328;94042623;"Henry Barona";Barona;;Henry;
+acudientes;1501;25517526;"Hilda Del Socorro Zambrano Fernandez";Zambrano;Fernandez;Hilda;"Del Socorro"
+acudientes;1712;93572705;"Israel villamil";villamil;;Israel;
+acudientes;1764;1118289197;"Janeth Murillo";Murillo;;Janeth;
+acudientes;671;31488866;"Jenifer Echeverry";Echeverry;;Jenifer;
+acudientes;1214;5495608;"Joselyn Del Valle Lopez Delgado";Lopez;Delgado;Joselyn;"Del Valle"
+acudientes;252;31276244;"Judith Gaviria";Gaviria;;Judith;
+acudientes;12;1144134155;"Juliana Angulo";Angulo;;Juliana;
+acudientes;838;31567906;"Katerine Micolta";Micolta;;Katerine;
+acudientes;712;1006172017;"Katerine Virama";Virama;;Katerine;
+acudientes;1026;29974048;"Laura Gil";Gil;;Laura;
+acudientes;1778;1107054188;"Lina María Montes De Oca López";"De Oca";López;Lina;"María Montes"
+acudientes;1045;20161519;"Lizmar Del Carmen Sanchez";"Del Carmen";Sanchez;Lizmar;
+acudientes;610;5083973;"Lizmar Del Carmen Sanchez Bolivar";Sanchez;Bolivar;Lizmar;"Del Carmen"
+acudientes;357;59669886;"Lucero del Carmen Quiñones Burbano";Quiñones;Burbano;Lucero;"del Carmen"
+acudientes;1734;38940316;"Luz Marina Cortes De Montealegre";Cortes;"De Montealegre";Luz;Marina
+acudientes;1897;4136722;"Marceliano De Jesus Garcia Muñoz";Garcia;Muñoz;Marceliano;"De Jesus"
+acudientes;1935;5460590;"Maria De Los Angeles Avila Maita";Avila;Maita;Maria;"De Los Angeles"
+acudientes;432;936680;"Maria De Los Angeles Coronado Perez";Coronado;Perez;Maria;"De Los Angeles"
+acudientes;639;1005706482;"Maria de los Angeles Polo Mejia";Polo;Mejia;Maria;"de los Angeles"
+acudientes;1015;66739694;"Maria de los Angeles renteria Renteria";renteria;Renteria;Maria;"de los Angeles"
+acudientes;1072;13945427;"Maria De Los Angeles Suárez Palacios";Suárez;Palacios;Maria;"De Los Angeles"
+acudientes;471;31173081;"Maria Del Carmen Tasama Mulato";Tasama;Mulato;Maria;"Del Carmen"
+acudientes;906;1130552101;"Maria del Pilar Bravo Escobar";Bravo;Escobar;Maria;"del Pilar"
+acudientes;388;38467511;"Marìa Del Pilar Cano Ochoa";Cano;Ochoa;Marìa;"Del Pilar"
+acudientes;1076;38610311;"Maria Del Pilar Mosquera Valencia";Mosquera;Valencia;Maria;"Del Pilar"
+acudientes;580;31195943;"Maria Del Socorro Garcia Cruz";Garcia;Cruz;Maria;"Del Socorro"
+acudientes;839;31959461;"Maria Luz Dary Alvarez Hernandez";Alvarez;Hernandez;Maria;"Luz Dary"
+acudientes;291;27307342;"Marianita de Jesus Mier Morales";Mier;Morales;Marianita;"de Jesus"
+acudientes;1829;4313987;"Marielys Del Valle Medina Velasquez";Medina;Velasquez;Marielys;"Del Valle"
+acudientes;1348;38464364;"Marileth Patiño";Patiño;;Marileth;
+acudientes;687;1109546501;"Marisela Gil";Gil;;Marisela;
+acudientes;1648;27497419;"Maryinoth Del Carmen Franco Materano";Franco;Materano;Maryinoth;"Del Carmen"
+acudientes;4;31935786;"Nancy Margot Alban Canabal Mosquera";Canabal;Mosquera;Nancy;"Margot Alban"
+acudientes;131;25702681;"Nilsa Yangana";Yangana;;Nilsa;
+acudientes;377;1059044024;"Noira Panameño";Panameño;;Noira;
+acudientes;1675;31150512;"Nora De Jesus Abad Ossa";Abad;Ossa;Nora;"De Jesus"
+acudientes;1253;4551276;"Oriana Del Valle Rivera Rivera";Rivera;Rivera;Oriana;"Del Valle"
+acudientes;1305;6545215;"Pierina Joseibt Oassis Delgado Carmona";Delgado;Carmona;Pierina;"Joseibt Oassis"
+acudientes;1330;1083455856;"Rosa Angelica Obeso Dela Hoz";Dela;Hoz;Rosa;"Angelica Obeso"
+acudientes;1763;31262722;"Rosa Elvira Ortiz de Henao";Ortiz;"de Henao";Rosa;Elvira
+acudientes;1608;7025497;"Rosangela Del Valle Paez Ospino";Paez;Ospino;Rosangela;"Del Valle"
+acudientes;1975;31320663;"Sandra Nayiby Maldonado Bueno Terranova";Bueno;Terranova;Sandra;"Nayiby Maldonado"
+acudientes;185;14089962;"Soannys Del Valle Orea de Escobar";Orea;"de Escobar";Soannys;"Del Valle"
+acudientes;1025;1144127554;"Stephany Bayen";Bayen;;Stephany;
+acudientes;1010;31173905;"Suleyma Monsalve";Monsalve;;Suleyma;
+acudientes;374;1151936237;"Susana Holguin";Holguin;;Susana;
+acudientes;293;66926079;"Tania Vergara";Vergara;;Tania;
+acudientes;1646;2993451;"Tiffany De Carmen Torres Nava";Torres;Nava;Tiffany;"De Carmen"
+acudientes;1635;1193452250;"Valentina De La Flor Alomia Rivas";Alomia;Rivas;Valentina;"De La Flor"
+acudientes;1676;2118471;"Wilmary Del Carmen Montilla Bracho";Montilla;Bracho;Wilmary;"Del Carmen"
+acudientes;1437;1005832897;"Yasmin Tamayo";Tamayo;;Yasmin;
+acudientes;1020;1144167396;"Yennifer Ledesma";Ledesma;;Yennifer;
+acudientes;240;31993069;"Yineth Angel";Angel;;Yineth;
+acudientes;1979;1130634780;"Yuli Stefany De La Cruz";Stefany;"De La Cruz";Yuli;
+acudientes;1179;1006188849;"Yurani Ramos";Ramos;;Yurani;
+acudientes;1314;6815229;"Yurimar Gutiérrez De Pérez";Gutiérrez;"De Pérez";Yurimar;
+acudientes;128;14622412;"Zeus Kefren Sadhu Paez Guman";Paez;Guman;Zeus;"Kefren Sadhu"
+acudientes;241;18571152;"Zudeleinny Del Valle Castro Zarraga";Castro;Zarraga;Zudeleinny;"Del Valle"
