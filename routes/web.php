@@ -9,6 +9,7 @@ use App\Http\Controllers\InformeController;
 use App\Http\Controllers\InscripcionController;
 use App\Http\Controllers\InscritoController;
 use App\Http\Controllers\PromocionController;
+use App\Http\Controllers\SedeController;
 use App\Http\Controllers\UsuarioController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -45,6 +46,17 @@ Route::middleware(['auth'])->group(function () {
     Route::put('inscritos/{solicitud}/documentos', [InscritoController::class, 'guardarDocumentos'])->whereNumber('solicitud')->name('inscritos.documentos.guardar');
     Route::get('inscritos/{solicitud}/grupo', [InscritoController::class, 'grupo'])->whereNumber('solicitud')->name('inscritos.grupo');
     Route::post('inscritos/{solicitud}/matricular', [InscritoController::class, 'matricular'])->whereNumber('solicitud')->name('inscritos.matricular');
+
+    // Sedes y sus grupos: verlas, cualquiera con sesión; crearlas y cambiarlas, todos menos los docentes.
+    Route::get('sedes', [SedeController::class, 'index'])->name('sedes.index');
+    Route::middleware('can:gestionar-sedes')->group(function () {
+        Route::post('sedes', [SedeController::class, 'store'])->name('sedes.store');
+        Route::put('sedes/{sede}', [SedeController::class, 'update'])->whereNumber('sede')->name('sedes.update');
+        Route::delete('sedes/{sede}', [SedeController::class, 'destroy'])->whereNumber('sede')->name('sedes.destroy');
+        Route::post('sedes/{sede}/grupos', [GrupoController::class, 'store'])->whereNumber('sede')->name('sedes.grupos.store');
+        Route::put('grupos/{grupo}', [GrupoController::class, 'update'])->whereNumber('grupo')->name('grupos.update');
+        Route::delete('grupos/{grupo}', [GrupoController::class, 'destroy'])->whereNumber('grupo')->name('grupos.destroy');
+    });
 
     Route::middleware('can:gestionar-matriculas')->group(function () {
         Route::post('estudiantes/{estudiante}/deshabilitar', [DeshabilitacionController::class, 'deshabilitar'])->whereNumber('estudiante')->name('estudiantes.deshabilitar');

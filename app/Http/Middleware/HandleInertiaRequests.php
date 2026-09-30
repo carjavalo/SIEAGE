@@ -46,6 +46,7 @@ class HandleInertiaRequests extends Middleware
                 'puedeDeshabilitar' => fn () => (bool) $request->user()?->can('gestionar-matriculas'),
                 // Corregir datos del estudiante y sus acudientes: el mismo permiso.
                 'puedeEditarDatos' => fn () => (bool) $request->user()?->can('gestionar-matriculas'),
+                'puedeGestionarSedes' => fn () => (bool) $request->user()?->can('gestionar-sedes'),
             ],
             // Para el aviso del menú "Inscritos": solo con sesión iniciada.
             'inscritosPendientes' => fn () => $request->user()

@@ -4,13 +4,14 @@ import { SaltarAlContenido } from '@/components/saltar-al-contenido';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ClipboardList, GraduationCap, UploadCloud, UserCog } from 'lucide-react';
+import { Building2, ClipboardList, GraduationCap, UploadCloud, UserCog } from 'lucide-react';
 import { type ReactNode, useEffect, useLayoutEffect, useState } from 'react';
 
 const enlaces = [
     { titulo: 'Estudiantes', href: '/estudiantes', icono: GraduationCap },
     { titulo: 'Inscritos', href: '/inscritos', icono: ClipboardList },
     { titulo: 'Importar datos', href: '/dashboard', icono: UploadCloud },
+    { titulo: 'Sedes', href: '/sedes', icono: Building2 },
     { titulo: 'Usuarios', href: '/usuarios', icono: UserCog, soloAdministrador: true },
 ];
 

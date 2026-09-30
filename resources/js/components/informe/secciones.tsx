@@ -1,4 +1,4 @@
-import { Anillo, Barra100, Columnas, FilaBarra, Leyenda, Ocupacion, colorNivel, colorSede, colores } from '@/components/informe/graficos';
+import { Anillo, Barra100, Columnas, FilaBarra, Leyenda, Ocupacion, colorNivel, colores } from '@/components/informe/graficos';
 import { Bloque, Cifras, Titular, filaTotal, num, tabla, td, th } from '@/components/informe/hoja';
 import { telefono } from '@/lib/estudiantes';
 import {
@@ -14,6 +14,7 @@ import {
     pct,
     porcentaje,
 } from '@/lib/informe';
+import { colorDeSede } from '@/lib/sedes';
 import { cn } from '@/lib/utils';
 import { Fragment } from 'react';
 
@@ -145,7 +146,7 @@ export function Resumen({ informe: i }: { informe: Informe }) {
             <div className="grid grid-cols-[1.1fr_1fr] gap-[34px]">
                 <Bloque titulo="Por sede" nota="activos">
                     {i.sedes.map((s) => (
-                        <FilaBarra key={s.codigo} etiqueta={s.nombre} valor={s.activos} max={maxSede} color={colorSede[s.codigo] ?? colores.fuerte} />
+                        <FilaBarra key={s.codigo} etiqueta={s.nombre} valor={s.activos} max={maxSede} color={colorDeSede(s.codigo)} />
                     ))}
                 </Bloque>
                 <Bloque titulo="Por jornada y sexo">
@@ -232,10 +233,7 @@ export function Sedes({ informe: i }: { informe: Informe }) {
                             <tr key={s.codigo}>
                                 <td className={td}>
                                     <span className="flex items-center gap-[7px]">
-                                        <span
-                                            className="size-[8px] shrink-0 rounded-full"
-                                            style={{ background: colorSede[s.codigo] ?? colores.fuerte }}
-                                        />
+                                        <span className="size-[8px] shrink-0 rounded-full" style={{ background: colorDeSede(s.codigo) }} />
                                         <b className="truncate font-medium">{s.nombre}</b>
                                     </span>
                                 </td>
@@ -485,10 +483,7 @@ export function Grupos({ informe: i, filas, primera }: { informe: Informe; filas
                                 <td className={cn(td, 'text-[#56627F]')}>{g.grado_nombre}</td>
                                 <td className={td}>
                                     <span className="flex items-center gap-[6px]">
-                                        <span
-                                            className="size-[7px] shrink-0 rounded-full"
-                                            style={{ background: colorSede[g.sede_codigo] ?? colores.fuerte }}
-                                        />
+                                        <span className="size-[7px] shrink-0 rounded-full" style={{ background: colorDeSede(g.sede_codigo) }} />
                                         <span className="truncate">{g.sede}</span>
                                     </span>
                                 </td>

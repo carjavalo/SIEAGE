@@ -1,4 +1,5 @@
 import { plano } from '@/lib/estudiantes';
+import { colorDeSede } from '@/lib/sedes';
 import { cn } from '@/lib/utils';
 import { Fragment } from 'react';
 
@@ -55,7 +56,15 @@ export const infoSedes: Record<string, { orden: number; corto: string; punto: st
 export const sedeInfo = (codigo: string | null | undefined) => infoSedes[codigo ?? ''] ?? { orden: 9, corto: codigo ?? '—', punto: 'bg-[#8C97B3]' };
 
 export function PuntoSede({ codigo, className }: { codigo: string | null | undefined; className?: string }) {
-    return <span aria-hidden className={cn('size-2 shrink-0 rounded-full', sedeInfo(codigo).punto, className)} />;
+    // Las sedes creadas después no están en infoSedes: toman su color de reserva.
+    const conocida = !!infoSedes[codigo ?? ''];
+    return (
+        <span
+            aria-hidden
+            className={cn('size-2 shrink-0 rounded-full', conocida && sedeInfo(codigo).punto, className)}
+            style={conocida || !codigo ? undefined : { backgroundColor: colorDeSede(codigo) }}
+        />
+    );
 }
 
 /** Situación por excepción: un punto y la palabra, sin pastilla. */

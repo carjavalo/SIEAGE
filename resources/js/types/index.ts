@@ -9,6 +9,8 @@ export interface Auth {
     puedeDeshabilitar: boolean;
     /** Corregir los datos del estudiante y de sus acudientes (todos menos docentes). */
     puedeEditarDatos: boolean;
+    /** Crear y cambiar sedes y grupos (todos menos docentes). */
+    puedeGestionarSedes: boolean;
 }
 
 export interface SharedData {

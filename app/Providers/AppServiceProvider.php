@@ -28,6 +28,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('gestionar-matriculas', fn (User $user) => $user->activo
             && in_array($user->rol?->nombre, ['administrador', 'coordinacion', 'secretaria'], true));
 
+        // Crear y cambiar sedes y grupos: todos menos los docentes.
+        Gate::define('gestionar-sedes', fn (User $user) => $user->activo
+            && in_array($user->rol?->nombre, ['administrador', 'coordinacion', 'secretaria'], true));
+
         // Promover estudiantes al grado siguiente: todos menos los docentes.
         Gate::define('promover-estudiantes', fn (User $user) => $user->activo
             && in_array($user->rol?->nombre, ['administrador', 'coordinacion', 'secretaria'], true));
