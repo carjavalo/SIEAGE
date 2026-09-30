@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AyudaController;
 use App\Http\Controllers\DatosEstudianteController;
 use App\Http\Controllers\DeshabilitacionController;
 use App\Http\Controllers\EstudianteController;
@@ -25,6 +26,9 @@ Route::post('inscripcion', [InscripcionController::class, 'store'])
     // los equipos salen por la misma IP; 6/min bloqueaba familias legítimas.
     ->middleware('throttle:30,1')
     ->name('inscripcion.store');
+
+// El video «Cómo inscribir a un estudiante» del login. Sin sesión ni cookies: el navegador lo pide por trozos.
+Route::get('ayuda/inscripcion.mp4', [AyudaController::class, 'inscripcion'])->withoutMiddleware('web')->name('ayuda.inscripcion');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', function () {
