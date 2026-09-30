@@ -10,6 +10,10 @@ use Illuminate\Support\Facades\DB;
  * de matrícula del colegio). Hay una lista para primaria y otra para
  * bachillerato; Transición usa la de primaria.
  *
+ * En bachillerato, los certificados de notas que se piden dependen del grado
+ * al que entra: el del grado anterior y todos los de atrás (a 7.º: «de 6.º y
+ * de todos los grados anteriores»).
+ *
  * Cada documento se marca como entregado o, si puede no corresponder (el
  * certificado de notas o el retiro del SIMAT de quien nunca estudió), como
  * "no aplica". Se puede matricular con documentos pendientes: quedan
@@ -40,15 +44,17 @@ final class Documentos
      */
     public static function para(SolicitudInscripcion $solicitud): array
     {
-        $primaria = self::esPrimaria($solicitud);
+        $grado = self::grado($solicitud);
+        $primaria = $grado <= self::ULTIMO_DE_PRIMARIA;
         $documento = self::DOCUMENTO_DEL_ESTUDIANTE[$solicitud->tipo_documento] ?? 'del documento de identidad';
+        $anterior = $grado - 1;
 
         $lista = [
             ['fotos', '3 fotografías tamaño 3×4 cm', null, false],
             ['documento_estudiante', "Fotocopia {$documento} del estudiante", null, false],
             [
                 'notas',
-                $primaria ? 'Certificado de notas del último grado aprobado' : 'Certificado de notas de 5.º al último grado aprobado',
+                $primaria ? 'Certificado de notas del último grado aprobado' : "Certificados de notas de {$anterior}.º y de todos los grados anteriores",
                 'No aplica si no viene de otro grado.',
                 true,
             ],
@@ -64,7 +70,13 @@ final class Documentos
 
     public static function esPrimaria(SolicitudInscripcion $solicitud): bool
     {
-        return (int) DB::table('grados')->where('id', $solicitud->grado_id)->value('numero') <= self::ULTIMO_DE_PRIMARIA;
+        return self::grado($solicitud) <= self::ULTIMO_DE_PRIMARIA;
+    }
+
+    /** El número del grado al que entra: 0 es Transición, 11 es Undécimo. */
+    private static function grado(SolicitudInscripcion $solicitud): int
+    {
+        return (int) DB::table('grados')->where('id', $solicitud->grado_id)->value('numero');
     }
 
     /**
