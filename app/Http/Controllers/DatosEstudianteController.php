@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Alcance;
 use App\Support\Barrios;
 use App\Support\CambiosFicha;
 use Illuminate\Http\JsonResponse;
@@ -263,6 +264,7 @@ class DatosEstudianteController extends Controller
     /** Al agregar un acudiente: ¿ese documento ya está registrado? (es frecuente entre hermanos). */
     public function buscarAcudiente(Request $request): JsonResponse
     {
+        Alcance::exigirEstudiante($request->user(), (int) $request->input('estudiante'));
         $documento = preg_replace('/[\s.]/', '', (string) $request->input('documento'));
         $a = mb_strlen($documento) >= 5 ? DB::table('acudientes')->where('numero_documento', $documento)->first() : null;
         if (! $a) {
@@ -275,7 +277,7 @@ class DatosEstudianteController extends Controller
             'tipo_documento' => $a->tipo_documento,
             'numero_documento' => $a->numero_documento,
             'telefono' => $a->telefono_celular ?? $a->telefono_fijo,
-            'estudiantes' => CambiosFicha::otrosEstudiantes(collect([$a->id]))->get($a->id, collect())->values(),
+            'estudiantes' => CambiosFicha::otrosEstudiantes(collect([$a->id]), null, Alcance::sedes($request->user()))->get($a->id, collect())->values(),
             'ya_vinculado' => DB::table('estudiante_acudiente')
                 ->where(['acudiente_id' => $a->id, 'estudiante_id' => (int) $request->input('estudiante')])->exists(),
         ]]);
@@ -285,6 +287,8 @@ class DatosEstudianteController extends Controller
 
     private function alumno(int $id): object
     {
+        Alcance::exigirEstudiante(request()->user(), $id);
+
         return DB::table('estudiantes')->whereNull('deleted_at')->where('id', $id)->first() ?? abort(404);
     }
 

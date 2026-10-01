@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Alcance;
 use App\Support\Constancias;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,7 @@ class ConstanciaController extends Controller
             ->join('estudiantes as e', 'e.id', '=', 'm.estudiante_id')
             ->where('m.estudiante_id', $estudiante)
             ->whereNull('e.deleted_at')
+            ->tap(fn ($q) => Alcance::filtrar($q, $request->user(), 'm.sede_id'))
             ->where('al.estado', '<>', 'planeado')
             ->when($request->filled('anio'), fn ($q) => $q->where('al.anio', (int) $request->query('anio')))
             ->orderByDesc('al.anio')
@@ -48,6 +50,9 @@ class ConstanciaController extends Controller
             ? DB::table('grupos as g')->join('sedes as s', 's.id', '=', 'g.sede_id')->where('g.id', (int) $request->query('grupo'))->where('g.anio_lectivo_id', $anio->id)->first(['g.id', 'g.codigo', 's.nombre as sede'])
             : null;
         abort_if(($request->filled('sede') && ! $sede) || ($request->filled('grado') && ! $grado) || ($request->filled('grupo') && ! $grupo), 404);
+        if ($sede) {
+            Alcance::exigirSede($request->user(), $sede->id);
+        }
 
         $ids = DB::table('matriculas as m')
             ->join('estudiantes as e', 'e.id', '=', 'm.estudiante_id')
@@ -60,6 +65,8 @@ class ConstanciaController extends Controller
             ->when($grupo, fn ($q) => $q->where('m.grupo_id', $grupo->id))
             ->when(! $grupo && $grado, fn ($q) => $q->where('m.grado_id', $grado->id))
             ->when(! $grupo && $sede, fn ($q) => $q->where('m.sede_id', $sede->id))
+            // Sin sede pedida: todas las que puede ver (un grupo de otra sede no trae a nadie).
+            ->tap(fn ($q) => Alcance::filtrar($q, $request->user(), 'm.sede_id'))
             ->orderByDesc('s.es_principal')
             ->orderBy('s.nombre')
             ->orderBy('gr.numero')

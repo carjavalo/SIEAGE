@@ -24,15 +24,22 @@ export type Usuario = {
     rol_id: number | null;
     rol: { id: number; nombre: string } | null;
     activo: boolean;
+    /** Ve todas las sedes (incluidas las que se creen). Los administradores siempre. */
+    todas_las_sedes: boolean;
+    /** Ids de las sedes asignadas, si no ve todas. */
+    sedes: number[];
     ultimo_acceso: string | null;
     created_at: string;
 };
+
+export type SedeOpcion = { id: number; codigo: string; nombre: string };
 
 type Props = {
     /** 'nuevo' para crear; un usuario para verlo y editarlo; null, cerrado. */
     abierto: 'nuevo' | Usuario | null;
     esYo: boolean;
     roles: Rol[];
+    sedes: SedeOpcion[];
     panel: RefObject<HTMLElement | null>;
     onCerrar: () => void;
 };
@@ -54,7 +61,7 @@ function sugerirUsuario(nombre: string) {
  * lista o, en pantallas anchas, se acopla a su lado. La `key` del contenido
  * reinicia el formulario al cambiar de usuario.
  */
-export function PanelUsuario({ abierto, esYo, roles, panel, onCerrar }: Props) {
+export function PanelUsuario({ abierto, esYo, roles, sedes, panel, onCerrar }: Props) {
     // Al cerrar, lo último que se mostró se queda mientras el panel sale (si no,
     // desaparecería de golpe). Cada apertura, o cambio de usuario, empieza con el
     // formulario limpio; si solo llegan datos nuevos del mismo usuario, no.
@@ -73,15 +80,27 @@ export function PanelUsuario({ abierto, esYo, roles, panel, onCerrar }: Props) {
     return (
         <PanelFicha abierta={abierto !== null} panel={panel} etiqueta={mostrado === 'nuevo' ? 'Nuevo usuario' : 'Usuario'}>
             {mostrado === 'nuevo' ? (
-                <FormularioUsuario key={vez} roles={roles} esYo={false} onCerrar={onCerrar} />
+                <FormularioUsuario key={vez} roles={roles} sedes={sedes} esYo={false} onCerrar={onCerrar} />
             ) : mostrado ? (
-                <FormularioUsuario key={vez} usuario={mostrado} roles={roles} esYo={esYo} onCerrar={onCerrar} />
+                <FormularioUsuario key={vez} usuario={mostrado} roles={roles} sedes={sedes} esYo={esYo} onCerrar={onCerrar} />
             ) : null}
         </PanelFicha>
     );
 }
 
-function FormularioUsuario({ usuario, roles, esYo, onCerrar }: { usuario?: Usuario; roles: Rol[]; esYo: boolean; onCerrar: () => void }) {
+function FormularioUsuario({
+    usuario,
+    roles,
+    sedes,
+    esYo,
+    onCerrar,
+}: {
+    usuario?: Usuario;
+    roles: Rol[];
+    sedes: SedeOpcion[];
+    esYo: boolean;
+    onCerrar: () => void;
+}) {
     const nuevo = !usuario;
     // Mientras no se toque, el usuario se sugiere a partir del nombre.
     const [usuarioTocado, setUsuarioTocado] = useState(!nuevo);
@@ -91,8 +110,12 @@ function FormularioUsuario({ usuario, roles, esYo, onCerrar }: { usuario?: Usuar
         email: usuario?.email ?? '',
         rol_id: usuario?.rol_id ?? roles.find((r) => r.nombre === 'secretaria')?.id ?? roles[0]?.id ?? 0,
         activo: usuario?.activo ?? true,
+        todas_las_sedes: usuario?.todas_las_sedes ?? false,
+        sedes: usuario?.sedes ?? ([] as number[]),
         password: nuevo ? claveAleatoria() : '',
     });
+    const esAdministrador = roles.find((r) => r.id === form.data.rol_id)?.nombre === 'administrador';
+    const marcarSede = (id: number, si: boolean) => form.setData('sedes', si ? [...form.data.sedes, id] : form.data.sedes.filter((s) => s !== id));
 
     const guardar: FormEventHandler = (e) => {
         e.preventDefault();
@@ -240,6 +263,39 @@ function FormularioUsuario({ usuario, roles, esYo, onCerrar }: { usuario?: Usuar
                         {form.errors.rol_id && <p className="mt-2 text-[13px] text-[#B42318]">{form.errors.rol_id}</p>}
                     </Bloque>
 
+                    <Bloque titulo="Sedes">
+                        {esAdministrador ? (
+                            <p className="rounded-[14px] bg-[#F5F7FC] px-3.5 py-3 text-[14px] text-[#56627F]">
+                                Los administradores ven y gestionan todas las sedes.
+                            </p>
+                        ) : (
+                            <>
+                                <p className="mb-2.5 text-[13px] text-[#56627F]">
+                                    Solo verá y modificará los estudiantes, grupos e informes de estas sedes.
+                                </p>
+                                <div className="grid gap-2">
+                                    <CasillaSede
+                                        marcada={form.data.todas_las_sedes}
+                                        onCambio={(si) => form.setData('todas_las_sedes', si)}
+                                        titulo="Todas las sedes"
+                                        detalle="Incluye las que se creen después."
+                                    />
+                                    {sedes.map((s) => (
+                                        <CasillaSede
+                                            key={s.id}
+                                            marcada={form.data.todas_las_sedes || form.data.sedes.includes(s.id)}
+                                            desactivada={form.data.todas_las_sedes}
+                                            onCambio={(si) => marcarSede(s.id, si)}
+                                            titulo={s.nombre}
+                                            detalle={s.codigo}
+                                        />
+                                    ))}
+                                </div>
+                                {form.errors.sedes && <p className="mt-2 text-[13px] text-[#B42318]">{form.errors.sedes}</p>}
+                            </>
+                        )}
+                    </Bloque>
+
                     {nuevo ? (
                         <Bloque titulo="Clave">
                             <CampoClaveNueva
@@ -364,5 +420,45 @@ export function MarcaActivo({ activo }: { activo: boolean }) {
             <span aria-hidden className={cn('size-1.5 rounded-full', activo ? 'bg-[#3BA67A]' : 'bg-[#AEB7CC]')} />
             {activo ? 'Activo' : 'Desactivado'}
         </span>
+    );
+}
+
+/** Una casilla de la lista de sedes, con el mismo aspecto que la elección de rol. */
+function CasillaSede({
+    marcada,
+    desactivada,
+    onCambio,
+    titulo,
+    detalle,
+}: {
+    marcada: boolean;
+    desactivada?: boolean;
+    onCambio: (si: boolean) => void;
+    titulo: string;
+    detalle?: string;
+}) {
+    return (
+        <label
+            className={cn(
+                'flex items-center gap-3 rounded-[16px] border-[1.5px] px-3.5 py-2.5 transition',
+                desactivada ? 'cursor-default opacity-60' : 'cursor-pointer',
+                marcada ? 'border-[#1E3A7B] bg-[#F7F9FF]' : 'border-[#E3E9F6] hover:border-[#B9C8EC]',
+            )}
+        >
+            <input type="checkbox" checked={marcada} disabled={desactivada} onChange={(e) => onCambio(e.target.checked)} className="peer sr-only" />
+            <span
+                aria-hidden
+                className={cn(
+                    'flex size-5 shrink-0 items-center justify-center rounded-[6px] transition peer-focus-visible:ring-4 peer-focus-visible:ring-[#DCE5F8]',
+                    marcada ? 'bg-[#1E3A7B] text-white' : 'border-[1.5px] border-[#B7C6EA] bg-white',
+                )}
+            >
+                {marcada && <Check className="size-3" strokeWidth={3} />}
+            </span>
+            <span className="flex min-w-0 flex-1 items-baseline justify-between gap-2">
+                <span className="text-[15px] font-medium text-[#16223F]">{titulo}</span>
+                {detalle && <span className="text-[13px] text-[#56627F]">{detalle}</span>}
+            </span>
+        </label>
     );
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Alcance;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +27,7 @@ class GrupoController extends Controller
 
     public function store(Request $request, int $sede): RedirectResponse
     {
+        Alcance::exigirSede($request->user(), $sede);
         $sede = DB::table('sedes')->find($sede) ?? abort(404);
         $datos = $request->validate([
             'anio' => ['required', 'integer', 'exists:anios_lectivos,anio'],
@@ -56,6 +58,7 @@ class GrupoController extends Controller
     public function update(Request $request, int $grupo): RedirectResponse
     {
         $actual = DB::table('grupos')->find($grupo) ?? abort(404);
+        Alcance::exigirSede($request->user(), $actual->sede_id);
         $datos = $request->validate($this->reglas(), self::MENSAJES);
 
         $this->abierto(DB::table('anios_lectivos')->where('id', $actual->anio_lectivo_id)->value('estado'));
@@ -80,9 +83,10 @@ class GrupoController extends Controller
         return back()->with('success', "Grupo {$codigo} actualizado.");
     }
 
-    public function destroy(int $grupo): RedirectResponse
+    public function destroy(Request $request, int $grupo): RedirectResponse
     {
         $actual = DB::table('grupos')->find($grupo) ?? abort(404);
+        Alcance::exigirSede($request->user(), $actual->sede_id);
         $this->abierto(DB::table('anios_lectivos')->where('id', $actual->anio_lectivo_id)->value('estado'));
 
         $matriculas = DB::table('matriculas')->where('grupo_id', $actual->id)->count();
@@ -145,7 +149,9 @@ class GrupoController extends Controller
         ]);
 
         $ids = array_map('intval', array_keys($datos['cupos']));
-        abort_if(DB::table('grupos')->whereIn('id', $ids)->count() !== count($ids), 422, 'Grupo inexistente.');
+        // Todos deben existir y ser de las sedes del usuario.
+        $validos = Alcance::filtrar(DB::table('grupos')->whereIn('id', $ids), $request->user(), 'sede_id')->count();
+        abort_if($validos !== count($ids), 404);
 
         DB::transaction(function () use ($datos) {
             foreach ($datos['cupos'] as $id => $cupos) {

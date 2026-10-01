@@ -2,7 +2,7 @@ import { Resaltado } from '@/components/estudiantes/etiquetas';
 import { Tecla, Vacio, td, th } from '@/components/estudiantes/lista-estudiantes';
 import { VeloFicha } from '@/components/ficha';
 import { botonPrimario } from '@/components/formulario';
-import { MarcaActivo, PanelUsuario, type Usuario } from '@/components/usuarios/panel-usuario';
+import { MarcaActivo, PanelUsuario, type SedeOpcion, type Usuario } from '@/components/usuarios/panel-usuario';
 import PanelLayout from '@/layouts/panel-layout';
 import { palabras, plano } from '@/lib/estudiantes';
 import { type Rol, haceCuanto, inicialesPersona, nombreRol, puntoRol } from '@/lib/usuarios';
@@ -20,7 +20,7 @@ const alto = '[@media(min-height:860px)]';
  * Quién puede ingresar a SIEAGE y con qué rol. Mismo marco que Estudiantes:
  * roles en segmentos, la lista y un panel lateral para crear o editar.
  */
-export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; roles: Rol[] }) {
+export default function Usuarios({ usuarios, roles, sedes }: { usuarios: Usuario[]; roles: Rol[]; sedes: SedeOpcion[] }) {
     const { auth } = usePage<SharedData>().props;
     const [rolId, setRolId] = useState<number | null>(null);
     const [estado, setEstado] = useState<FiltroEstado>('todos');
@@ -365,6 +365,7 @@ export default function Usuarios({ usuarios, roles }: { usuarios: Usuario[]; rol
                     abierto={abierto === 'nuevo' ? 'nuevo' : elegido}
                     esYo={elegido?.id === auth.user.id}
                     roles={roles}
+                    sedes={sedes}
                     panel={panel}
                     onCerrar={() => setAbierto(null)}
                 />

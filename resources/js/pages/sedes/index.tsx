@@ -68,7 +68,7 @@ export default function Sedes({ anios, anio, editable, sedes, grados, jornadas }
                         {!editable && ' · año cerrado, solo consulta'}
                     </p>
                 </div>
-                {puede && (
+                {puede && auth.todasLasSedes && (
                     <button type="button" onClick={() => abrir({ tipo: 'sede', sede: null })} className={cn(botonPrimario, 'ml-auto shrink-0')}>
                         <Plus aria-hidden className="size-[18px]" strokeWidth={2.4} />
                         Nueva sede

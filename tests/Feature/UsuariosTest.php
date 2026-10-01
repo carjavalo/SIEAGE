@@ -50,6 +50,7 @@ class UsuariosTest extends TestCase
             'usuario' => ' JPerez ',
             'email' => '',
             'rol_id' => $this->rol('secretaria'),
+            'todas_las_sedes' => true,
             'password' => 'clave-segura-1',
         ])->assertSessionHasNoErrors();
 
@@ -93,7 +94,7 @@ class UsuariosTest extends TestCase
 
         $this->actingAs($this->admin())->put("/usuarios/{$docente->id}", [
             'name' => 'Docente Renombrado', 'usuario' => $docente->usuario, 'email' => $docente->email,
-            'rol_id' => $this->rol('coordinacion'), 'activo' => false,
+            'rol_id' => $this->rol('coordinacion'), 'activo' => false, 'todas_las_sedes' => true,
         ])->assertSessionHasNoErrors();
 
         $docente->refresh();

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Rol;
 use App\Models\User;
+use App\Support\Alcance;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -32,12 +33,17 @@ class UsuarioController extends Controller
 
     public function index(): Response
     {
+        $asignadas = DB::table('sede_user')->get(['user_id', 'sede_id'])->groupBy('user_id');
+
         return Inertia::render('usuarios/index', [
             'usuarios' => User::with('rol:id,nombre')
                 ->orderByDesc('activo')
                 ->orderBy('name')
-                ->get(['id', 'name', 'usuario', 'email', 'rol_id', 'activo', 'ultimo_acceso', 'created_at']),
+                ->get(['id', 'name', 'usuario', 'email', 'rol_id', 'activo', 'todas_las_sedes', 'ultimo_acceso', 'created_at'])
+                ->map(fn (User $u) => [...$u->toArray(), 'sedes' => $asignadas->get($u->id, collect())->pluck('sede_id')->map(fn ($id) => (int) $id)->values()]),
             'roles' => Rol::orderBy('id')->get(['id', 'nombre', 'descripcion']),
+            // Para asignar a cada usuario las sedes que puede ver.
+            'sedes' => DB::table('sedes')->orderByDesc('es_principal')->orderBy('nombre')->get(['id', 'codigo', 'nombre']),
         ]);
     }
 
@@ -48,7 +54,8 @@ class UsuarioController extends Controller
             'password' => ['required', 'string', 'min:8', 'max:72'],
         ], self::MENSAJES);
 
-        User::create([...$datos, 'activo' => true]);
+        // En una transacción: si faltan sedes, el usuario no queda creado a medias.
+        DB::transaction(fn () => $this->asignarSedes(User::create([...collect($datos)->except('sedes')->all(), 'activo' => true]), $datos));
 
         return back()->with('success', "Usuario «{$datos['usuario']}» creado.");
     }
@@ -62,7 +69,10 @@ class UsuarioController extends Controller
 
         $this->protegerAdministradores($request, $usuario, (int) $datos['rol_id'], (bool) $datos['activo']);
 
-        $usuario->update($datos);
+        DB::transaction(function () use ($usuario, $datos) {
+            $usuario->update(collect($datos)->except('sedes')->all());
+            $this->asignarSedes($usuario, $datos);
+        });
         if (! $usuario->activo) {
             $this->cerrarSesiones($usuario);
         }
@@ -83,6 +93,30 @@ class UsuarioController extends Controller
         }
 
         return back()->with('success', "Clave de «{$usuario->usuario}» cambiada.");
+    }
+
+    /**
+     * Guarda las sedes del usuario. Si no es administrador, debe tener "todas las
+     * sedes" o al menos una marcada: un usuario sin sedes no vería nada.
+     *
+     * @param  array<string, mixed>  $datos
+     */
+    private function asignarSedes(User $usuario, array $datos): void
+    {
+        $esAdmin = Rol::where('id', $datos['rol_id'])->value('nombre') === 'administrador';
+        $todas = (bool) ($datos['todas_las_sedes'] ?? false);
+        $sedes = array_map('intval', $datos['sedes'] ?? []);
+
+        if (! $esAdmin && ! $todas && ! $sedes) {
+            throw ValidationException::withMessages(['sedes' => 'Marca al menos una sede, o «Todas las sedes».']);
+        }
+
+        DB::transaction(function () use ($usuario, $todas, $sedes) {
+            $usuario->forceFill(['todas_las_sedes' => $todas])->save();
+            DB::table('sede_user')->where('user_id', $usuario->id)->delete();
+            DB::table('sede_user')->insert(array_map(fn ($id) => ['user_id' => $usuario->id, 'sede_id' => $id, 'created_at' => now()], $todas ? [] : $sedes));
+        });
+        Alcance::olvidar($usuario);
     }
 
     /** Saca al usuario de las sesiones que tenga abiertas en otros equipos. */
@@ -110,6 +144,10 @@ class UsuarioController extends Controller
             'usuario' => ['required', 'string', 'min:3', 'max:50', 'regex:/^[a-z0-9._-]+$/', Rule::unique('users', 'usuario')->ignore($usuario?->id)],
             'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($usuario?->id)],
             'rol_id' => ['required', 'integer', 'exists:roles,id'],
+            // Qué sedes puede ver: todas, o las marcadas (los administradores ven todas siempre).
+            'todas_las_sedes' => ['sometimes', 'boolean'],
+            'sedes' => ['sometimes', 'array'],
+            'sedes.*' => ['integer', 'distinct', 'exists:sedes,id'],
         ];
     }
 
