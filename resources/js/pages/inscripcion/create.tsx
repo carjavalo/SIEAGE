@@ -325,6 +325,9 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios,
             for (const c of CAMPOS_COMPARTIDOS_ENTRE_HERMANOS) (base as Record<Campo, unknown>)[c] = data[c];
         }
         form.setData(base);
+        // Lo que queda (vacío, o los datos de la familia para el hermano) ya no es «sin enviar»: sin esto,
+        // el sello nuevo que trae la respuesta hacía que «Volver» avisara que se perdían datos.
+        form.setDefaults(base);
         form.clearErrors();
         setEnviado(null);
         setAlcanzado(0);
