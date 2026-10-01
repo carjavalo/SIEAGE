@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Alcance;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -108,6 +109,7 @@ class DeshabilitacionController extends Controller
             ->join('anios_lectivos as al', 'al.id', '=', 'm.anio_lectivo_id')
             ->where('al.estado', 'activo')
             ->where('m.estudiante_id', $estudiante)
+            ->tap(fn ($q) => Alcance::filtrar($q, request()->user(), 'm.sede_id'))
             ->first(['m.id', 'm.estudiante_id', 'm.estado']);
 
         if (! $matricula) {

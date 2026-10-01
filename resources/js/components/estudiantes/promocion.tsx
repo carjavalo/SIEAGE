@@ -103,6 +103,9 @@ export function BotonPromover({
     /** Con filtro de sede, "este grado" es solo el de esa sede. */
     sede?: { codigo: string; nombre: string };
 }) {
+    const { auth } = usePage<SharedData>().props;
+    const todoElColegio = auth.todasLasSedes !== false;
+    const misSedes = (auth.sedes ?? []).map((s) => s.nombre).join(', ');
     const [abierto, setAbierto] = useState(false);
     const [alcance, setAlcance] = useState<'grado' | 'todos'>('grado');
     const [enviando, setEnviando] = useState(false);
@@ -172,7 +175,11 @@ export function BotonPromover({
                                 ? 'Ya están todos promovidos.'
                                 : `${pendientes} estudiante${pendientes === 1 ? '' : 's'} activo${pendientes === 1 ? '' : 's'} por promover.`,
                         )}
-                        {opcion('todos', 'Todo el colegio', `Todos los grados de ${anio}, de transición a undécimo.`)}
+                        {opcion(
+                            'todos',
+                            todoElColegio ? 'Todo el colegio' : 'Todas mis sedes',
+                            todoElColegio ? `Todos los grados de ${anio}, de transición a undécimo.` : `Todos los grados de ${anio} en ${misSedes}.`,
+                        )}
                     </div>
 
                     <div className="mt-1 flex justify-end gap-2">
@@ -186,7 +193,13 @@ export function BotonPromover({
                             className={botonPrimario}
                         >
                             {enviando && <LoaderCircle className="size-4 animate-spin" />}
-                            {alcance === 'todos' ? 'Promover todo el colegio' : gradua ? 'Graduar' : 'Promover'}
+                            {alcance === 'todos'
+                                ? todoElColegio
+                                    ? 'Promover todo el colegio'
+                                    : 'Promover mis sedes'
+                                : gradua
+                                  ? 'Graduar'
+                                  : 'Promover'}
                         </button>
                     </div>
                 </DialogContent>

@@ -25,6 +25,7 @@ class User extends Authenticatable
         'email',
         'password',
         'rol_id',
+        'todas_las_sedes',
         'activo',
     ];
 
@@ -49,6 +50,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'activo' => 'boolean',
+            'todas_las_sedes' => 'boolean',
             'ultimo_acceso' => 'datetime',
         ];
     }

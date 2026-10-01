@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Alcance;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -33,10 +34,13 @@ class SedeController extends Controller
             ?? $anios->firstWhere('estado', 'activo')
             ?? $anios->first();
 
+        $permitidas = Alcance::sedes($request->user());
+
         $grupos = DB::table('grupos as g')
             ->join('grados as gr', 'gr.id', '=', 'g.grado_id')
             ->leftJoin('matriculas as m', 'm.grupo_id', '=', 'g.id')
             ->where('g.anio_lectivo_id', $anio?->id)
+            ->when($permitidas !== null, fn ($q) => $q->whereIn('g.sede_id', $permitidas))
             ->groupBy('g.id', 'g.sede_id', 'g.codigo', 'g.numero', 'g.jornada', 'g.cupos_proyectados', 'gr.id', 'gr.numero', 'gr.nombre')
             ->orderBy('gr.numero')
             ->orderBy('g.numero')
@@ -59,7 +63,7 @@ class SedeController extends Controller
         // Una sede con historia (grupos o matrículas de cualquier año) no se puede eliminar.
         $enUso = DB::table('grupos')->distinct()->pluck('sede_id')->merge(DB::table('matriculas')->distinct()->pluck('sede_id'))->unique();
 
-        $sedes = DB::table('sedes')->orderByDesc('es_principal')->orderBy('id')->get()->map(fn ($s) => [
+        $sedes = DB::table('sedes')->when($permitidas !== null, fn ($q) => $q->whereIn('id', $permitidas))->orderByDesc('es_principal')->orderBy('id')->get()->map(fn ($s) => [
             'id' => $s->id,
             'codigo' => $s->codigo,
             'nombre' => $s->nombre,
@@ -84,6 +88,7 @@ class SedeController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        abort_unless(Alcance::todas($request->user()), 403);
         $datos = $this->validar($request);
 
         DB::table('sedes')->insert([
@@ -100,6 +105,7 @@ class SedeController extends Controller
 
     public function update(Request $request, int $sede): RedirectResponse
     {
+        Alcance::exigirSede($request->user(), $sede);
         $actual = DB::table('sedes')->find($sede) ?? abort(404);
         $datos = $this->validar($request, $actual->id);
 
@@ -108,8 +114,9 @@ class SedeController extends Controller
         return back()->with('success', "Sede {$datos['nombre']} actualizada.");
     }
 
-    public function destroy(int $sede): RedirectResponse
+    public function destroy(Request $request, int $sede): RedirectResponse
     {
+        abort_unless(Alcance::todas($request->user()), 403);
         $actual = DB::table('sedes')->find($sede) ?? abort(404);
 
         if (DB::table('grupos')->where('sede_id', $actual->id)->exists() || DB::table('matriculas')->where('sede_id', $actual->id)->exists()) {

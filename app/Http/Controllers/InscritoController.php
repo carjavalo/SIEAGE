@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Padre;
 use App\Models\SolicitudInscripcion;
+use App\Support\Alcance;
 use App\Support\Barrios;
 use App\Support\Documentos;
 use App\Support\Grupos;
@@ -34,6 +35,7 @@ class InscritoController extends Controller
             ->join('parentescos as p', 'p.id', '=', 's.acudiente_parentesco_id')
             ->leftJoin('matriculas as m', 'm.id', '=', 's.matricula_id')
             ->leftJoin('grupos as ga', 'ga.id', '=', 'm.grupo_id')
+            ->tap(fn ($q) => Alcance::filtrarSolicitudes($q, $request->user()))
             ->when($estado !== 'todas', fn ($q) => $q->where('s.estado', $estado))
             ->orderByDesc('s.created_at')
             ->get([
@@ -51,14 +53,17 @@ class InscritoController extends Controller
 
         return Inertia::render('inscritos/index', [
             'estado' => $estado,
-            'conteos' => DB::table('solicitudes_inscripcion')->selectRaw('estado, count(*) as n')->groupBy('estado')->pluck('n', 'estado'),
+            'conteos' => Alcance::filtrarSolicitudes(DB::table('solicitudes_inscripcion as s'), $request->user())
+                ->selectRaw('s.estado, count(*) as n')->groupBy('s.estado')->pluck('n', 'estado'),
             'inscritos' => $inscritos->map(fn ($i) => [
                 ...(array) $i,
                 'padres' => $padres->get($i->id, collect())->pluck('parentesco')->values(),
             ]),
             // Ficha del inscrito elegido (?ver=ID), que se muestra al lado de la
             // lista sin salir de la página. Solo se consulta si hay uno.
-            'detalle' => fn () => $request->filled('ver') && ($elegida = SolicitudInscripcion::find((int) $request->query('ver')))
+            'detalle' => fn () => $request->filled('ver')
+                && Alcance::filtrarSolicitudes(DB::table('solicitudes_inscripcion as s')->where('s.id', (int) $request->query('ver')), $request->user())->exists()
+                && ($elegida = SolicitudInscripcion::find((int) $request->query('ver')))
                 ? $this->ficha($elegida)
                 : null,
         ]);
@@ -77,6 +82,8 @@ class InscritoController extends Controller
      */
     private function ficha(SolicitudInscripcion $solicitud): array
     {
+        Alcance::exigirSolicitud(request()->user(), $solicitud->id);
+
         return [
             'solicitud' => [
                 ...$solicitud->only([
@@ -133,6 +140,7 @@ class InscritoController extends Controller
 
     public function guardarDocumentos(Request $request, SolicitudInscripcion $solicitud): RedirectResponse
     {
+        Alcance::exigirSolicitud($request->user(), $solicitud->id);
         $requisitos = collect(Documentos::para($solicitud))->keyBy('clave');
 
         $request->validate([
@@ -171,7 +179,8 @@ class InscritoController extends Controller
             ...$this->ficha($solicitud),
             'anio' => DB::table('anios_lectivos')->where('id', $anioId)->value('anio'),
             'gradoNumero' => DB::table('grados')->where('id', $solicitud->grado_id)->value('numero'),
-            'grupos' => Grupos::conOcupacion($anioId, $solicitud->grado_id),
+            // Solo los grupos de las sedes del usuario.
+            'grupos' => Grupos::conOcupacion($anioId, $solicitud->grado_id, Alcance::sedes(request()->user())),
         ]);
     }
 
@@ -182,12 +191,14 @@ class InscritoController extends Controller
      */
     public function matricular(Request $request, SolicitudInscripcion $solicitud): RedirectResponse
     {
+        Alcance::exigirSolicitud($request->user(), $solicitud->id);
         $anioId = $this->anioDeMatricula($solicitud);
         $grupoId = $request->validate([
             'grupo_id' => [
                 'required',
                 'integer',
-                Rule::exists('grupos', 'id')->where('grado_id', $solicitud->grado_id)->where('anio_lectivo_id', $anioId),
+                Rule::exists('grupos', 'id')->where('grado_id', $solicitud->grado_id)->where('anio_lectivo_id', $anioId)
+                    ->when(Alcance::sedes($request->user()) !== null, fn ($r) => $r->whereIn('sede_id', Alcance::sedes($request->user()))),
             ],
         ], [
             'grupo_id.required' => 'Elige el grupo.',
@@ -340,6 +351,7 @@ class InscritoController extends Controller
 
     public function guardarPadres(Request $request, SolicitudInscripcion $solicitud): RedirectResponse
     {
+        Alcance::exigirSolicitud($request->user(), $solicitud->id);
         $nombre = ['nullable', 'string', 'max:40', 'regex:/^(?=.*\pL)[\pL\pM\s\'.-]+$/u'];
         $reglas = [];
         foreach (['madre', 'padre'] as $p) {

@@ -33,6 +33,7 @@ type Props = {
     anio: number;
     sedes: SedeFiltro[];
     sede: string | null;
+    todasLasSedes: boolean;
     grados: Grado[];
     gradoId: number | null;
     totales: { activos: number; nuevos: number; antiguos: number; retirados: number };
@@ -53,6 +54,7 @@ export default function Estudiantes({
     anio,
     sedes,
     sede,
+    todasLasSedes,
     grados,
     gradoId,
     totales,
@@ -150,6 +152,7 @@ export default function Estudiantes({
                 anios={anios}
                 anio={anioDestino}
                 sedes={sedes}
+                todasLasSedes={todasLasSedes}
                 sede={sede}
                 grados={grados}
                 gradoId={gradoDestino}

@@ -27,6 +27,8 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'usuario' => fake()->unique()->userName(),
             'activo' => true,
+            // Por defecto ve todas las sedes; las pruebas de sedes lo restringen a propósito.
+            'todas_las_sedes' => true,
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),

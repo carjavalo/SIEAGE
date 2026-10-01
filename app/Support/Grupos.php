@@ -12,7 +12,7 @@ final class Grupos
      * cupos y cuántos estudiantes activos (y nuevos) tienen. Lo usan el
      * tablero de Estudiantes y el paso de elegir grupo al matricular.
      */
-    public static function conOcupacion(?int $anioLectivoId, ?int $gradoId, ?int $sedeId = null): Collection
+    public static function conOcupacion(?int $anioLectivoId, ?int $gradoId, int|array|null $sedeId = null): Collection
     {
         return DB::table('grupos as g')
             ->join('sedes as s', 's.id', '=', 'g.sede_id')
@@ -20,7 +20,8 @@ final class Grupos
             ->leftJoin('matriculas as m', 'm.grupo_id', '=', 'g.id')
             ->where('g.anio_lectivo_id', $anioLectivoId)
             ->where('g.grado_id', $gradoId)
-            ->when($sedeId, fn ($q) => $q->where('g.sede_id', $sedeId))
+            // Una sede, o la lista de sedes que puede ver el usuario (null = todas).
+            ->when($sedeId !== null, fn ($q) => $q->whereIn('g.sede_id', (array) $sedeId))
             ->groupBy('g.id', 'g.codigo', 'g.numero', 'g.jornada', 'g.cupos_proyectados', 's.nombre', 's.codigo', 'd.nombre_completo')
             ->orderBy('g.numero')
             ->orderBy('s.codigo')

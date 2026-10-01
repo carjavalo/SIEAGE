@@ -77,7 +77,7 @@ final class CambiosFicha
      *
      * @return Collection<int, Collection<int, array{nombre: string, grupo: ?string}>> por acudiente
      */
-    public static function otrosEstudiantes(Collection $acudientesIds, ?int $excepto = null): Collection
+    public static function otrosEstudiantes(Collection $acudientesIds, ?int $excepto = null, ?array $sedes = null): Collection
     {
         if ($acudientesIds->isEmpty()) {
             return collect();
@@ -90,6 +90,8 @@ final class CambiosFicha
             ->leftJoin('grupos as g', 'g.id', '=', 'm.grupo_id')
             ->whereIn('ea.acudiente_id', $acudientesIds)
             ->when($excepto, fn ($q) => $q->where('e.id', '<>', $excepto))
+            // Un usuario de sede no ve a los hermanos que estudian en otra.
+            ->when($sedes !== null, fn ($q) => $q->whereIn('m.sede_id', $sedes))
             ->whereNull('e.deleted_at')
             ->orderBy('e.nombre_completo')
             ->get(['ea.acudiente_id', 'e.nombre_completo as nombre', 'g.codigo as grupo'])

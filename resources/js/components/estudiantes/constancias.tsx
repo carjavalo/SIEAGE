@@ -2,7 +2,8 @@ import { botonPrimario, botonSecundario } from '@/components/formulario';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { type Grado, type Grupo, type SedeFiltro } from '@/lib/estudiantes';
 import { cn } from '@/lib/utils';
-import { Link } from '@inertiajs/react';
+import { type SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
 import { ArrowRight, FileBadge } from 'lucide-react';
 import { useState } from 'react';
 
@@ -25,6 +26,8 @@ export function BotonConstancias({
     sede: string | null;
     sedes: SedeFiltro[];
 }) {
+    // Para un usuario de sede, "todo el colegio" son sus sedes (el servidor ya limita la lista).
+    const todoElColegio = usePage<SharedData>().props.auth.todasLasSedes !== false;
     const laSede = sedes.find((s) => s.codigo === sede);
     const ruta = (filtros: Record<string, string | number | undefined>) => {
         const consulta = new URLSearchParams({ anio: String(anio) });
@@ -64,7 +67,7 @@ export function BotonConstancias({
             : []),
         {
             clave: 'colegio',
-            titulo: 'Todo el colegio',
+            titulo: todoElColegio ? 'Todo el colegio' : 'Todas mis sedes',
             detalle: 'Todas las sedes y grados',
             n: sedes.reduce((t, s) => t + s.activos, 0),
             href: ruta({}),

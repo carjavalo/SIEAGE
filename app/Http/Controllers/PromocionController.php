@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Alcance;
 use App\Support\Promocion;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,6 +21,14 @@ class PromocionController extends Controller
         ]);
 
         $sedeId = isset($datos['sede']) ? DB::table('sedes')->where('codigo', $datos['sede'])->value('id') : null;
+        if ($sedeId) {
+            Alcance::exigirSede($request->user(), $sedeId);
+        }
+        if (isset($datos['estudiante_id'])) {
+            Alcance::exigirEstudiante($request->user(), (int) $datos['estudiante_id']);
+        }
+        // Sin sede pedida, "todo el colegio" es todo lo que este usuario puede ver.
+        $sedeId ??= Alcance::sedes($request->user());
         $resumen = Promocion::ejecutar((int) $datos['anio'], $datos['grado_id'] ?? null, $datos['estudiante_id'] ?? null, $sedeId);
 
         return back()->with('promocion', $resumen);

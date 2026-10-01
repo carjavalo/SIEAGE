@@ -33,17 +33,18 @@ final class InformeMatricula
 
     private CarbonImmutable $referencia;
 
-    private function __construct(private object $anio)
+    /** @param  list<int>|null  $sedes  las sedes que puede ver quien pide el informe (null = todas) */
+    private function __construct(private object $anio, private ?array $sedes = null)
     {
         $this->referencia = CarbonImmutable::create($anio->anio, 3, 31);
     }
 
     /** @return array<string, mixed>|null null si el año no existe */
-    public static function del(int $anio): ?array
+    public static function del(int $anio, ?array $sedes = null): ?array
     {
         $fila = DB::table('anios_lectivos')->where('anio', $anio)->first(['id', 'anio']);
 
-        return $fila ? (new self($fila))->armar() : null;
+        return $fila ? (new self($fila, $sedes))->armar() : null;
     }
 
     /** @return array<string, mixed> */
@@ -95,6 +96,7 @@ final class InformeMatricula
             ->leftJoin('acudientes as a', 'a.id', '=', 'ea.acudiente_id')
             ->leftJoin('parentescos as p', 'p.id', '=', 'ea.parentesco_id')
             ->where('m.anio_lectivo_id', $this->anio->id)
+            ->when($this->sedes !== null, fn ($q) => $q->whereIn('m.sede_id', $this->sedes))
             ->whereNull('e.deleted_at')
             ->orderBy('e.nombre_completo')
             ->get([
@@ -135,6 +137,7 @@ final class InformeMatricula
             ->join('grados as gr', 'gr.id', '=', 'g.grado_id')
             ->join('sedes as s', 's.id', '=', 'g.sede_id')
             ->where('g.anio_lectivo_id', $this->anio->id)
+            ->when($this->sedes !== null, fn ($q) => $q->whereIn('g.sede_id', $this->sedes))
             ->orderBy('gr.numero')->orderByDesc('s.es_principal')->orderBy('s.nombre')->orderBy('g.numero')
             ->get(['g.id', 'g.codigo', 'g.jornada', 'g.cupos_proyectados as cupos', 'gr.numero as grado', 'gr.nombre as grado_nombre', 'gr.nivel',
                 's.codigo as sede_codigo', 's.nombre as sede'])
@@ -251,6 +254,7 @@ final class InformeMatricula
         $solicitudes = DB::table('solicitudes_inscripcion as si')
             ->join('grados as gr', 'gr.id', '=', 'si.grado_id')
             ->where('si.anio_lectivo_id', $this->anio->id)
+            ->tap(fn ($q) => Alcance::filtrarSolicitudes($q, request()->user(), 'si'))
             ->get(['si.estado', 'gr.numero as grado']);
 
         return [

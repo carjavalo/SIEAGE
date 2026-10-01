@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Alcance;
 use App\Support\Pulso;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -48,10 +49,15 @@ class HandleInertiaRequests extends Middleware
                 // Corregir datos del estudiante y sus acudientes: el mismo permiso.
                 'puedeEditarDatos' => fn () => (bool) $request->user()?->can('gestionar-matriculas'),
                 'puedeGestionarSedes' => fn () => (bool) $request->user()?->can('gestionar-sedes'),
+                // Ve todas las sedes, o solo estas (para mostrarlas en la cabecera).
+                'todasLasSedes' => fn () => Alcance::todas($request->user()),
+                'sedes' => fn () => $request->user() && ! Alcance::todas($request->user())
+                    ? DB::table('sedes')->whereIn('id', Alcance::sedes($request->user()))->orderBy('nombre')->get(['id', 'codigo', 'nombre'])
+                    : [],
             ],
             // Para el aviso del menú "Inscritos": solo con sesión iniciada.
             'inscritosPendientes' => fn () => $request->user()
-                ? DB::table('solicitudes_inscripcion')->where('estado', 'pendiente')->count()
+                ? Alcance::filtrarSolicitudes(DB::table('solicitudes_inscripcion as s'), $request->user())->where('s.estado', 'pendiente')->count()
                 : 0,
             // Cómo estaban los datos cuando se armó esta página: el navegador lo compara con GET /pulso.
             'pulso' => fn () => $request->user() ? Pulso::firma() : null,

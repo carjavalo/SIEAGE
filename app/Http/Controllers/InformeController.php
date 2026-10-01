@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Alcance;
 use App\Support\InformeMatricula;
 use App\Support\LibroMatriculaSede;
 use Illuminate\Http\Request;
@@ -22,7 +23,7 @@ class InformeController extends Controller
     {
         $anio = (int) ($request->query('anio') ?: DB::table('anios_lectivos')->where('estado', 'activo')->value('anio'));
 
-        return Inertia::render('informes/matricula', InformeMatricula::del($anio) ?? abort(404));
+        return Inertia::render('informes/matricula', InformeMatricula::del($anio, Alcance::sedes($request->user())) ?? abort(404));
     }
 
     /** «PRINCIPAL-2026.xlsx»: el libro de la sede, una hoja por grupo más las de resumen. */
@@ -32,6 +33,7 @@ class InformeController extends Controller
             'anio' => ['required', 'integer'],
             'sede' => ['required', 'string', 'max:5'],
         ]);
+        Alcance::exigirSede($request->user(), DB::table('sedes')->where('codigo', $datos['sede'])->value('id'));
         [$libro, $archivo] = LibroMatriculaSede::generar((int) $datos['anio'], $datos['sede']) ?? abort(404);
 
         return response()->streamDownload(function () use ($libro) {

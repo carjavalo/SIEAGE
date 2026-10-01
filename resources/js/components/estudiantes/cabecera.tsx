@@ -11,8 +11,10 @@ type Props = {
     anios: { id: number; anio: number; estado: string }[];
     anio: number;
     sedes: SedeFiltro[];
-    /** Código de la sede elegida; null = todas. */
+    /** Código de la sede elegida; null = todas (las que puede ver). */
     sede: string | null;
+    /** false: el usuario solo ve algunas sedes (las de `sedes`). */
+    todasLasSedes: boolean;
     grados: Grado[];
     gradoId: number | null;
     totales: { activos: number; nuevos: number; retirados: number };
@@ -24,7 +26,9 @@ type Props = {
 const alto = '[@media(min-height:860px)]';
 
 /** Primera franja: título con el año, grados en segmentos y búsqueda en todo el colegio. */
-export function Cabecera({ anios, anio, sedes, sede, grados, gradoId, totales, busqueda, entrada, onElegir }: Props) {
+export function Cabecera({ anios, anio, sedes, sede, todasLasSedes, grados, gradoId, totales, busqueda, entrada, onElegir }: Props) {
+    // Con una sola sede asignada no hay nada que elegir: se muestra su nombre.
+    const unaSola = !todasLasSedes && sedes.length === 1;
     const ir = (datos: { anio?: number; grado?: number; sede?: string | null }) => {
         const s = datos.sede !== undefined ? datos.sede : sede;
         router.get('/estudiantes', { anio: datos.anio ?? anio, grado: datos.grado ?? gradoId ?? undefined, ...(s ? { sede: s } : {}) });
@@ -46,27 +50,40 @@ export function Cabecera({ anios, anio, sedes, sede, grados, gradoId, totales, b
                         onCambio={(valor) => ir({ anio: valor })}
                         claseBoton={`h-[26px] rounded-full bg-white/75 pr-2 pl-2.5 text-[15px] font-semibold text-[#1E3A7B] tabular-nums ring-1 ring-[#D3DDF3] transition hover:bg-white focus-visible:ring-2 focus-visible:ring-[#6E8BD6] aria-expanded:bg-white aria-expanded:ring-[#6E8BD6] ${alto}:h-8 ${alto}:text-[16px]`}
                     />
-                    <Desplegable
-                        etiqueta="Sede"
-                        valor={sede ?? ''}
-                        opciones={[
-                            { valor: '', etiqueta: 'Todas las sedes', detalle: numero(sedes.reduce((t, s) => t + s.activos, 0)) },
-                            ...sedes.map((s) => ({ valor: s.codigo, etiqueta: s.nombre, detalle: numero(s.activos) })),
-                        ]}
-                        onCambio={(valor) => ir({ sede: valor || null })}
-                        claseBoton={cn(
-                            `h-[26px] rounded-full pr-2 pl-2.5 text-[14px] font-semibold ring-1 transition focus-visible:ring-2 focus-visible:ring-[#6E8BD6] aria-expanded:ring-[#6E8BD6] ${alto}:h-8 ${alto}:text-[15px]`,
-                            sede
-                                ? 'bg-[#1E3A7B] text-white ring-[#1E3A7B] hover:bg-[#172E63]'
-                                : 'bg-white/75 text-[#1E3A7B] ring-[#D3DDF3] hover:bg-white aria-expanded:bg-white',
-                        )}
-                    />
-                    {sede && (
+                    {unaSola ? (
+                        <span
+                            title="Tu usuario solo ve esta sede"
+                            className={`flex h-[26px] items-center rounded-full bg-[#1E3A7B] px-3 text-[14px] font-semibold text-white ${alto}:h-8 ${alto}:text-[15px]`}
+                        >
+                            {sedes[0].nombre}
+                        </span>
+                    ) : (
+                        <Desplegable
+                            etiqueta="Sede"
+                            valor={sede ?? ''}
+                            opciones={[
+                                {
+                                    valor: '',
+                                    etiqueta: todasLasSedes ? 'Todas las sedes' : 'Mis sedes',
+                                    detalle: numero(sedes.reduce((t, s) => t + s.activos, 0)),
+                                },
+                                ...sedes.map((s) => ({ valor: s.codigo, etiqueta: s.nombre, detalle: numero(s.activos) })),
+                            ]}
+                            onCambio={(valor) => ir({ sede: valor || null })}
+                            claseBoton={cn(
+                                `h-[26px] rounded-full pr-2 pl-2.5 text-[14px] font-semibold ring-1 transition focus-visible:ring-2 focus-visible:ring-[#6E8BD6] aria-expanded:ring-[#6E8BD6] ${alto}:h-8 ${alto}:text-[15px]`,
+                                sede
+                                    ? 'bg-[#1E3A7B] text-white ring-[#1E3A7B] hover:bg-[#172E63]'
+                                    : 'bg-white/75 text-[#1E3A7B] ring-[#D3DDF3] hover:bg-white aria-expanded:bg-white',
+                            )}
+                        />
+                    )}
+                    {sede && !unaSola && (
                         <button
                             type="button"
                             onClick={() => ir({ sede: null })}
                             aria-label="Quitar el filtro de sede"
-                            title="Ver todas las sedes"
+                            title={todasLasSedes ? 'Ver todas las sedes' : 'Ver todas mis sedes'}
                             className="-ml-1 flex size-[26px] cursor-pointer items-center justify-center rounded-full text-[#56627F] transition hover:bg-white hover:text-[#16223F]"
                         >
                             <X className="size-3.5" />

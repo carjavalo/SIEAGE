@@ -11,6 +11,10 @@ export interface Auth {
     puedeEditarDatos: boolean;
     /** Crear y cambiar sedes y grupos (todos menos docentes). */
     puedeGestionarSedes: boolean;
+    /** Ve todas las sedes (administrador o "todas las sedes"); si no, solo las de `sedes`. */
+    todasLasSedes: boolean;
+    /** Las sedes asignadas, cuando no ve todas. */
+    sedes: { id: number; codigo: string; nombre: string }[];
 }
 
 /** Cómo están los datos (App\Support\Pulso): dos firmas que cambian cuando alguien más toca algo. */

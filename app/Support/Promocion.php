@@ -31,7 +31,7 @@ final class Promocion
      *
      * @return array<string, mixed> resumen para mostrar al usuario
      */
-    public static function ejecutar(int $anio, ?int $gradoId = null, ?int $estudianteId = null, ?int $sedeId = null): array
+    public static function ejecutar(int $anio, ?int $gradoId = null, ?int $estudianteId = null, int|array|null $sedeId = null): array
     {
         $origen = DB::table('anios_lectivos')->where('anio', $anio)->first();
         if (! $origen || $origen->estado !== 'activo') {
@@ -57,7 +57,7 @@ final class Promocion
     }
 
     /** Matrículas activas del alcance que todavía no tienen matrícula el año siguiente. */
-    private function pendientes(?int $gradoId, ?int $estudianteId, ?int $sedeId = null): Collection
+    private function pendientes(?int $gradoId, ?int $estudianteId, int|array|null $sedeId = null): Collection
     {
         return DB::table('matriculas as m')
             ->join('grados as gr', 'gr.id', '=', 'm.grado_id')
@@ -68,7 +68,8 @@ final class Promocion
             ->whereNull('e.deleted_at')
             ->when($gradoId, fn ($q) => $q->where('m.grado_id', $gradoId))
             ->when($estudianteId, fn ($q) => $q->where('m.estudiante_id', $estudianteId))
-            ->when($sedeId, fn ($q) => $q->where('m.sede_id', $sedeId))
+            // Una sede, o las del usuario que promueve (null = todas).
+            ->when($sedeId !== null, fn ($q) => $q->whereIn('m.sede_id', (array) $sedeId))
             ->whereNotExists(fn ($q) => $q->from('matriculas as sig')
                 ->whereColumn('sig.estudiante_id', 'm.estudiante_id')
                 ->where('sig.anio_lectivo_id', $this->destino->id))
