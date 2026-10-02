@@ -12,11 +12,13 @@ const INACTIVO = 30 * 60_000;
  * `only`: es una recarga parcial, que no mueve el desplazamiento, no borra lo
  * que se está escribiendo ni muestra esqueletos.
  */
-const FRESCOS: Record<string, { inscritos?: string[]; datos?: string[] }> = {
+const FRESCOS: Record<string, { inscritos?: string[]; datos?: string[]; presencia?: string[] }> = {
     'inscritos/index': { inscritos: ['conteos', 'inscritos', 'detalle'] },
     'estudiantes/index': { datos: ['grados', 'totales', 'grupos', 'estudiantes', 'sedes', 'detalle'] },
     'estudiantes/ficha': { datos: ['estudiante', 'actual', 'novedades', 'promocion', 'historia', 'acudientes', 'boletines'] },
     'sedes/index': { datos: ['sedes'] },
+    // «En línea» y «Última vez» de cada usuario.
+    'usuarios/index': { presencia: ['usuarios'] },
 };
 
 /**
@@ -68,16 +70,22 @@ export function usePulso() {
                 const { pulso: antes, componente } = visto.current;
                 if (!antes || visitas > 0) return;
 
-                const cambio = { inscritos: ahora.inscritos !== antes.inscritos, datos: ahora.datos !== antes.datos };
-                if (!cambio.inscritos && !cambio.datos) return;
-
                 const frescos = FRESCOS[componente] ?? {};
+                const cambio = {
+                    inscritos: ahora.inscritos !== antes.inscritos,
+                    datos: ahora.datos !== antes.datos,
+                    // Quién entra o sale solo importa en la página que lo muestra.
+                    presencia: !!frescos.presencia && ahora.presencia !== antes.presencia,
+                };
+                if (!cambio.inscritos && !cambio.datos && !cambio.presencia) return;
+
                 router.reload({
                     only: [
                         'pulso',
                         'inscritosPendientes',
                         ...(cambio.inscritos ? (frescos.inscritos ?? []) : []),
                         ...(cambio.datos ? (frescos.datos ?? []) : []),
+                        ...(cambio.presencia ? (frescos.presencia ?? []) : []),
                     ],
                 });
                 if (ahora.ultima_inscripcion > antes.ultima_inscripcion) {

@@ -2,7 +2,7 @@ import { Resaltado } from '@/components/estudiantes/etiquetas';
 import { Tecla, Vacio, td, th } from '@/components/estudiantes/lista-estudiantes';
 import { VeloFicha } from '@/components/ficha';
 import { botonPrimario } from '@/components/formulario';
-import { MarcaActivo, PanelUsuario, type SedeOpcion, type Usuario } from '@/components/usuarios/panel-usuario';
+import { EnLinea, MarcaActivo, PanelUsuario, type SedeOpcion, type Usuario } from '@/components/usuarios/panel-usuario';
 import PanelLayout from '@/layouts/panel-layout';
 import { palabras, plano } from '@/lib/estudiantes';
 import { type Rol, haceCuanto, inicialesPersona, nombreRol, puntoRol } from '@/lib/usuarios';
@@ -256,7 +256,7 @@ export default function Usuarios({ usuarios, roles, sedes }: { usuarios: Usuario
                                             Correo
                                         </th>
                                         <th scope="col" className={cn(th, 'hidden w-[150px] sm:table-cell')}>
-                                            Último ingreso
+                                            Última vez
                                         </th>
                                         <th scope="col" className={cn(th, 'w-[136px] pr-4 sm:w-[130px] sm:pr-5')}>
                                             <span className="sm:hidden">Rol y estado</span>
@@ -338,7 +338,9 @@ export default function Usuarios({ usuarios, roles, sedes }: { usuarios: Usuario
                                                         <span className="text-[#6B7690]">—</span>
                                                     )}
                                                 </td>
-                                                <td className={cn(celda, 'hidden text-[#56627F] sm:table-cell')}>{haceCuanto(u.ultimo_acceso)}</td>
+                                                <td className={cn(celda, 'hidden text-[#56627F] sm:table-cell')}>
+                                                    {u.en_linea ? <EnLinea /> : haceCuanto(u.ultima_vez)}
+                                                </td>
                                                 <td className={cn(celda, 'pr-4 sm:pr-5')}>
                                                     <span className="mb-0.5 flex min-w-0 items-center gap-1.5 text-[13px] leading-[18px] font-medium text-[#16223F] sm:hidden">
                                                         <span

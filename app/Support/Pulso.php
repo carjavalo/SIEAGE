@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
 final class Pulso
 {
     /**
-     * @return array{inscritos: string, datos: string, pendientes: int, ultima_inscripcion: int}
+     * @return array{inscritos: string, datos: string, presencia: string, pendientes: int, ultima_inscripcion: int}
      */
     public static function firma(): array
     {
@@ -49,6 +49,8 @@ final class Pulso
             'datos' => substr(md5(implode('|', array_intersect_key($v, array_flip(
                 ['ma_n', 'ma_m', 'es_n', 'es_m', 'ac_m', 'cf_u', 'nm_u', 'gr_n', 'gr_m', 'se_n', 'se_m']
             )))), 0, 12),
+            // Quién está en línea (solo la usa la lista de usuarios).
+            'presencia' => Presencia::firma(),
             'pendientes' => (int) $v['si_p'],
             'ultima_inscripcion' => (int) $v['si_u'],
         ];

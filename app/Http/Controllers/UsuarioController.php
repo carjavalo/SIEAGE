@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Rol;
 use App\Models\User;
 use App\Support\Alcance;
+use App\Support\Presencia;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -34,13 +35,20 @@ class UsuarioController extends Controller
     public function index(): Response
     {
         $asignadas = DB::table('sede_user')->get(['user_id', 'sede_id'])->groupBy('user_id');
+        $enLinea = Presencia::enLinea()->flip();
 
         return Inertia::render('usuarios/index', [
             'usuarios' => User::with('rol:id,nombre')
                 ->orderByDesc('activo')
                 ->orderBy('name')
-                ->get(['id', 'name', 'usuario', 'email', 'rol_id', 'activo', 'todas_las_sedes', 'ultimo_acceso', 'created_at'])
-                ->map(fn (User $u) => [...$u->toArray(), 'sedes' => $asignadas->get($u->id, collect())->pluck('sede_id')->map(fn ($id) => (int) $id)->values()]),
+                ->get(['id', 'name', 'usuario', 'email', 'rol_id', 'activo', 'todas_las_sedes', 'ultimo_acceso', 'ultima_actividad', 'created_at'])
+                ->map(fn (User $u) => [
+                    ...$u->toArray(),
+                    'sedes' => $asignadas->get($u->id, collect())->pluck('sede_id')->map(fn ($id) => (int) $id)->values(),
+                    // Usando el panel ahora mismo; si no, la última vez que lo usó (o, de antes, cuándo ingresó).
+                    'en_linea' => $enLinea->has($u->id),
+                    'ultima_vez' => ($u->ultima_actividad ?? $u->ultimo_acceso)?->toIso8601String(),
+                ]),
             'roles' => Rol::orderBy('id')->get(['id', 'nombre', 'descripcion']),
             // Para asignar a cada usuario las sedes que puede ver.
             'sedes' => DB::table('sedes')->orderByDesc('es_principal')->orderBy('nombre')->get(['id', 'codigo', 'nombre']),
