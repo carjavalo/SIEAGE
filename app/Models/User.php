@@ -52,6 +52,7 @@ class User extends Authenticatable
             'activo' => 'boolean',
             'todas_las_sedes' => 'boolean',
             'ultimo_acceso' => 'datetime',
+            'ultima_actividad' => 'datetime',
         ];
     }
 

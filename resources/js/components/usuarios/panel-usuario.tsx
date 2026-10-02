@@ -29,6 +29,10 @@ export type Usuario = {
     /** Ids de las sedes asignadas, si no ve todas. */
     sedes: number[];
     ultimo_acceso: string | null;
+    /** Usando el panel en este momento. */
+    en_linea: boolean;
+    /** La última vez que lo usó (o, si es de antes de anotarlo, cuándo ingresó). */
+    ultima_vez: string | null;
     created_at: string;
 };
 
@@ -159,7 +163,11 @@ function FormularioUsuario({
                                 {nombreRol(usuario.rol?.nombre)}
                             </span>
                             <MarcaActivo activo={usuario.activo} />
-                            <span className="text-[#56627F]">Último ingreso: {haceCuanto(usuario.ultimo_acceso).toLowerCase()}</span>
+                            {usuario.en_linea ? (
+                                <EnLinea />
+                            ) : (
+                                <span className="text-[#56627F]">Última vez: {haceCuanto(usuario.ultima_vez).toLowerCase()}</span>
+                            )}
                         </>
                     }
                     onCerrar={onCerrar}
@@ -460,5 +468,18 @@ function CasillaSede({
                 {detalle && <span className="text-[13px] text-[#56627F]">{detalle}</span>}
             </span>
         </label>
+    );
+}
+
+/** Usando SIEAGE en este momento: un punto verde que late (la cuenta «Activa» es otra cosa, ver MarcaActivo). */
+export function EnLinea() {
+    return (
+        <span className="inline-flex items-center gap-2 font-medium whitespace-nowrap text-[#1C6B4A]">
+            <span aria-hidden className="relative flex size-2">
+                <span className="absolute inset-0 animate-ping rounded-full bg-[#3BA67A] opacity-60 motion-reduce:animate-none" />
+                <span className="relative size-2 rounded-full bg-[#3BA67A]" />
+            </span>
+            En línea
+        </span>
     );
 }

@@ -21,6 +21,8 @@ export interface Auth {
 export interface Pulso {
     inscritos: string;
     datos: string;
+    /** Quién está en línea (App\Support\Presencia); solo la usa la lista de usuarios. */
+    presencia: string;
     pendientes: number;
     ultima_inscripcion: number;
 }
