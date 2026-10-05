@@ -54,11 +54,12 @@ export default function Login({ status }: { status?: string }) {
                     <div className="relative flex flex-1 items-center justify-center py-10 [@media(max-height:760px)]:py-5">
                         <div className={cn(aparecer, 'zoom-in-95')} style={tras(150)}>
                             <div className="relative">
-                                {/* 188 px = alto real del archivo: se ve nítido, sin estirar. */}
+                                {/* 188 px = alto real del archivo: se ve nítido, sin estirar. Quieto y derecho: solo entra con
+                                    el resto de la página (flotar e inclinarse sin parar se veía a plantilla). */}
                                 <img
                                     src="/sieage-logo.webp"
                                     alt="SIEAGE ADES versión 1.5, edición azul"
-                                    className="animate-flotar relative h-[188px] w-auto rounded-[16px] shadow-[0_30px_60px_-24px_rgba(22,34,63,0.55)] ring-1 ring-white/70 motion-reduce:animate-none"
+                                    className="relative h-[188px] w-auto rounded-[16px] shadow-[0_1px_2px_rgba(22,34,63,0.08),0_14px_28px_-14px_rgba(22,34,63,0.4)] ring-1 ring-white/70"
                                 />
                             </div>
                         </div>

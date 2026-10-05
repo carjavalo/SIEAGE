@@ -101,11 +101,10 @@
     text-transform: none;
 }
 
-/* Animaciones propias del login. Se usan como `animate-senalar` y
-   `animate-flotar`; quien tenga activado "reducir movimiento" no las ve. */
+/* Animación propia del login: la mano que señala «Inscribir estudiante»
+   (`animate-senalar`); quien tenga activado "reducir movimiento" no la ve. */
 @theme {
     --animate-senalar: senalar 1.6s ease-in-out infinite;
-    --animate-flotar: flotar 7s ease-in-out infinite;
 
     @keyframes senalar {
         0%,
@@ -114,16 +113,6 @@
         }
         50% {
             transform: translateX(6px);
-        }
-    }
-
-    @keyframes flotar {
-        0%,
-        100% {
-            transform: translateY(0) rotate(-5deg);
-        }
-        50% {
-            transform: translateY(-12px) rotate(-3deg);
         }
     }
 }
