@@ -38,6 +38,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('importaciones', [ImportacionController::class, 'store'])->name('importaciones.store');
 
+    // El tutorial del panel (el «?» del encabezado), por trozos como el de inscripción.
+    Route::get('ayuda/operador.mp4', [AyudaController::class, 'operador'])->name('ayuda.operador');
+
     // El navegador lo consulta cada pocos segundos para enterarse de lo que cambió (ver App\Support\Pulso).
     Route::get('pulso', fn () => response()->json(Pulso::firma())->header('Cache-Control', 'no-store'))->name('pulso');
 

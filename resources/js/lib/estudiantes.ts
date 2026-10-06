@@ -151,6 +151,15 @@ export type FichaDetalle = {
     acudientes: Acudiente[];
     boletines: { numero: number; valor: string }[];
     parentescos: Parentesco[];
+    /** Si entró por el formulario de inscripción: los documentos de matrícula y cuáles se recibieron. */
+    documentos: DocumentosEstudiante | null;
+};
+
+export type DocumentosEstudiante = {
+    /** La inscripción donde se guardan. */
+    solicitud: number;
+    lista: (import('@/lib/inscritos').Requisito & { estado: import('@/lib/inscritos').EstadoDocumento | null })[];
+    registro: { por: string | null; en: string } | null;
 };
 
 /** Filtro de estado de la lista: "inactivo" agrupa retirados, cancelados y trasladados. */

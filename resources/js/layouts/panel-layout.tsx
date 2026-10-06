@@ -1,3 +1,4 @@
+import { AyudaOperador } from '@/components/ayuda-operador';
 import { Lavado } from '@/components/lavado';
 import { MenuUsuario } from '@/components/menu-usuario';
 import { SaltarAlContenido } from '@/components/saltar-al-contenido';
@@ -96,7 +97,10 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
                                 })}
                         </nav>
 
-                        <div className="ml-auto">{auth.user && <MenuUsuario user={auth.user} />}</div>
+                        <div className="ml-auto flex items-center gap-2">
+                            <AyudaOperador />
+                            {auth.user && <MenuUsuario user={auth.user} />}
+                        </div>
                     </div>
                 </header>
 
