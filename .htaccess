@@ -1,0 +1,16 @@
+# Respaldo para hostings compartidos (cPanel): si el dominio apunta a la carpeta del proyecto
+# y no a public/, todo se manda a public/. Así la app carga en la raíz del dominio y ningún otro
+# archivo del proyecto (código, database/data, composer.json, artisan…) se puede descargar.
+#
+# Lo correcto es que el dominio apunte a public/ (cPanel → Dominios → Raíz del documento);
+# con eso, este archivo queda fuera del sitio y no hace nada.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Sin mod_rewrite no hay forma de proteger el resto: mejor no servir nada.
+<IfModule !mod_rewrite.c>
+    Require all denied
+</IfModule>
