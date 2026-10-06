@@ -1,0 +1,18 @@
+#!/bin/sh
+# Producción no tiene Node: las pantallas compiladas (public/build) viajan en el repo.
+# Si el commit cambia algo del frontend, se compila aquí y se agrega al mismo commit,
+# para que nunca suba código de pantallas sin su compilación.
+#
+# Se activa solo con `npm install` (script "prepare" de package.json).
+
+if ! git diff --cached --name-only | grep -qE '^(resources/(js|css)/|vite\.config\.|package(-lock)?\.json$|tsconfig\.json$)'; then
+    exit 0
+fi
+
+echo "pre-commit: hay cambios en las pantallas, compilando public/build…"
+if ! npx vite build --logLevel error; then
+    echo "pre-commit: la compilación falló; no se hizo el commit." >&2
+    exit 1
+fi
+rm -f public/hot
+git add -A public/build

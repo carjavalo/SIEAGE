@@ -8,3 +8,6 @@
 
 CHANGELOG.md export-ignore
 README.md export-ignore
+
+# Compilado por Vite (ver .githooks/pre-commit): sin diff en las revisiones.
+public/build/** -diff linguist-generated=true
