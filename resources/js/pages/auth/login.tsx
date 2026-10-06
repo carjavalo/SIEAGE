@@ -1,8 +1,22 @@
 import { AyudaInscripcion } from '@/components/ayuda-inscripcion';
 import { cn } from '@/lib/utils';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowRight, CalendarDays, Eye, EyeOff, FileText, LoaderCircle, Play, Pointer, User, UserPlus, Users } from 'lucide-react';
-import { type CSSProperties, FormEventHandler, useState } from 'react';
+import {
+    ArrowRight,
+    CalendarDays,
+    ChevronDown,
+    Eye,
+    EyeOff,
+    FileText,
+    LoaderCircle,
+    LogIn,
+    Play,
+    Pointer,
+    User,
+    UserPlus,
+    Users,
+} from 'lucide-react';
+import { type CSSProperties, FormEventHandler, useEffect, useState } from 'react';
 
 type LoginForm = {
     usuario: string;
@@ -31,6 +45,11 @@ export default function Login({ status }: { status?: string }) {
         password: '',
         remember: true,
     });
+    // El acceso del personal va plegado debajo de la inscripción; se abre solo si hubo un intento fallido o un aviso.
+    const [operativo, setOperativo] = useState(() => !!status || Object.keys(errors).length > 0);
+    useEffect(() => {
+        if (errors.usuario || errors.password) setOperativo(true);
+    }, [errors.usuario, errors.password]);
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
@@ -97,150 +116,171 @@ export default function Login({ status }: { status?: string }) {
                             </div>
                         </div>
 
-                        <form onSubmit={submit} className="flex flex-col gap-6">
-                            <div className={cn('space-y-2', aparecer)} style={tras(100)}>
-                                <h1 className="text-[32px] leading-tight font-bold tracking-[-0.02em]">Bienvenido de nuevo</h1>
-                                <p className="text-base text-[#56627F]">Ingresa con el usuario y la clave que te asignaron.</p>
-                            </div>
-
-                            {status && <p className="rounded-[14px] bg-[#DCE5F8] px-4 py-3 text-sm text-[#172E63]">{status}</p>}
-
-                            <div className={cn('flex flex-col gap-[18px]', aparecer)} style={tras(180)}>
-                                <div className="flex flex-col gap-2">
-                                    <label htmlFor="usuario" className="text-sm font-medium">
-                                        Usuario
-                                    </label>
-                                    <input
-                                        id="usuario"
-                                        type="text"
-                                        required
-                                        autoFocus
-                                        autoComplete="username"
-                                        autoCapitalize="none"
-                                        spellCheck={false}
-                                        value={data.usuario}
-                                        onChange={(e) => setData('usuario', e.target.value)}
-                                        placeholder="Ej. jperez"
-                                        className={campo}
-                                        aria-invalid={!!errors.usuario}
-                                        aria-describedby={errors.usuario ? 'usuario-error' : undefined}
-                                    />
-                                    {errors.usuario && (
-                                        <p id="usuario-error" className="animate-in fade-in text-sm text-[#B42318] duration-200">
-                                            {errors.usuario}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="flex flex-col gap-2">
-                                    <label htmlFor="password" className="text-sm font-medium">
-                                        Clave
-                                    </label>
-                                    <div className="relative flex items-center">
-                                        <input
-                                            id="password"
-                                            type={verClave ? 'text' : 'password'}
-                                            required
-                                            autoComplete="current-password"
-                                            value={data.password}
-                                            onChange={(e) => setData('password', e.target.value)}
-                                            placeholder="••••••••"
-                                            className={`${campo} pr-13`}
-                                            aria-invalid={!!errors.password}
-                                            aria-describedby={errors.password ? 'password-error' : undefined}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setVerClave((v) => !v)}
-                                            aria-label={verClave ? 'Ocultar clave' : 'Mostrar clave'}
-                                            className="absolute right-1 flex size-11 items-center justify-center rounded-[10px] text-[#56627F] transition hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none"
-                                        >
-                                            {verClave ? <EyeOff className="size-[18px]" /> : <Eye className="size-[18px]" />}
-                                        </button>
-                                    </div>
-                                    {errors.password && (
-                                        <p id="password-error" className="animate-in fade-in text-sm text-[#B42318] duration-200">
-                                            {errors.password}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <label className="flex w-fit cursor-pointer items-center gap-2.5 text-sm text-[#3E4A68]">
-                                    <input
-                                        type="checkbox"
-                                        checked={data.remember}
-                                        onChange={(e) => setData('remember', e.target.checked)}
-                                        className="size-[18px] cursor-pointer accent-[#1E3A7B]"
-                                    />
-                                    Mantener la sesión iniciada
-                                </label>
-                            </div>
-
-                            <div className={cn('space-y-3.5', aparecer)} style={tras(260)}>
-                                <button
-                                    type="submit"
-                                    disabled={processing}
-                                    className="flex h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-[#1E3A7B] text-base font-semibold text-white transition-all duration-200 hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.98] disabled:opacity-70"
-                                >
-                                    {processing && <LoaderCircle className="size-4 animate-spin" />}
-                                    Ingresar
-                                </button>
-                                <p className="text-center text-[13px] text-balance text-[#56627F]">
-                                    ¿Sin usuario o sin clave? Pídelos a coordinación académica.
+                        {/* ---------------------------------------- 1.º inscripción: lo que buscan las familias */}
+                        <div className={cn('flex flex-col gap-5', aparecer)} style={tras(100)}>
+                            <div className="space-y-2">
+                                <p className="flex items-center gap-2 text-sm font-semibold text-[#5B7BD0]">
+                                    <UserPlus className="size-4" />
+                                    Padres y acudientes
+                                </p>
+                                <h1 className="text-[32px] leading-tight font-bold tracking-[-0.02em]">Inscribe a tu hijo o hija</h1>
+                                <p className="text-base text-[#56627F]">
+                                    Llena el formulario de inscripción. No necesitas usuario ni clave · 5 minutos.
                                 </p>
                             </div>
-                        </form>
 
-                        {/* ---------------------------------------- inscripción (familias) */}
-                        <div className={aparecer} style={tras(360)}>
-                            <div className="rounded-[24px] bg-[#EEF2FB] p-4">
-                                <div className="flex items-center gap-3">
-                                    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#1E3A7B] shadow-[0_1px_2px_rgba(22,34,63,0.08)]">
-                                        <UserPlus className="size-[18px]" />
+                            {/* En un celular angosto la ayuda baja a su propia fila. */}
+                            <div className="flex flex-wrap items-center gap-2.5">
+                                <div className="group flex flex-1 items-center gap-2.5 max-[429px]:basis-full">
+                                    {/* La mano señala el botón; al pasar el cursor se acerca y se queda quieta. */}
+                                    <span
+                                        aria-hidden
+                                        className="animate-senalar shrink-0 text-[#5B7BD0] transition-transform duration-300 group-hover:translate-x-1.5 group-hover:animate-none motion-reduce:animate-none"
+                                    >
+                                        <Pointer className="size-7 rotate-90" strokeWidth={1.75} />
                                     </span>
-                                    <div className="leading-snug">
-                                        <p className="text-[15px] font-semibold">¿Vas a inscribir a un estudiante?</p>
-                                        <p className="text-[13px] text-[#56627F]">No necesitas usuario ni clave · 5 minutos</p>
-                                    </div>
+                                    <Link
+                                        href={route('inscripcion.create')}
+                                        prefetch
+                                        className="flex h-14 flex-1 items-center justify-center gap-2 rounded-[16px] bg-[#1E3A7B] text-base font-semibold whitespace-nowrap text-white transition-all duration-200 hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.98]"
+                                    >
+                                        Inscribir estudiante
+                                        <ArrowRight className="size-[18px] transition-transform duration-200 group-hover:translate-x-0.5" />
+                                    </Link>
                                 </div>
 
-                                {/* En un celular angosto la ayuda baja a su propia fila. */}
-                                <div className="mt-3.5 flex flex-wrap items-center gap-2.5">
-                                    <div className="group flex flex-1 items-center gap-2.5 max-[429px]:basis-full">
-                                        {/* La mano señala el botón; al pasar el cursor se acerca y se queda quieta. */}
-                                        <span
-                                            aria-hidden
-                                            className="animate-senalar shrink-0 text-[#5B7BD0] transition-transform duration-300 group-hover:translate-x-1.5 group-hover:animate-none motion-reduce:animate-none"
-                                        >
-                                            <Pointer className="size-7 rotate-90" strokeWidth={1.75} />
+                                <AyudaInscripcion>
+                                    <button
+                                        type="button"
+                                        title="Mira en un minuto cómo es la inscripción"
+                                        className="flex h-14 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[16px] bg-white pr-4 pl-2.5 text-[15px] font-semibold whitespace-nowrap text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition-all duration-200 hover:bg-[#F5F7FC] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.98] max-[429px]:basis-full"
+                                    >
+                                        <span className="flex size-7 items-center justify-center rounded-full bg-[#1E3A7B] text-white">
+                                            <Play className="size-3 translate-x-px fill-current" />
                                         </span>
-                                        <Link
-                                            href={route('inscripcion.create')}
-                                            prefetch
-                                            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-[16px] border-[1.5px] border-[#6E8BD6] bg-white text-[15px] font-semibold whitespace-nowrap text-[#1E3A7B] transition-all duration-200 hover:border-[#1E3A7B] hover:bg-[#1E3A7B] hover:text-white focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.98]"
-                                        >
-                                            Inscribir estudiante
-                                            <ArrowRight className="size-[18px] transition-transform duration-200 group-hover:translate-x-0.5" />
-                                        </Link>
-                                    </div>
-
-                                    <AyudaInscripcion>
-                                        <button
-                                            type="button"
-                                            title="Mira en un minuto cómo es la inscripción"
-                                            className="flex h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[16px] bg-[#DCE5F8] pr-4 pl-2.5 text-[15px] font-semibold whitespace-nowrap text-[#1E3A7B] transition-all duration-200 hover:bg-[#CBD8F4] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.98] max-[429px]:basis-full"
-                                        >
-                                            <span className="flex size-7 items-center justify-center rounded-full bg-[#1E3A7B] text-white">
-                                                <Play className="size-3 translate-x-px fill-current" />
-                                            </span>
-                                            {/* En pantallas anchas el botón dice solo «Ayuda»; el resto lo oye el lector de pantalla. */}
-                                            <span>
-                                                Ayuda<span className="min-[430px]:sr-only"> · video de 1 min</span>
-                                            </span>
-                                        </button>
-                                    </AyudaInscripcion>
-                                </div>
+                                        {/* En pantallas anchas el botón dice solo «Ayuda»; el resto lo oye el lector de pantalla. */}
+                                        <span>
+                                            Ayuda<span className="min-[430px]:sr-only"> · video de 1 min</span>
+                                        </span>
+                                    </button>
+                                </AyudaInscripcion>
                             </div>
+                        </div>
+
+                        {/* ---------------------------------------- 2.º personal del colegio */}
+                        <div className={cn('border-t border-[#E3E9F6] pt-6', aparecer)} style={tras(220)}>
+                            <button
+                                type="button"
+                                onClick={() => setOperativo((v) => !v)}
+                                aria-expanded={operativo}
+                                aria-controls="acceso-operativo"
+                                className="group flex w-full cursor-pointer items-center gap-3 rounded-[18px] text-left focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none"
+                            >
+                                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#EEF2FB] text-[#1E3A7B]">
+                                    <LogIn className="size-[18px]" />
+                                </span>
+                                <span className="flex-1 leading-snug">
+                                    <span className="block text-[15px] font-semibold">¿Eres usuario operativo del colegio?</span>
+                                    <span className="block text-[13px] text-[#56627F]">Secretaría, coordinación o docentes</span>
+                                </span>
+                                <span className="flex items-center gap-1 text-[15px] font-semibold text-[#1E3A7B]">
+                                    Iniciar sesión
+                                    <ChevronDown className={cn('size-[18px] transition-transform duration-200', operativo && 'rotate-180')} />
+                                </span>
+                            </button>
+
+                            {operativo && (
+                                <div id="acceso-operativo" className="animate-in fade-in slide-in-from-top-2 duration-300 motion-reduce:animate-none">
+                                    <form onSubmit={submit} className="flex flex-col gap-6 pt-5">
+                                        {status && <p className="rounded-[14px] bg-[#DCE5F8] px-4 py-3 text-sm text-[#172E63]">{status}</p>}
+
+                                        <div className="flex flex-col gap-[18px]">
+                                            <div className="flex flex-col gap-2">
+                                                <label htmlFor="usuario" className="text-sm font-medium">
+                                                    Usuario
+                                                </label>
+                                                <input
+                                                    id="usuario"
+                                                    type="text"
+                                                    required
+                                                    autoFocus
+                                                    autoComplete="username"
+                                                    autoCapitalize="none"
+                                                    spellCheck={false}
+                                                    value={data.usuario}
+                                                    onChange={(e) => setData('usuario', e.target.value)}
+                                                    placeholder="Ej. jperez"
+                                                    className={campo}
+                                                    aria-invalid={!!errors.usuario}
+                                                    aria-describedby={errors.usuario ? 'usuario-error' : undefined}
+                                                />
+                                                {errors.usuario && (
+                                                    <p id="usuario-error" className="animate-in fade-in text-sm text-[#B42318] duration-200">
+                                                        {errors.usuario}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <div className="flex flex-col gap-2">
+                                                <label htmlFor="password" className="text-sm font-medium">
+                                                    Clave
+                                                </label>
+                                                <div className="relative flex items-center">
+                                                    <input
+                                                        id="password"
+                                                        type={verClave ? 'text' : 'password'}
+                                                        required
+                                                        autoComplete="current-password"
+                                                        value={data.password}
+                                                        onChange={(e) => setData('password', e.target.value)}
+                                                        placeholder="••••••••"
+                                                        className={`${campo} pr-13`}
+                                                        aria-invalid={!!errors.password}
+                                                        aria-describedby={errors.password ? 'password-error' : undefined}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setVerClave((v) => !v)}
+                                                        aria-label={verClave ? 'Ocultar clave' : 'Mostrar clave'}
+                                                        className="absolute right-1 flex size-11 items-center justify-center rounded-[10px] text-[#56627F] transition hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none"
+                                                    >
+                                                        {verClave ? <EyeOff className="size-[18px]" /> : <Eye className="size-[18px]" />}
+                                                    </button>
+                                                </div>
+                                                {errors.password && (
+                                                    <p id="password-error" className="animate-in fade-in text-sm text-[#B42318] duration-200">
+                                                        {errors.password}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <label className="flex w-fit cursor-pointer items-center gap-2.5 text-sm text-[#3E4A68]">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={data.remember}
+                                                    onChange={(e) => setData('remember', e.target.checked)}
+                                                    className="size-[18px] cursor-pointer accent-[#1E3A7B]"
+                                                />
+                                                Mantener la sesión iniciada
+                                            </label>
+                                        </div>
+
+                                        <div className="space-y-3.5">
+                                            <button
+                                                type="submit"
+                                                disabled={processing}
+                                                className="flex h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-[#1E3A7B] text-base font-semibold text-white transition-all duration-200 hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.98] disabled:opacity-70"
+                                            >
+                                                {processing && <LoaderCircle className="size-4 animate-spin" />}
+                                                Ingresar
+                                            </button>
+                                            <p className="text-center text-[13px] text-balance text-[#56627F]">
+                                                ¿Sin usuario o sin clave? Pídelos a coordinación académica.
+                                            </p>
+                                        </div>
+                                    </form>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </section>
