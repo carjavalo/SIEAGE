@@ -5,6 +5,7 @@ import {
     type EstudianteInforme,
     type GrupoInforme,
     type Informe,
+    alcanceInforme,
     cifra,
     decimal,
     fechaLarga,
@@ -43,6 +44,9 @@ export function Portada({ informe: i, indice }: { informe: Informe; indice: { ti
                 <br />
                 matrícula <span className="text-[#4863B8]">{i.anio}</span>
             </h1>
+            {alcanceInforme(i.filtro) && (
+                <p className="mt-[16px] text-[22px] font-semibold tracking-[-0.4px] text-[#1E3A7B]">{alcanceInforme(i.filtro)}</p>
+            )}
             <p className="mt-[18px] max-w-[460px] text-[15px] leading-[1.5] text-[#56627F]">
                 Estudiantes, grupos y cupos de {t.sedes === 1 ? 'la sede' : `las ${t.sedes} sedes`}, con el listado completo de estudiantes por grupo
                 al final.

@@ -43,15 +43,15 @@ class InscripcionController extends Controller
         ])->withViewData(['meta' => [
             // Lo que se ve al compartir el enlace (WhatsApp, correo) y en un buscador.
             'titulo' => "Inscripciones {$anio} · I.E. Alfonso López Pumarejo",
-            'descripcion' => 'Inscribe a tu hijo o hija en la I.E. Alfonso López Pumarejo (Cali). Son cinco pasos: datos del estudiante, grado, residencia, acudiente y revisión.',
+            'descripcion' => 'Inscribe a tu hijo o hija en la I.E. Alfonso López Pumarejo (Cali). Son seis pasos: datos del estudiante, grado, residencia, acudiente, madre y padre, y revisión.',
             'indexar' => true,
         ]]);
     }
 
     /**
-     * Guarda la inscripción como solicitud pendiente. No toca las tablas
-     * oficiales: el estudiante, el acudiente y la matrícula se crean cuando
-     * la secretaría la apruebe.
+     * Guarda la inscripción como solicitud pendiente, con la madre y el padre.
+     * No toca las tablas oficiales: el estudiante, el acudiente y la matrícula
+     * se crean cuando la secretaría la apruebe.
      */
     public function store(InscripcionRequest $request): RedirectResponse
     {
@@ -63,7 +63,12 @@ class InscripcionController extends Controller
             return back();
         }
 
-        SolicitudInscripcion::create($request->datosParaGuardar());
+        DB::transaction(function () use ($request) {
+            $solicitud = SolicitudInscripcion::create($request->datosParaGuardar());
+            foreach ($request->padresParaGuardar() as $padre) {
+                $solicitud->padres()->create($padre);
+            }
+        });
 
         return back();
     }

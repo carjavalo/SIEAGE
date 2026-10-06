@@ -101,7 +101,26 @@ export type Informe = {
     /** Datos que faltan para la mayoría de los activos (no se muestran). */
     sinRegistrar: string[];
     anexo: { grupo: number; estudiantes: EstudianteInforme[] }[];
+    /** Sede y grado elegidos (null = todos). */
+    filtro: {
+        sede: string | null;
+        sedeNombre: string | null;
+        grado: number | null;
+        gradoNombre: string | null;
+        grupo: number | null;
+        grupoCodigo: string | null;
+    };
+    /** Las sedes que puede ver el usuario, con los grados que tienen grupos ese año y esos grupos. */
+    opciones: {
+        codigo: string;
+        nombre: string;
+        grados: { id: number; numero: number; nombre: string; grupos: { id: number; codigo: string }[] }[];
+    }[];
 };
+
+/** "Los Farallones · Séptimo · Grupo 7-1", o null si es todo el colegio. */
+export const alcanceInforme = (f: Informe['filtro']) =>
+    [f.sedeNombre, f.grupoCodigo ? null : f.gradoNombre, f.grupoCodigo && `Grupo ${f.grupoCodigo}`].filter(Boolean).join(' · ') || null;
 
 const numeros = new Intl.NumberFormat('es-CO');
 const decimales = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 1 });
