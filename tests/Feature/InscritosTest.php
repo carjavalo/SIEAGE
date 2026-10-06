@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\SolicitudInscripcion;
 use App\Models\User;
+use App\Support\Documentos;
 use Database\Seeders\DatosIniciales;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -324,6 +325,40 @@ class InscritosTest extends TestCase
         $this->actingAs($usuario)
             ->get("/inscritos/{$this->solicitud->id}")
             ->assertInertia(fn (Assert $page) => $page->where('matricula.grupo', '7-2'));
+    }
+
+    public function test_los_documentos_que_faltaron_se_ven_y_se_marcan_desde_la_ficha_del_estudiante()
+    {
+        $grupos = $this->grupos();
+        $usuario = User::factory()->create();
+        $this->actingAs($usuario)->put("/inscritos/{$this->solicitud->id}/padres", $this->padres());
+        // Trajo solo las fotos y la cédula del acudiente.
+        $this->actingAs($usuario)->put("/inscritos/{$this->solicitud->id}/documentos", ['documentos' => ['fotos' => 'entregado', 'cedula_acudiente' => 'entregado']]);
+        $this->actingAs($usuario)->post("/inscritos/{$this->solicitud->id}/matricular", ['grupo_id' => $grupos['7-2']])->assertSessionHasNoErrors();
+        $estudiante = (int) DB::table('estudiantes')->where('numero_documento', '1109555001')->value('id');
+
+        $this->actingAs($usuario)->get("/estudiantes/{$estudiante}")
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('documentos.solicitud', $this->solicitud->id)
+                ->where('documentos.lista', fn ($l) => collect($l)->whereNull('estado')->count() === collect($l)->count() - 2
+                    && collect($l)->firstWhere('clave', 'fotos')['estado'] === 'entregado'));
+
+        // Llegaron los demás: desde la ficha se guardan en la misma inscripción y se vuelve a la ficha.
+        $todos = collect(Documentos::para($this->solicitud->fresh()))->mapWithKeys(fn ($d) => [$d['clave'] => 'entregado'])->all();
+        $this->actingAs($usuario)->from("/estudiantes?ver={$estudiante}")
+            ->put("/inscritos/{$this->solicitud->id}/documentos", ['documentos' => $todos])
+            ->assertRedirect("/estudiantes?ver={$estudiante}");
+
+        $this->actingAs($usuario)->get("/estudiantes/{$estudiante}")
+            ->assertInertia(fn (Assert $page) => $page->where('documentos.lista', fn ($l) => collect($l)->every(fn ($d) => $d['estado'] === 'entregado')));
+    }
+
+    public function test_un_estudiante_que_no_entro_por_inscripcion_no_trae_documentos()
+    {
+        $id = DB::table('estudiantes')->insertGetId(['tipo_documento' => 'T.I.', 'numero_documento' => '99887766', 'nombre_completo' => 'Prueba Uno', 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->actingAs(User::factory()->create())->get("/estudiantes/{$id}")
+            ->assertInertia(fn (Assert $page) => $page->where('documentos', null));
     }
 
     public function test_no_se_matricula_sin_padres_en_otro_grado_ni_dos_veces()

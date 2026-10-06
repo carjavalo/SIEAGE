@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\SolicitudInscripcion;
 use App\Support\Alcance;
 use App\Support\CambiosFicha;
+use App\Support\Documentos;
 use App\Support\Grupos;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -222,6 +225,7 @@ class EstudianteController extends Controller
         return [
             'estudiante' => $alumno,
             'actual' => $actual,
+            'documentos' => $this->documentos($historia->pluck('id')),
             'novedades' => $novedades,
             // Matrícula del año siguiente, si ya fue promovido.
             'promocion' => $promocion,
@@ -229,6 +233,32 @@ class EstudianteController extends Controller
             'acudientes' => $acudientes,
             'boletines' => $boletines,
             'parentescos' => DB::table('parentescos')->orderBy('id')->get(['id', 'nombre']),
+        ];
+    }
+
+    /**
+     * Los documentos de matrícula, si entró por el formulario de inscripción: la
+     * lista que le tocaba y cuáles se recibieron. Los que faltaron al matricular
+     * se marcan aquí cuando los traiga (se guardan en la misma solicitud).
+     *
+     * @param  Collection<int, int>  $matriculas
+     * @return array<string, mixed>|null
+     */
+    private function documentos(Collection $matriculas): ?array
+    {
+        $solicitud = SolicitudInscripcion::whereIn('matricula_id', $matriculas)->latest('id')->first();
+        if (! $solicitud) {
+            return null;
+        }
+        $marcados = $solicitud->documentos ?? [];
+
+        return [
+            'solicitud' => $solicitud->id,
+            'lista' => array_map(fn (array $d) => [...$d, 'estado' => $marcados[$d['clave']] ?? null], Documentos::para($solicitud)),
+            'registro' => $solicitud->documentos_en ? [
+                'por' => DB::table('users')->where('id', $solicitud->documentos_por)->value('name'),
+                'en' => $solicitud->documentos_en->toIso8601String(),
+            ] : null,
         ];
     }
 

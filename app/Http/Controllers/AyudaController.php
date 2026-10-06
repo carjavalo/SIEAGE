@@ -6,7 +6,8 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Los videos de ayuda. Por ahora uno: «Cómo inscribir a un estudiante», que se abre desde el login.
+ * Los videos de ayuda: «Cómo inscribir a un estudiante», que se abre desde el login, y el
+ * tutorial del panel para el personal del colegio, que se abre con el «?» del encabezado.
  *
  * No se dejan en public/ porque el servidor de `artisan serve` no atiende peticiones por
  * rangos (Range): sin ellas Chrome no deja adelantar ni devolver el video y el iPhone no lo abre.
@@ -22,7 +23,17 @@ class AyudaController extends Controller
 
     public function inscripcion(Request $request): Response
     {
-        $ruta = resource_path('ayuda/inscripcion.mp4');
+        return $this->video($request, resource_path('ayuda/inscripcion.mp4'));
+    }
+
+    /** Solo con sesión: muestra el panel por dentro. */
+    public function operador(Request $request): Response
+    {
+        return $this->video($request, resource_path('ayuda/operador.mp4'));
+    }
+
+    private function video(Request $request, string $ruta): Response
+    {
         abort_unless(is_file($ruta), 404);
 
         $total = filesize($ruta);
