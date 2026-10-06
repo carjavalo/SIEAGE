@@ -14,7 +14,9 @@ import { BarraMovil, PanelLateral } from '@/components/inscripcion/progreso';
 import { SaltarAlContenido } from '@/components/saltar-al-contenido';
 import {
     type Campo,
+    type CampoPadre,
     CAMPOS_COMPARTIDOS_ENTRE_HERMANOS,
+    camposDe,
     DATOS_VACIOS,
     type DatosInscripcion,
     type Errores,
@@ -26,16 +28,19 @@ import {
     NIVELES_SISBEN,
     nombreCompleto,
     PAISES,
+    PARENTESCO_DE,
     pasoDelCampo,
     PASOS,
+    type Progenitor,
     SEXOS,
     TIPOS_DOCUMENTO,
+    TIPOS_DOCUMENTO_ADULTO,
     TIPOS_SANGRE,
     validarPaso,
 } from '@/lib/inscripcion';
 import { cn } from '@/lib/utils';
 import { Head, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, ArrowRight, Check, Clock, HeartPulse, IdCard, Pencil, Play, UserPlus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Clock, HeartPulse, IdCard, Pencil, Play, UserPlus, UsersRound } from 'lucide-react';
 import { type FormEvent, type ReactNode, type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 
 type Props = {
@@ -58,6 +63,12 @@ const JORNADAS = [
     { valor: 'Mañana', etiqueta: 'Mañana' },
     { valor: 'Tarde', etiqueta: 'Tarde' },
 ];
+
+/** Cómo se nombra a la madre y al padre en el formulario. */
+const PROGENITORES: Record<Progenitor, { titulo: string; de: string; acudiente: string; fallecido: string }> = {
+    madre: { titulo: 'Madre', de: 'de la madre', acudiente: 'Es la acudiente', fallecido: 'Fallecida' },
+    padre: { titulo: 'Padre', de: 'del padre', acudiente: 'Es el acudiente', fallecido: 'Fallecido' },
+};
 
 function telefono(t: string) {
     if (t.length === 10) return `${t.slice(0, 3)} ${t.slice(3, 6)} ${t.slice(6)}`;
@@ -156,6 +167,129 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios,
     const elegir = (campo: CampoDeTexto, otro: CampoDeTexto) => (valor: string) => {
         form.setData(campo, valor);
         form.clearErrors(campo, otro);
+    };
+
+    /** La madre o el padre: si es el acudiente, ya tenemos sus datos; si no, se escriben aquí. */
+    const bloquePadre = (p: Progenitor) => {
+        const r = PROGENITORES[p];
+        const c = <K extends CampoPadre>(campo: K) => `${p}_${campo}` as const;
+        const misma = data[`${p}_misma_direccion`];
+
+        if (data.acudiente_parentesco === PARENTESCO_DE[p]) {
+            return (
+                <Seccion key={p} titulo={r.titulo}>
+                    <p className="col-span-full flex items-start gap-3 rounded-[16px] border-[1.5px] border-[#6E8BD6] bg-[#EEF2FB] px-4 py-3">
+                        <Check className="mt-0.5 size-[18px] shrink-0 text-[#1E3A7B]" strokeWidth={2.5} />
+                        <span className="text-[15px]">
+                            <span className="font-medium">{r.acudiente}</span>
+                            <span className="block text-[13px] text-[#56627F]">
+                                Usamos los datos del paso anterior:{' '}
+                                {nombreCompleto(data.acudiente_primer_nombre, data.acudiente_primer_apellido, data.acudiente_segundo_apellido)}.
+                            </span>
+                        </span>
+                    </p>
+                    <CampoTexto {...props(c('ocupacion'))} etiqueta="Ocupación" opcional placeholder="Ej. Comerciante" />
+                </Seccion>
+            );
+        }
+
+        return (
+            <Seccion key={p} titulo={r.titulo}>
+                <Opciones
+                    {...props(c('situacion'))}
+                    onCambio={(valor) => {
+                        form.setData(c('situacion'), valor);
+                        form.clearErrors(...camposDe(p));
+                    }}
+                    etiqueta={`¿Tienes los datos ${r.de}?`}
+                    opciones={[
+                        { valor: 'registrado', etiqueta: 'Sí' },
+                        { valor: 'fallecido', etiqueta: r.fallecido },
+                        { valor: 'desconocido', etiqueta: 'No registra' },
+                    ]}
+                    columnas="grid-cols-3"
+                />
+                {data[c('situacion')] === 'registrado' && (
+                    <>
+                        <CampoTexto {...props(c('primer_nombre'))} etiqueta="Primer nombre" autoComplete="off" />
+                        <CampoTexto {...props(c('segundo_nombre'))} etiqueta="Segundo nombre" opcional autoComplete="off" />
+                        <CampoTexto {...props(c('primer_apellido'))} etiqueta="Primer apellido" autoComplete="off" />
+                        <CampoTexto {...props(c('segundo_apellido'))} etiqueta="Segundo apellido" opcional autoComplete="off" />
+                        <Opciones
+                            {...props(c('tipo_documento'))}
+                            etiqueta="Tipo de documento"
+                            opciones={TIPOS_DOCUMENTO_ADULTO}
+                            columnas="grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3"
+                        />
+                        <CampoTexto
+                            {...props(c('numero_documento'))}
+                            etiqueta="Número de documento"
+                            opcional
+                            numerico
+                            maxLength={15}
+                            autoComplete="off"
+                            ayuda="Solo números, sin puntos ni espacios."
+                        />
+                        <CampoTexto {...props(c('fecha_nacimiento'))} etiqueta="Fecha de nacimiento" opcional type="date" max={hoy()} />
+                        <CampoTexto
+                            {...props(c('telefono'))}
+                            etiqueta="Teléfono"
+                            opcional
+                            type="tel"
+                            numerico
+                            maxLength={10}
+                            autoComplete="off"
+                            placeholder="Ej. 3001234567"
+                        />
+                        <CampoTexto {...props(c('correo'))} etiqueta="Correo electrónico" opcional type="email" autoComplete="off" />
+                        <CampoTexto {...props(c('ocupacion'))} etiqueta="Ocupación" opcional placeholder="Ej. Comerciante" />
+                        <label
+                            className={cn(
+                                'col-span-full flex cursor-pointer items-center gap-3 rounded-[16px] border-[1.5px] px-4 py-3 transition',
+                                misma ? 'border-[#6E8BD6] bg-[#EEF2FB]' : 'border-[#E3E9F6] hover:border-[#B9C8EC]',
+                            )}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={misma}
+                                onChange={(e) => {
+                                    form.setData(`${p}_misma_direccion` as 'madre_misma_direccion', e.target.checked);
+                                    form.clearErrors(c('direccion'), c('barrio'));
+                                }}
+                                className="size-[18px] shrink-0 accent-[#1E3A7B]"
+                            />
+                            <span className="text-[15px]">
+                                <span className="font-medium">Vive con el estudiante</span>
+                                <span className="block text-[13px] text-[#56627F]">
+                                    {misma
+                                        ? `Su dirección es la misma: ${[data.direccion, data.barrio].filter(Boolean).join(' · ') || 'la de la residencia'}`
+                                        : `Desmarcada: escribe la dirección ${r.de}.`}
+                                </span>
+                            </span>
+                        </label>
+                        {!misma && (
+                            <>
+                                <CampoTexto
+                                    {...props(c('direccion'))}
+                                    etiqueta="Dirección de residencia"
+                                    placeholder="Ej. Carrera 8 # 70-12"
+                                    autoComplete="off"
+                                    ancho="completo"
+                                />
+                                <Buscador
+                                    {...props(c('barrio'))}
+                                    etiqueta="Barrio"
+                                    sugerencias={barrios}
+                                    placeholder="Escribe el nombre del barrio"
+                                    ayuda="Opcional."
+                                    ancho="completo"
+                                />
+                            </>
+                        )}
+                    </>
+                )}
+            </Seccion>
+        );
     };
 
     const autorizar = (valor: boolean) => {
@@ -735,6 +869,13 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios,
                                                 </>
                                             )}
 
+                                            {paso === 4 && (
+                                                <>
+                                                    {bloquePadre('madre')}
+                                                    {bloquePadre('padre')}
+                                                </>
+                                            )}
+
                                             {paso === REVISION && (
                                                 <Revision
                                                     data={data}
@@ -787,6 +928,7 @@ function Bienvenida({ anio, titulo, onComenzar }: ConTitulo & { anio: number; on
     const tenerAMano = [
         { icono: IdCard, texto: 'El documento de identidad del estudiante' },
         { icono: IdCard, texto: 'Tu documento de identidad, como acudiente' },
+        { icono: UsersRound, texto: 'Los nombres y datos de la madre y el padre' },
         { icono: HeartPulse, texto: 'El nombre de la EPS y el tipo de sangre' },
     ];
 
@@ -871,7 +1013,9 @@ function Enviado({ titulo, estudiante, telefono, correo, onHermano, onTerminar }
                     Terminar
                 </BotonSecundario>
             </div>
-            <p className="mt-5 text-[13px] text-[#56627F]">Tus datos como acudiente y los de la residencia quedan llenos para el siguiente.</p>
+            <p className="mt-5 text-[13px] text-[#56627F]">
+                Tus datos como acudiente, los de la residencia y los de la madre y el padre quedan llenos para el siguiente.
+            </p>
         </div>
     );
 }
@@ -879,6 +1023,35 @@ function Enviado({ titulo, estudiante, telefono, correo, onHermano, onTerminar }
 // ---------------------------------------------------------------- revisión --
 
 type Fila = [string, ReactNode];
+
+/** La madre o el padre en la revisión: quién es y cómo contactarlo. */
+function resumenPadre(p: Progenitor, d: DatosInscripcion): Fila[] {
+    const r = PROGENITORES[p];
+    const v = (campo: CampoPadre) => d[`${p}_${campo}`];
+    if (d.acudiente_parentesco === PARENTESCO_DE[p]) {
+        return [[r.titulo, `${nombreCompleto(d.acudiente_primer_nombre, d.acudiente_primer_apellido)} · ${r.acudiente.toLowerCase()}`]];
+    }
+    if (v('situacion') !== 'registrado') return [[r.titulo, v('situacion') === 'fallecido' ? r.fallecido : 'No registra']];
+
+    const documento = v('numero_documento') ? `${v('tipo_documento')} ${v('numero_documento')}` : '';
+    return [
+        [
+            r.titulo,
+            [nombreCompleto(v('primer_nombre'), v('segundo_nombre'), v('primer_apellido'), v('segundo_apellido')), documento]
+                .filter(Boolean)
+                .join(' · '),
+        ],
+        [
+            `Contacto ${r.de}`,
+            [
+                v('telefono') && telefono(v('telefono')),
+                d[`${p}_misma_direccion`] ? 'Vive con el estudiante' : [v('direccion'), v('barrio')].filter(Boolean).join(' · '),
+            ]
+                .filter(Boolean)
+                .join(' · '),
+        ],
+    ];
+}
 
 function Revision({
     data,
@@ -964,6 +1137,7 @@ function Revision({
                 ['Correo', data.acudiente_correo || 'No registrado'],
             ],
         },
+        { paso: 4, filas: [...resumenPadre('madre', data), ...resumenPadre('padre', data)] },
     ];
 
     return (

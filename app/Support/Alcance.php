@@ -89,7 +89,17 @@ final class Alcance
      */
     public static function filtrarSolicitudes(Builder $consulta, ?User $user, string $alias = 's'): Builder
     {
-        $sedes = self::sedes($user);
+        return self::solicitudesDeSedes($consulta, self::sedes($user), $alias);
+    }
+
+    /**
+     * Las solicitudes de estas sedes (null = todas), con el mismo criterio de
+     * filtrarSolicitudes(). La usa el informe cuando se elige una sede.
+     *
+     * @param  list<int>|null  $sedes
+     */
+    public static function solicitudesDeSedes(Builder $consulta, ?array $sedes, string $alias = 's'): Builder
+    {
         if ($sedes === null) {
             return $consulta;
         }

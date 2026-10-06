@@ -200,8 +200,9 @@ export default function Inscrito({ solicitud: s, padres, documentos, matricula }
                         <div>
                             <h2 className="text-[20px] font-semibold tracking-[-0.015em]">Madre y padre</h2>
                             <p className="mt-1 text-[14px] text-[#56627F]">
-                                El acudiente es {parentescoAcudiente(s).toLowerCase()} del estudiante. Si la madre o el padre son el acudiente, marca
-                                la casilla y sus datos se copian solos.
+                                {padresListos(padres)
+                                    ? 'Los llenó la familia en el formulario de inscripción. Corrige aquí lo que esté mal.'
+                                    : `El acudiente es ${parentescoAcudiente(s).toLowerCase()} del estudiante. Si la madre o el padre son el acudiente, marca la casilla y sus datos se copian solos.`}
                             </p>
                         </div>
 
@@ -427,7 +428,11 @@ export default function Inscrito({ solicitud: s, padres, documentos, matricula }
                                 className="flex h-11 cursor-pointer items-center gap-2 rounded-[13px] bg-[#1E3A7B] px-5 text-[15px] font-semibold text-white transition hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.99] disabled:cursor-default disabled:opacity-70"
                             >
                                 {form.processing && <LoaderCircle className="size-4 animate-spin" />}
-                                {pendiente ? 'Guardar y seguir a documentos' : 'Guardar madre y padre'}
+                                {pendiente
+                                    ? form.isDirty || !padresListos(padres)
+                                        ? 'Guardar y seguir a documentos'
+                                        : 'Seguir a documentos'
+                                    : 'Guardar madre y padre'}
                                 {pendiente && !form.processing && <ArrowRight className="size-[18px]" />}
                             </button>
                         </div>

@@ -18,7 +18,8 @@ use Inertia\Response;
 
 /**
  * Estudiantes inscritos por el formulario público que la secretaría revisa:
- * primero se completan los datos de la madre y el padre, luego se marcan los
+ * primero se revisan los datos de la madre y el padre (los llena la familia en
+ * el formulario; en las solicitudes anteriores, la secretaría), luego se marcan los
  * documentos que trajo el acudiente y después se elige el grupo y se
  * matricula (se crean el estudiante, el acudiente y la matrícula).
  */

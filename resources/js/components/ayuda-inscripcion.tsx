@@ -64,7 +64,8 @@ export function AyudaInscripcion({ children, alComenzar }: { children: ReactNode
 
                     <div className="flex flex-col gap-3.5 px-5 py-4 @xl:flex-row @xl:items-center @xl:gap-6">
                         <Dialogo.Description className="text-sm leading-snug text-pretty text-[#56627F]">
-                            Son 5 pasos y toma unos 5 minutos. Ten a mano el documento del estudiante, el tuyo y los datos de EPS y tipo de sangre.
+                            Son 6 pasos y toma unos 5 minutos. Ten a mano el documento del estudiante, el tuyo, los datos de la madre y el padre, y
+                            los de EPS y tipo de sangre.
                         </Dialogo.Description>
                         {alComenzar ? (
                             <Dialogo.Close type="button" onClick={alComenzar} className={BOTON}>

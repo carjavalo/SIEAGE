@@ -392,4 +392,70 @@ class InscripcionTest extends TestCase
             'tipo_documento' => 'Otro', 'tipo_documento_otro' => 'Acta',
         ]);
     }
+
+    /** Lo que envía el paso "Madre y padre": la madre es la acudiente (se toma de ahí) y el padre vive aparte. */
+    private function padres(array $cambios = []): array
+    {
+        return array_merge([
+            'madre_situacion' => 'registrado', 'madre_ocupacion' => 'Modista', 'madre_misma_direccion' => true,
+            'padre_situacion' => 'registrado', 'padre_primer_nombre' => 'Jorge', 'padre_segundo_nombre' => '',
+            'padre_primer_apellido' => 'Gómez', 'padre_segundo_apellido' => 'Lasso', 'padre_tipo_documento' => 'C.C.',
+            'padre_numero_documento' => '16.700.200', 'padre_fecha_nacimiento' => '', 'padre_telefono' => '311 555 0000',
+            'padre_correo' => '', 'padre_ocupacion' => '', 'padre_misma_direccion' => false,
+            'padre_direccion' => 'Carrera 8 # 70-12', 'padre_barrio' => '',
+        ], $cambios);
+    }
+
+    public function test_guarda_la_madre_y_el_padre_con_la_inscripcion()
+    {
+        $this->post('/inscripcion', $this->datos($this->padres()))->assertSessionHasNoErrors();
+
+        $padres = SolicitudInscripcion::firstOrFail()->padres()->get()->keyBy('parentesco');
+        $this->assertCount(2, $padres);
+
+        // La madre es la acudiente: sus datos salen del paso del acudiente, con la dirección de la residencia.
+        $madre = $padres['madre'];
+        $this->assertTrue($madre->es_acudiente);
+        $this->assertSame(['Martha', 'Rentería', '67038408', '3187184003', 'Calle 73 # 7M-18', 'Modista'],
+            [$madre->primer_nombre, $madre->primer_apellido, $madre->numero_documento, $madre->telefono, $madre->direccion, $madre->ocupacion]);
+        $this->assertSame('1986-07-02', $madre->fecha_nacimiento->format('Y-m-d'));
+
+        $padre = $padres['padre'];
+        $this->assertFalse($padre->es_acudiente);
+        $this->assertSame(['Jorge', 'Lasso', 'C.C.', '16700200', '3115550000', 'Carrera 8 # 70-12'],
+            [$padre->primer_nombre, $padre->segundo_apellido, $padre->tipo_documento, $padre->numero_documento, $padre->telefono, $padre->direccion]);
+        $this->assertNull($padre->barrio);
+        $this->assertNull($padre->registrado_por, 'lo registró la familia, no un usuario');
+    }
+
+    public function test_padre_que_vive_con_el_estudiante_fallecido_o_que_no_registra()
+    {
+        $this->post('/inscripcion', $this->datos($this->padres(['padre_misma_direccion' => true, 'padre_direccion' => ''])))->assertSessionHasNoErrors();
+        $this->assertSame('Calle 73 # 7M-18', DB::table('padres')->where('parentesco', 'padre')->value('direccion'));
+
+        // Fallecido: no lleva nombre aunque el navegador haya enviado lo que se alcanzó a escribir.
+        $this->post('/inscripcion', $this->datos([...$this->padres(['padre_situacion' => 'fallecido', 'padre_primer_nombre' => '']), 'numero_documento' => '1109555002']))
+            ->assertSessionHasNoErrors();
+        $fallecido = DB::table('padres')->where('parentesco', 'padre')->orderByDesc('id')->first();
+        $this->assertSame('fallecido', $fallecido->situacion);
+        $this->assertNull($fallecido->primer_nombre);
+    }
+
+    public function test_el_padre_con_datos_exige_nombre_y_direccion()
+    {
+        $this->post('/inscripcion', $this->datos($this->padres(['padre_primer_nombre' => '', 'padre_direccion' => ''])))
+            ->assertSessionHasErrors(['padre_primer_nombre', 'padre_direccion']);
+        $this->post('/inscripcion', $this->datos($this->padres(['padre_situacion' => 'quien sabe'])))
+            ->assertSessionHasErrors('padre_situacion');
+        $this->post('/inscripcion', $this->datos(['madre_situacion' => 'registrado']))
+            ->assertSessionHasErrors('padre_situacion');
+        $this->assertSame(0, SolicitudInscripcion::count());
+    }
+
+    public function test_una_pestana_abierta_antes_del_paso_de_padres_guarda_sin_ellos()
+    {
+        $this->post('/inscripcion', $this->datos())->assertSessionHasNoErrors();
+        $this->assertSame(1, SolicitudInscripcion::count());
+        $this->assertSame(0, DB::table('padres')->count());
+    }
 }

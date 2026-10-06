@@ -61,6 +61,67 @@ class InformeTest extends TestCase
         $this->assertLessThanOrEqual($props['totales']['activos'], $enAnexo);
     }
 
+    public function test_filtra_por_sede_y_por_grado()
+    {
+        $this->seed(DatosInicialesSeeder::class);
+        $anioId = DB::table('anios_lectivos')->where('anio', 2026)->value('id');
+        $lf = DB::table('sedes')->where('codigo', 'LF')->first();
+        $septimo = DB::table('grados')->where('numero', 7)->value('id');
+        $activos = fn (?int $sede, ?int $grado) => DB::table('matriculas')->where('anio_lectivo_id', $anioId)->where('estado', 'activo')
+            ->when($sede, fn ($q) => $q->where('sede_id', $sede))->when($grado, fn ($q) => $q->where('grado_id', $grado))->count();
+
+        $this->actingAs(User::first())->get('/informes/matricula?anio=2026&sede=LF')
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('filtro.sede', 'LF')
+                ->where('filtro.sedeNombre', $lf->nombre)
+                ->where('totales.activos', $activos($lf->id, null))
+                ->where('grupos', fn ($g) => collect($g)->every(fn ($x) => $x['sede_codigo'] === 'LF'))
+                // El selector de grado: cada sede con los grados que tiene grupos ese año.
+                ->where('opciones', fn ($o) => collect(collect($o)->firstWhere('codigo', 'LF')['grados'])->pluck('id')->map(fn ($i) => (int) $i)->sort()->values()->all()
+                    === DB::table('grupos')->where('anio_lectivo_id', $anioId)->where('sede_id', $lf->id)->distinct()->orderBy('grado_id')->pluck('grado_id')->map(fn ($i) => (int) $i)->all()));
+
+        $this->actingAs(User::first())->get("/informes/matricula?anio=2026&sede=LF&grado={$septimo}")
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('filtro.grado', $septimo)
+                ->where('totales.activos', $activos($lf->id, $septimo))
+                ->has('grados', 1)
+                ->where('grupos', fn ($g) => collect($g)->every(fn ($x) => $x['sede_codigo'] === 'LF' && $x['grado'] === 7)));
+
+        // Solo el grado, en todas las sedes.
+        $this->actingAs(User::first())->get("/informes/matricula?anio=2026&grado={$septimo}")
+            ->assertInertia(fn (Assert $page) => $page->where('filtro.sede', null)->where('totales.activos', $activos(null, $septimo)));
+
+        $this->actingAs(User::first())->get('/informes/matricula?anio=2026&sede=XX')->assertNotFound();
+        $this->actingAs(User::first())->get('/informes/matricula?anio=2026&grado=999')->assertNotFound();
+    }
+
+    public function test_filtra_por_grupo()
+    {
+        $this->seed(DatosInicialesSeeder::class);
+        $anioId = DB::table('anios_lectivos')->where('anio', 2026)->value('id');
+        $grupo = DB::table('grupos as g')->join('sedes as s', 's.id', '=', 'g.sede_id')
+            ->where('g.anio_lectivo_id', $anioId)->orderBy('g.id')->first(['g.id', 'g.codigo', 'g.grado_id', 's.codigo as sede']);
+        $activos = DB::table('matriculas')->where('grupo_id', $grupo->id)->where('estado', 'activo')->count();
+
+        // Solo con el grupo basta: la sede y el grado salen de él.
+        $this->actingAs(User::first())->get("/informes/matricula?anio=2026&grupo={$grupo->id}")
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('filtro.grupo', $grupo->id)
+                ->where('filtro.grupoCodigo', $grupo->codigo)
+                ->where('filtro.sede', $grupo->sede)
+                ->where('filtro.grado', $grupo->grado_id)
+                ->where('totales.activos', $activos)
+                ->has('grupos', 1)
+                ->where('opciones', fn ($o) => collect($o)->flatMap(fn ($s) => collect($s['grados'])->flatMap(fn ($g) => $g['grupos']))->pluck('id')->contains($grupo->id)));
+
+        // Un grupo de otro año no existe en este.
+        $otro = DB::table('grupos')->where('anio_lectivo_id', '!=', $anioId)->value('id');
+        if ($otro) {
+            $this->actingAs(User::first())->get("/informes/matricula?anio=2026&grupo={$otro}")->assertNotFound();
+        }
+        $this->actingAs(User::first())->get('/informes/matricula?anio=2026&grupo=999999')->assertNotFound();
+    }
+
     public function test_un_anio_que_no_existe_da_404()
     {
         $this->seed(DatosInicialesSeeder::class);

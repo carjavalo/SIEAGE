@@ -1,4 +1,4 @@
-import { ClipboardCheck, HeartPulse, House, type LucideIcon, UserRound, Users } from 'lucide-react';
+import { ClipboardCheck, HeartPulse, House, type LucideIcon, UserRound, Users, UsersRound } from 'lucide-react';
 
 /**
  * Formulario público de inscripción: datos, pasos y validación del lado del
@@ -6,7 +6,37 @@ import { ClipboardCheck, HeartPulse, House, type LucideIcon, UserRound, Users } 
  * si cambias una, cambia la otra.
  */
 
-export type DatosInscripcion = {
+/** La madre o el padre: los campos van con su prefijo (madre_primer_nombre…). */
+export type Progenitor = 'madre' | 'padre';
+
+/** Datos de la madre o el padre. `situacion`: registrado (con datos), fallecido o desconocido (no registra). */
+export const CAMPOS_PADRE = [
+    'situacion',
+    'primer_nombre',
+    'segundo_nombre',
+    'primer_apellido',
+    'segundo_apellido',
+    'tipo_documento',
+    'numero_documento',
+    'fecha_nacimiento',
+    'telefono',
+    'correo',
+    'ocupacion',
+    'direccion',
+    'barrio',
+] as const;
+export type CampoPadre = (typeof CAMPOS_PADRE)[number];
+
+type DatosPadres = { [K in `${Progenitor}_${CampoPadre}`]: string } & {
+    /** Vive con el estudiante: su dirección es la de la residencia. */
+    madre_misma_direccion: boolean;
+    padre_misma_direccion: boolean;
+};
+
+/** El parentesco del catálogo que hace a la madre o al padre el acudiente. */
+export const PARENTESCO_DE: Record<Progenitor, string> = { madre: 'Madre', padre: 'Padre' };
+
+export type DatosInscripcion = DatosPadres & {
     // 1. Estudiante
     primer_nombre: string;
     segundo_nombre: string;
@@ -56,7 +86,8 @@ export type DatosInscripcion = {
     acudiente_telefono_1: string;
     acudiente_telefono_2: string;
     acudiente_correo: string;
-    // 5. Revisión
+    // 5. Madre y padre (DatosPadres)
+    // 6. Revisión
     autorizacion_datos: boolean;
     /** Hora en que se abrió el formulario, cifrada por el servidor (contra robots). */
     sello: string;
@@ -67,7 +98,20 @@ export type Errores = Partial<Record<Campo, string>>;
 
 export type Grado = { id: number; numero: number; nombre: string };
 
+const padreVacio = <P extends Progenitor>(p: P) =>
+    ({
+        ...Object.fromEntries(CAMPOS_PADRE.map((c) => [`${p}_${c}`, ''])),
+        [`${p}_situacion`]: 'registrado',
+        [`${p}_tipo_documento`]: 'C.C.',
+        [`${p}_misma_direccion`]: true,
+    }) as Pick<DatosInscripcion, `${P}_${CampoPadre}` | `${P}_misma_direccion`>;
+
+/** Los campos de la madre o el padre, en el orden en que aparecen en pantalla. */
+export const camposDe = (p: Progenitor) => CAMPOS_PADRE.map((c) => `${p}_${c}` as const);
+
 export const DATOS_VACIOS: DatosInscripcion = {
+    ...padreVacio('madre'),
+    ...padreVacio('padre'),
     primer_nombre: '',
     segundo_nombre: '',
     primer_apellido: '',
@@ -114,8 +158,12 @@ export const DATOS_VACIOS: DatosInscripcion = {
     sello: '',
 };
 
-/** Al inscribir a un hermano se conservan el acudiente y el hogar. */
+/** Al inscribir a un hermano se conservan el acudiente, el hogar y los padres. */
 export const CAMPOS_COMPARTIDOS_ENTRE_HERMANOS: Campo[] = [
+    ...camposDe('madre'),
+    ...camposDe('padre'),
+    'madre_misma_direccion',
+    'padre_misma_direccion',
     'direccion',
     'barrio',
     'telefono_1',
@@ -160,6 +208,15 @@ export const TIPOS_DOCUMENTO: Opcion[] = [
     { valor: 'P.P.T.', etiqueta: 'Permiso de protección' },
     { valor: 'P.E.P.', etiqueta: 'Permiso especial de permanencia' },
     { valor: 'Acta', etiqueta: 'Acta' },
+    { valor: 'Otro', etiqueta: 'Otro' },
+];
+
+/** Documentos de un adulto (la tabla padres). */
+export const TIPOS_DOCUMENTO_ADULTO: Opcion[] = [
+    { valor: 'C.C.', etiqueta: 'Cédula de ciudadanía' },
+    { valor: 'C.E.', etiqueta: 'Cédula de extranjería' },
+    { valor: 'P.P.T.', etiqueta: 'Permiso de protección' },
+    { valor: 'PAS', etiqueta: 'Pasaporte' },
     { valor: 'Otro', etiqueta: 'Otro' },
 ];
 
@@ -250,6 +307,13 @@ export const PASOS: Paso[] = [
             'acudiente_telefono_2',
             'acudiente_correo',
         ],
+    },
+    {
+        corto: 'Madre y padre',
+        titulo: '¿Quiénes son la madre y el padre?',
+        descripcion: 'Aunque no sean el acudiente. Si alguno de los dos lo es, ya tenemos sus datos.',
+        icono: UsersRound,
+        campos: [...camposDe('madre'), ...camposDe('padre')],
     },
     {
         corto: 'Revisión',
@@ -387,7 +451,34 @@ export function validarPaso(paso: number, d: DatosInscripcion): Errores {
         poner('acudiente_correo', correo(d.acudiente_correo, false));
     }
 
-    if (paso === 4 && !d.autorizacion_datos) {
+    if (paso === 4) {
+        for (const p of ['madre', 'padre'] as const) {
+            const c = (campo: CampoPadre) => `${p}_${campo}` as const;
+            // Si es el acudiente, sus datos ya están en el paso anterior.
+            if (d.acudiente_parentesco === PARENTESCO_DE[p]) {
+                poner(c('ocupacion'), texto(d[c('ocupacion')], 80, false));
+                continue;
+            }
+            poner(c('situacion'), elegido(d[c('situacion')]));
+            if (d[c('situacion')] !== 'registrado') continue;
+            poner(c('primer_nombre'), nombre(d[c('primer_nombre')], true));
+            poner(c('segundo_nombre'), nombre(d[c('segundo_nombre')], false));
+            poner(c('primer_apellido'), nombre(d[c('primer_apellido')], true));
+            poner(c('segundo_apellido'), nombre(d[c('segundo_apellido')], false));
+            // Lo demás es opcional: se valida solo si lo escribieron.
+            if (d[c('numero_documento')]) poner(c('numero_documento'), digitos(d[c('numero_documento')], 5, 15));
+            if (d[c('fecha_nacimiento')]) poner(c('fecha_nacimiento'), fechaPasada(d[c('fecha_nacimiento')]));
+            if (d[c('telefono')]) poner(c('telefono'), digitos(d[c('telefono')], 7, 10));
+            poner(c('correo'), correo(d[c('correo')], false));
+            poner(c('ocupacion'), texto(d[c('ocupacion')], 80, false));
+            if (!d[`${p}_misma_direccion`]) {
+                poner(c('direccion'), texto(d[c('direccion')], 150));
+                poner(c('barrio'), texto(d[c('barrio')], 80, false));
+            }
+        }
+    }
+
+    if (paso === PASOS.length - 1 && !d.autorizacion_datos) {
         e.autorizacion_datos = 'Necesitamos tu autorización para procesar la inscripción.';
     }
 

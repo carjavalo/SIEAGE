@@ -23,6 +23,16 @@ class InscripcionRequest extends FormRequest
     private const NUMERICOS = [
         'numero_documento', 'telefono_1', 'telefono_2',
         'acudiente_numero_documento', 'acudiente_telefono_1', 'acudiente_telefono_2',
+        'madre_numero_documento', 'madre_telefono', 'padre_numero_documento', 'padre_telefono',
+    ];
+
+    /** La madre y el padre, con el parentesco del catálogo que los hace acudiente. */
+    private const PADRES = ['madre' => 'Madre', 'padre' => 'Padre'];
+
+    /** Lo que se guarda de cada uno en la tabla padres (además de situación y si es el acudiente). */
+    private const CAMPOS_PADRE = [
+        'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'tipo_documento', 'numero_documento',
+        'fecha_nacimiento', 'telefono', 'correo', 'ocupacion', 'direccion', 'barrio',
     ];
 
     private const DOCUMENTOS_COMO_OTRO = [
@@ -33,6 +43,8 @@ class InscripcionRequest extends FormRequest
     private const NOMBRES = [
         'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido',
         'acudiente_primer_nombre', 'acudiente_segundo_nombre', 'acudiente_primer_apellido', 'acudiente_segundo_apellido',
+        'madre_primer_nombre', 'madre_segundo_nombre', 'madre_primer_apellido', 'madre_segundo_apellido',
+        'padre_primer_nombre', 'padre_segundo_nombre', 'padre_primer_apellido', 'padre_segundo_apellido',
     ];
 
     /**
@@ -63,7 +75,7 @@ class InscripcionRequest extends FormRequest
 
         // Minúsculas ANTES de validar el largo: hacerlo después podía alargar
         // el correo (la "İ" turca pasa a dos caracteres) y la base lo rechazaba.
-        foreach (['correo', 'acudiente_correo'] as $campo) {
+        foreach (['correo', 'acudiente_correo', 'madre_correo', 'padre_correo'] as $campo) {
             if (is_string($valor = $this->input($campo))) {
                 $limpios[$campo] = Str::lower($valor);
             }
@@ -84,6 +96,39 @@ class InscripcionRequest extends FormRequest
         }
 
         $this->merge($limpios);
+
+        // Madre y padre. Si uno de ellos es el acudiente, sus datos son los del
+        // acudiente (se copian aquí, duplicados a propósito: ver create_padres_table);
+        // si vive con el estudiante, su dirección es la de la residencia.
+        // Una pestaña abierta antes de este paso no los envía: se omiten.
+        $padres = [];
+        foreach (self::PADRES as $p => $parentesco) {
+            if ($this->input("{$p}_situacion") === null) {
+                continue;
+            }
+            $esAcudiente = $this->input('acudiente_parentesco') === $parentesco;
+            $padres["{$p}_es_acudiente"] = $esAcudiente;
+            if ($esAcudiente) {
+                $padres += [
+                    "{$p}_situacion" => 'registrado',
+                    "{$p}_primer_nombre" => $this->input('acudiente_primer_nombre'),
+                    "{$p}_segundo_nombre" => $this->input('acudiente_segundo_nombre'),
+                    "{$p}_primer_apellido" => $this->input('acudiente_primer_apellido'),
+                    "{$p}_segundo_apellido" => $this->input('acudiente_segundo_apellido'),
+                    "{$p}_tipo_documento" => 'C.C.',
+                    "{$p}_numero_documento" => $this->input('acudiente_numero_documento'),
+                    "{$p}_fecha_nacimiento" => $this->input('acudiente_fecha_nacimiento'),
+                    "{$p}_telefono" => $this->input('acudiente_telefono_1'),
+                    "{$p}_correo" => $this->input('acudiente_correo'),
+                    "{$p}_direccion" => $this->input('acudiente_direccion'),
+                    "{$p}_barrio" => $this->input('acudiente_barrio'),
+                ];
+            } elseif ($this->boolean("{$p}_misma_direccion")) {
+                $padres["{$p}_direccion"] = $this->input('direccion');
+                $padres["{$p}_barrio"] = $this->input('barrio');
+            }
+        }
+        $this->merge($padres);
     }
 
     /**
@@ -162,9 +207,46 @@ class InscripcionRequest extends FormRequest
             'acudiente_telefono_2' => $telefono,
             'acudiente_correo' => ['nullable', 'email', 'max:120'],
 
-            // 5. Revisión
+            // 5. Madre y padre
+            ...$this->reglasPadres($nombre),
+
+            // 6. Revisión
             'autorizacion_datos' => ['accepted'],
         ];
+    }
+
+    /**
+     * Si la madre o el padre "no registra" o falleció, no lleva más datos. Los
+     * obligatorios son el nombre y la dirección; el resto, si la familia lo sabe.
+     *
+     * @param  array<int, string>  $nombre
+     * @return array<string, array<mixed>>
+     */
+    private function reglasPadres(array $nombre): array
+    {
+        $reglas = [];
+        foreach (array_keys(self::PADRES) as $p) {
+            $otro = $p === 'madre' ? 'padre' : 'madre';
+            $con = "exclude_unless:{$p}_situacion,registrado";
+            $reglas += [
+                "{$p}_situacion" => ["required_with:{$otro}_situacion", Rule::in(['registrado', 'fallecido', 'desconocido'])],
+                "{$p}_es_acudiente" => [$con, 'boolean'],
+                "{$p}_primer_nombre" => [$con, 'required', ...$nombre],
+                "{$p}_segundo_nombre" => [$con, 'nullable', ...$nombre],
+                "{$p}_primer_apellido" => [$con, 'required', ...$nombre],
+                "{$p}_segundo_apellido" => [$con, 'nullable', ...$nombre],
+                "{$p}_tipo_documento" => [$con, 'nullable', Rule::in(['C.C.', 'C.E.', 'P.P.T.', 'PAS', 'Otro'])],
+                "{$p}_numero_documento" => [$con, 'nullable', 'digits_between:5,15'],
+                "{$p}_fecha_nacimiento" => [$con, 'nullable', 'date_format:Y-m-d', 'before:today', 'after:1900-01-01'],
+                "{$p}_telefono" => [$con, 'nullable', 'digits_between:7,10'],
+                "{$p}_correo" => [$con, 'nullable', 'email', 'max:120'],
+                "{$p}_ocupacion" => [$con, 'nullable', 'string', 'max:80'],
+                "{$p}_direccion" => [$con, 'required', 'string', 'max:150'],
+                "{$p}_barrio" => [$con, 'nullable', 'string', 'max:80'],
+            ];
+        }
+
+        return $reglas;
     }
 
     /**
@@ -178,6 +260,8 @@ class InscripcionRequest extends FormRequest
         return [
             'required' => 'Este campo es obligatorio.',
             'required_if' => 'Cuéntanos cuál.',
+            'required_with' => 'Elige una de las opciones.',
+            'boolean' => 'Revisa este campo.',
             'string' => 'Revisa este campo.',
             'max' => 'Es demasiado largo: máximo :max caracteres.',
             'regex' => 'Usa solo letras.',
@@ -262,5 +346,35 @@ class InscripcionRequest extends FormRequest
             'ip' => $this->ip(),
             'navegador' => $this->userAgent() ? Str::limit($this->userAgent(), 255, '') : null,
         ];
+    }
+
+    /**
+     * Las filas de la madre y el padre para la tabla padres, o ninguna si el
+     * formulario no los trajo (una pestaña abierta antes de este paso: la
+     * secretaría los completa al revisar).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function padresParaGuardar(): array
+    {
+        $d = $this->validated();
+        if (! isset($d['madre_situacion'], $d['padre_situacion'])) {
+            return [];
+        }
+
+        return array_map(function (string $p) use ($d) {
+            $fila = ['parentesco' => $p, 'situacion' => $d["{$p}_situacion"], 'es_acudiente' => false, ...array_fill_keys(self::CAMPOS_PADRE, null)];
+            if ($fila['situacion'] !== 'registrado') {
+                return $fila;
+            }
+            foreach (self::CAMPOS_PADRE as $c) {
+                $fila[$c] = ($d["{$p}_{$c}"] ?? null) ?: null;
+            }
+            $fila['es_acudiente'] = (bool) ($d["{$p}_es_acudiente"] ?? false);
+            // Con número y sin tipo, lo usual: cédula.
+            $fila['tipo_documento'] = $fila['numero_documento'] ? ($fila['tipo_documento'] ?? 'C.C.') : null;
+
+            return $fila;
+        }, array_keys(self::PADRES));
     }
 }
