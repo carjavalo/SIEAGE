@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\SolicitudInscripcion;
 use App\Support\Alcance;
+use App\Support\Boletines;
 use App\Support\CambiosFicha;
 use App\Support\Documentos;
 use App\Support\Grupos;
@@ -171,7 +172,7 @@ class EstudianteController extends Controller
             ->orderByDesc('al.anio')
             ->get([
                 'm.id', 'al.anio', 'gr.id as grado_id', 'gr.nombre as grado', 'gr.numero as grado_numero', 'g.codigo as grupo',
-                's.nombre as sede', 's.codigo as sede_codigo', 'm.jornada', 'mo.nombre as modalidad',
+                's.nombre as sede', 's.codigo as sede_codigo', 'm.sede_id', 'm.grupo_id', 'm.jornada', 'mo.nombre as modalidad',
                 'm.fecha_matricula', 'm.condicion', 'm.estado', 'm.es_historico', 'm.observaciones',
                 'm.fecha_retiro', 'm.motivo_retiro',
             ]);
@@ -225,6 +226,10 @@ class EstudianteController extends Controller
         return [
             'estudiante' => $alumno,
             'actual' => $actual,
+            // Transición del año en curso: escribe e imprime su boletín (ver BoletinController).
+            'boletin' => $actual && (int) $actual->grado_numero === Boletines::GRADO && $actual->estado === 'activo'
+                && $actual->grupo_id !== null && Alcance::puedeVerSede(request()->user(), $actual->sede_id)
+                && DB::table('anios_lectivos')->where('anio', $actual->anio)->value('estado') === 'activo',
             'documentos' => $this->documentos($historia->pluck('id')),
             'novedades' => $novedades,
             // Matrícula del año siguiente, si ya fue promovido.

@@ -25,7 +25,7 @@ import {
 } from '@/lib/estudiantes';
 import { type SharedData } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
-import { FileText } from 'lucide-react';
+import { FileText, NotebookPen } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 
 type Props = {
@@ -221,6 +221,16 @@ export default function Estudiantes({
                                     Informe
                                 </Link>
                                 <BotonConstancias anio={anio} grado={grado} grupo={grupo} sede={sede} sedes={sedes} />
+                                {/* Transición tiene boletín de texto: escribirlo e imprimirlo (también los docentes). */}
+                                {grado.numero === 0 && anio === anioEnCurso && (
+                                    <Link
+                                        href={`/boletines${grupo ? `?grupo=${grupo.id}` : ''}`}
+                                        className="flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none"
+                                    >
+                                        <NotebookPen className="size-4" />
+                                        Boletines
+                                    </Link>
+                                )}
                                 {/* Los cupos se editan en cualquier año (también en el planeado, después de promover). */}
                                 {puedeEditarCupos(auth) && <BotonCupos grado={grado} grupos={grupos} anio={anio} />}
                                 {promueve && (

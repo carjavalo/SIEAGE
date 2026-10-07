@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AyudaController;
+use App\Http\Controllers\BoletinController;
 use App\Http\Controllers\ConstanciaController;
 use App\Http\Controllers\DatosEstudianteController;
 use App\Http\Controllers\DeshabilitacionController;
@@ -50,6 +51,13 @@ Route::middleware(['auth'])->group(function () {
     // Constancias de matrícula para imprimir: la de un estudiante o las de un grupo, grado, sede o todo el colegio.
     Route::get('estudiantes/{estudiante}/constancia', [ConstanciaController::class, 'estudiante'])->whereNumber('estudiante')->name('constancias.estudiante');
     Route::get('constancias', [ConstanciaController::class, 'lote'])->name('constancias.lote');
+
+    // Boletines de transición: escribir el texto de cada estudiante (todos, también los docentes) e imprimirlos.
+    Route::get('boletines', [BoletinController::class, 'index'])->name('boletines.index');
+    Route::get('boletines/imprimir', [BoletinController::class, 'imprimir'])->name('boletines.imprimir');
+    Route::put('boletines/{matricula}/{periodo}', [BoletinController::class, 'guardar'])->whereNumber(['matricula', 'periodo'])->name('boletines.guardar');
+    // Quién firma y la jornada del grupo: todos menos los docentes.
+    Route::put('boletines/grupos/{grupo}', [BoletinController::class, 'configurar'])->whereNumber('grupo')->middleware('can:gestionar-sedes')->name('boletines.grupo');
 
     // Informe de matrícula del año (vista previa para guardar como PDF).
     Route::get('informes/matricula', [InformeController::class, 'matricula'])->name('informes.matricula');
