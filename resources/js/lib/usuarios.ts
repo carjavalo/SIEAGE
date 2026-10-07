@@ -1,7 +1,7 @@
 /** Roles de los usuarios de SIEAGE (tabla roles). */
 
 /** `nombre` es la clave interna (no cambia); `etiqueta`, como se ve (se cambia en Roles y permisos). */
-export type Rol = { id: number; nombre: string; etiqueta: string | null; descripcion: string | null };
+export type Rol = { id: number; nombre: string; etiqueta: string | null; descripcion: string | null; ve_todas?: boolean };
 type ConNombre = { nombre: string; etiqueta?: string | null };
 
 const NOMBRES: Record<string, string> = {

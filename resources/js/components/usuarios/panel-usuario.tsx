@@ -11,7 +11,7 @@ import {
 } from '@/components/formulario';
 import { type Rol, haceCuanto, inicialesPersona, nombreRol, puntoRol } from '@/lib/usuarios';
 import { cn } from '@/lib/utils';
-import { useForm } from '@inertiajs/react';
+import { useForm, usePage } from '@inertiajs/react';
 import { Check, KeyRound, UserPlus } from 'lucide-react';
 import { type FormEventHandler, type RefObject, useState } from 'react';
 import { sileo } from 'sileo';
@@ -28,6 +28,8 @@ export type Usuario = {
     todas_las_sedes: boolean;
     /** Ids de las sedes asignadas, si no ve todas. */
     sedes: number[];
+    /** En una sede, solo estos grados: {sede_id: [grado_id, …]}. Sin entrada, todos. */
+    grados: Record<string, number[]>;
     ultimo_acceso: string | null;
     /** Usando el panel en este momento. */
     en_linea: boolean;
@@ -36,7 +38,9 @@ export type Usuario = {
     created_at: string;
 };
 
-export type SedeOpcion = { id: number; codigo: string; nombre: string };
+/** `grados`: los que tiene la sede (los de sus grupos). */
+export type SedeOpcion = { id: number; codigo: string; nombre: string; grados?: number[] };
+type GradoOpcion = { id: number; numero: number; nombre: string };
 
 type Props = {
     /** 'nuevo' para crear; un usuario para verlo y editarlo; null, cerrado. */
@@ -116,10 +120,25 @@ function FormularioUsuario({
         activo: usuario?.activo ?? true,
         todas_las_sedes: usuario?.todas_las_sedes ?? false,
         sedes: usuario?.sedes ?? ([] as number[]),
+        grados: usuario?.grados ?? ({} as Record<string, number[]>),
         password: nuevo ? claveAleatoria() : '',
     });
-    const esAdministrador = roles.find((r) => r.id === form.data.rol_id)?.nombre === 'administrador';
-    const marcarSede = (id: number, si: boolean) => form.setData('sedes', si ? [...form.data.sedes, id] : form.data.sedes.filter((s) => s !== id));
+    const catalogo = usePage<{ grados?: GradoOpcion[] }>().props.grados ?? [];
+    const rolElegido = roles.find((r) => r.id === form.data.rol_id);
+    const esAdministrador = rolElegido?.nombre === 'administrador';
+    const marcarSede = (id: number, si: boolean) => {
+        // Al quitar una sede se olvidan sus grados.
+        const grados = sinSede(form.data.grados, id);
+        form.setData({
+            ...form.data,
+            sedes: si ? [...form.data.sedes, id] : form.data.sedes.filter((s) => s !== id),
+            grados: si ? form.data.grados : grados,
+        });
+    };
+    const marcarGrados = (sede: number, grados: number[]) => {
+        const resto = sinSede(form.data.grados, sede);
+        form.setData('grados', grados.length ? { ...resto, [sede]: grados } : resto);
+    };
 
     const guardar: FormEventHandler = (e) => {
         e.preventDefault();
@@ -276,6 +295,10 @@ function FormularioUsuario({
                             <p className="rounded-[14px] bg-[#F5F7FC] px-3.5 py-3 text-[14px] text-[#56627F]">
                                 Los administradores ven y gestionan todas las sedes.
                             </p>
+                        ) : rolElegido?.ve_todas ? (
+                            <p className="rounded-[14px] bg-[#F5F7FC] px-3.5 py-3 text-[14px] text-[#56627F]">
+                                Con el rol «{nombreRol(rolElegido)}» se ven todas las sedes. Se cambia en Roles y permisos.
+                            </p>
                         ) : (
                             <>
                                 <p className="mb-2.5 text-[13px] text-[#56627F]">
@@ -289,14 +312,24 @@ function FormularioUsuario({
                                         detalle="Incluye las que se creen después."
                                     />
                                     {sedes.map((s) => (
-                                        <CasillaSede
-                                            key={s.id}
-                                            marcada={form.data.todas_las_sedes || form.data.sedes.includes(s.id)}
-                                            desactivada={form.data.todas_las_sedes}
-                                            onCambio={(si) => marcarSede(s.id, si)}
-                                            titulo={s.nombre}
-                                            detalle={s.codigo}
-                                        />
+                                        <div key={s.id}>
+                                            <CasillaSede
+                                                marcada={form.data.todas_las_sedes || form.data.sedes.includes(s.id)}
+                                                desactivada={form.data.todas_las_sedes}
+                                                onCambio={(si) => marcarSede(s.id, si)}
+                                                titulo={s.nombre}
+                                                detalle={s.codigo}
+                                            />
+                                            {/* Sede y grado juntos: en esta sede, todos los grados o solo algunos. */}
+                                            {!form.data.todas_las_sedes && form.data.sedes.includes(s.id) && (
+                                                <GradosDeSede
+                                                    sede={s}
+                                                    catalogo={catalogo}
+                                                    marcados={form.data.grados[s.id] ?? []}
+                                                    onCambio={(g) => marcarGrados(s.id, g)}
+                                                />
+                                            )}
+                                        </div>
                                     ))}
                                 </div>
                                 {form.errors.sedes && <p className="mt-2 text-[13px] text-[#B42318]">{form.errors.sedes}</p>}
@@ -432,6 +465,58 @@ export function MarcaActivo({ activo }: { activo: boolean }) {
 }
 
 /** Una casilla de la lista de sedes, con el mismo aspecto que la elección de rol. */
+/** Los grados marcados, sin los de esa sede. */
+const sinSede = (grados: Record<string, number[]>, sede: number) => Object.fromEntries(Object.entries(grados).filter(([s]) => Number(s) !== sede));
+
+const gradoCorto = (g: GradoOpcion) => (g.numero <= 0 ? g.nombre : `${g.numero}°`);
+
+/** Los grados de una sede asignada: «Todos» o los que se marquen (solo verá esos en esa sede). */
+function GradosDeSede({
+    sede,
+    catalogo,
+    marcados,
+    onCambio,
+}: {
+    sede: SedeOpcion;
+    catalogo: GradoOpcion[];
+    marcados: number[];
+    onCambio: (grados: number[]) => void;
+}) {
+    const deLaSede = catalogo.filter((g) => !sede.grados?.length || sede.grados.includes(g.id) || marcados.includes(g.id));
+    const chip = (activo: boolean) =>
+        cn(
+            'h-7 cursor-pointer rounded-full px-2.5 text-[12.5px] font-semibold ring-1 transition focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none',
+            activo ? 'bg-[#1E3A7B] text-white ring-[#1E3A7B]' : 'text-[#3E4A68] ring-[#D3DDF3] hover:bg-[#EEF2FB]',
+        );
+    return (
+        <div
+            role="group"
+            aria-label={`Grados que ve en ${sede.nombre}`}
+            className="mt-1.5 mb-1 ml-3 flex flex-wrap items-center gap-1 border-l-2 border-[#E3E9F6] pl-3"
+        >
+            <span className="mr-0.5 text-[12.5px] text-[#56627F]">Grados:</span>
+            <button type="button" aria-pressed={marcados.length === 0} onClick={() => onCambio([])} className={chip(marcados.length === 0)}>
+                Todos
+            </button>
+            {deLaSede.map((g) => {
+                const si = marcados.includes(g.id);
+                return (
+                    <button
+                        key={g.id}
+                        type="button"
+                        aria-pressed={si}
+                        title={g.nombre}
+                        onClick={() => onCambio(si ? marcados.filter((x) => x !== g.id) : [...marcados, g.id])}
+                        className={chip(si)}
+                    >
+                        {gradoCorto(g)}
+                    </button>
+                );
+            })}
+        </div>
+    );
+}
+
 function CasillaSede({
     marcada,
     desactivada,

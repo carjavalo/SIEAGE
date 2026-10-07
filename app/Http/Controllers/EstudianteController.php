@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\SolicitudInscripcion;
+use App\Models\User;
 use App\Support\Alcance;
 use App\Support\Boletines;
 use App\Support\CambiosFicha;
@@ -31,20 +32,21 @@ class EstudianteController extends Controller
 
         // Filtro por sede (?sede=LF). Sin él, todas las que puede ver. Se ofrecen
         // las sedes con su número de activos en el año, para mostrarlo en el selector.
+        // Los activos que ve de cada sede (con los grados que tenga marcados en ella).
+        $activosPorSede = Alcance::filtrar(DB::table('matriculas')->where('anio_lectivo_id', $anio?->id)->where('estado', 'activo'), $request->user(), 'sede_id', 'grado_id')
+            ->groupBy('sede_id')->selectRaw('sede_id, count(*) as n')->pluck('n', 'sede_id');
         $sedes = DB::table('sedes as s')
             ->when($permitidas !== null, fn ($q) => $q->whereIn('s.id', $permitidas))
-            ->leftJoin('matriculas as m', fn ($j) => $j->on('m.sede_id', '=', 's.id')->where('m.anio_lectivo_id', $anio?->id)->where('m.estado', 'activo'))
-            ->groupBy('s.id', 's.codigo', 's.nombre', 's.es_principal')
             ->orderByDesc('s.es_principal')
             ->orderBy('s.nombre')
-            ->selectRaw('s.id, s.codigo, s.nombre, count(m.id) as activos')
-            ->get();
+            ->get(['s.id', 's.codigo', 's.nombre'])
+            ->map(fn ($s) => (object) [...(array) $s, 'activos' => (int) ($activosPorSede[$s->id] ?? 0)]);
         $sede = $sedes->firstWhere('codigo', (string) $request->query('sede'))
             // Con una sola sede asignada, esa queda elegida siempre.
             ?? ($permitidas !== null && $sedes->count() === 1 ? $sedes->first() : null);
-        $enSede = fn ($q, string $columna = 'sede_id') => $sede
-            ? $q->where($columna, $sede->id)
-            : $q->when($permitidas !== null, fn ($q) => $q->whereIn($columna, $permitidas));
+        // La sede elegida (o todas las suyas), y en cada una los grados que tenga marcados.
+        $enSede = fn ($q, string $columna = 'sede_id', string $grado = 'grado_id') => Alcance::filtrar($sede ? $q->where($columna, $sede->id) : $q, $request->user(), $columna, $grado);
+        $visibles = Alcance::gradosVisibles($request->user(), $sede?->id);
 
         $resumenPorGrado = DB::table('matriculas')
             ->where('anio_lectivo_id', $anio?->id)
@@ -54,7 +56,7 @@ class EstudianteController extends Controller
             ->get()
             ->keyBy('grado_id');
 
-        $grados = DB::table('grados')->orderBy('numero')->get()->map(fn ($g) => [
+        $grados = DB::table('grados')->when($visibles !== null, fn ($q) => $q->whereIn('id', $visibles))->orderBy('numero')->get()->map(fn ($g) => [
             'id' => $g->id,
             'numero' => $g->numero,
             'nombre' => $g->nombre,
@@ -80,7 +82,7 @@ class EstudianteController extends Controller
             ")
             ->first();
 
-        $grupos = Grupos::conOcupacion($anio?->id, $gradoId, $sede?->id ?? $permitidas);
+        $grupos = Grupos::conOcupacion($anio?->id, $gradoId, $sede ? (Alcance::puedeVer($request->user(), $sede->id, $gradoId) ? $sede->id : []) : Alcance::sedesDelGrado($request->user(), $gradoId));
 
         // Si ya fue promovido: el grupo que tiene en el año siguiente.
         $siguienteId = DB::table('anios_lectivos')->where('anio', ($anio?->anio ?? 0) + 1)->value('id');
@@ -100,7 +102,7 @@ class EstudianteController extends Controller
             ->leftJoin('grupos as gsig', 'gsig.id', '=', 'sig.grupo_id')
             ->where('m.anio_lectivo_id', $anio?->id)
             ->where('m.grado_id', $gradoId)
-            ->tap(fn ($q) => $enSede($q, 'm.sede_id'))
+            ->tap(fn ($q) => $enSede($q, 'm.sede_id', 'm.grado_id'))
             ->whereNull('e.deleted_at')
             ->orderBy('e.nombre_completo')
             ->get([
@@ -123,7 +125,7 @@ class EstudianteController extends Controller
             'estudiantes' => $estudiantes,
             // Con todas las sedes se ofrece "Todas las sedes"; con algunas, solo esas.
             'todasLasSedes' => $permitidas === null,
-            'busqueda' => Inertia::optional(fn () => $this->buscar((string) $request->query('q'), $anio?->id, $permitidas)),
+            'busqueda' => Inertia::optional(fn () => $this->buscar((string) $request->query('q'), $anio?->id, $request->user())),
             // Ficha del estudiante seleccionado (?ver=ID), que se muestra al lado
             // de la lista sin salir de la página. Solo se consulta si hay uno.
             'detalle' => fn () => $request->filled('ver') && Alcance::puedeVerEstudiante($request->user(), (int) $request->query('ver'))
@@ -228,7 +230,7 @@ class EstudianteController extends Controller
             'actual' => $actual,
             // Transición del año en curso: escribe e imprime su boletín (ver BoletinController).
             'boletin' => $actual && request()->user()->can('escribir-boletines') && (int) $actual->grado_numero === Boletines::GRADO && $actual->estado === 'activo'
-                && $actual->grupo_id !== null && Alcance::puedeVerSede(request()->user(), $actual->sede_id)
+                && $actual->grupo_id !== null && Alcance::puedeVer(request()->user(), $actual->sede_id, $actual->grado_id)
                 && DB::table('anios_lectivos')->where('anio', $actual->anio)->value('estado') === 'activo',
             'documentos' => $this->documentos($historia->pluck('id')),
             'novedades' => $novedades,
@@ -270,7 +272,7 @@ class EstudianteController extends Controller
     /**
      * Búsqueda global por nombre o documento, con la matrícula del año consultado.
      */
-    private function buscar(string $texto, ?int $anioId, ?array $permitidas = null): array
+    private function buscar(string $texto, ?int $anioId, ?User $user): array
     {
         $texto = trim($texto);
         if (mb_strlen($texto) < 2) {
@@ -284,10 +286,9 @@ class EstudianteController extends Controller
             ->leftJoin('grupos as g', 'g.id', '=', 'm.grupo_id')
             ->leftJoin('sedes as s', 's.id', '=', 'm.sede_id')
             ->whereNull('e.deleted_at')
-            // Solo estudiantes que tienen (o tuvieron) matrícula en las sedes del usuario.
-            ->when($permitidas !== null, fn ($q) => $q->whereExists(fn ($s) => $s->from('matriculas as mp')
-                ->whereColumn('mp.estudiante_id', 'e.id')
-                ->whereIn('mp.sede_id', $permitidas)))
+            // Solo estudiantes que tienen (o tuvieron) matrícula en las sedes (y grados) del usuario.
+            ->when(! Alcance::todas($user), fn ($q) => $q->whereExists(fn ($s) => Alcance::filtrar($s->from('matriculas as mp')
+                ->whereColumn('mp.estudiante_id', 'e.id'), $user, 'mp.sede_id', 'mp.grado_id')))
             ->where(fn ($q) => $q->where('e.nombre_completo', 'like', "%{$texto}%")->orWhere('e.numero_documento', 'like', "{$texto}%"))
             ->orderBy('e.nombre_completo')
             ->limit(12)

@@ -35,6 +35,9 @@ class UsuarioController extends Controller
     public function index(): Response
     {
         $asignadas = DB::table('sede_user')->get(['user_id', 'sede_id'])->groupBy('user_id');
+        $gradosMarcados = DB::table('sede_user_grado')->get(['user_id', 'sede_id', 'grado_id'])->groupBy('user_id');
+        // Los grados que tiene cada sede (los de sus grupos), para ofrecer solo esos.
+        $gradosDeSede = DB::table('grupos')->select('sede_id', 'grado_id')->distinct()->get()->groupBy('sede_id');
         $enLinea = Presencia::enLinea()->flip();
 
         return Inertia::render('usuarios/index', [
@@ -45,13 +48,19 @@ class UsuarioController extends Controller
                 ->map(fn (User $u) => [
                     ...$u->toArray(),
                     'sedes' => $asignadas->get($u->id, collect())->pluck('sede_id')->map(fn ($id) => (int) $id)->values(),
+                    // En cada sede, si solo ve algunos grados: {sede_id: [grado_id, …]}.
+                    'grados' => (object) $gradosMarcados->get($u->id, collect())->groupBy('sede_id')
+                        ->map(fn ($filas) => $filas->pluck('grado_id')->map(fn ($id) => (int) $id)->values())->all(),
                     // Usando el panel ahora mismo; si no, la última vez que lo usó (o, de antes, cuándo ingresó).
                     'en_linea' => $enLinea->has($u->id),
                     'ultima_vez' => ($u->ultima_actividad ?? $u->ultimo_acceso)?->toIso8601String(),
                 ]),
-            'roles' => Rol::orderBy('id')->get(['id', 'nombre', 'etiqueta', 'descripcion']),
+            // ve_todas: el rol ve todas las sedes (administrador o permiso «Ver todas las sedes»); no hace falta marcarlas.
+            'roles' => Rol::orderBy('id')->get(['id', 'nombre', 'etiqueta', 'descripcion'])->map(fn (Rol $r) => [...$r->toArray(), 've_todas' => $this->rolVeTodas($r->id)]),
             // Para asignar a cada usuario las sedes que puede ver.
-            'sedes' => DB::table('sedes')->orderByDesc('es_principal')->orderBy('nombre')->get(['id', 'codigo', 'nombre']),
+            'sedes' => DB::table('sedes')->orderByDesc('es_principal')->orderBy('nombre')->get(['id', 'codigo', 'nombre'])
+                ->map(fn ($s) => [...(array) $s, 'grados' => $gradosDeSede->get($s->id, collect())->pluck('grado_id')->map(fn ($id) => (int) $id)->values()]),
+            'grados' => DB::table('grados')->orderBy('numero')->get(['id', 'numero', 'nombre']),
         ]);
     }
 
@@ -64,7 +73,7 @@ class UsuarioController extends Controller
         $this->soloAdministradores($request, null, (int) $datos['rol_id']);
 
         // En una transacción: si faltan sedes, el usuario no queda creado a medias.
-        DB::transaction(fn () => $this->asignarSedes(User::create([...collect($datos)->except('sedes')->all(), 'activo' => true]), $datos));
+        DB::transaction(fn () => $this->asignarSedes(User::create([...collect($datos)->except(['sedes', 'grados'])->all(), 'activo' => true]), $datos));
 
         return back()->with('success', "Usuario «{$datos['usuario']}» creado.");
     }
@@ -80,7 +89,7 @@ class UsuarioController extends Controller
         $this->protegerAdministradores($request, $usuario, (int) $datos['rol_id'], (bool) $datos['activo']);
 
         DB::transaction(function () use ($usuario, $datos) {
-            $usuario->update(collect($datos)->except('sedes')->all());
+            $usuario->update(collect($datos)->except(['sedes', 'grados'])->all());
             $this->asignarSedes($usuario, $datos);
         });
         if (! $usuario->activo) {
@@ -114,20 +123,37 @@ class UsuarioController extends Controller
      */
     private function asignarSedes(User $usuario, array $datos): void
     {
-        $esAdmin = Rol::where('id', $datos['rol_id'])->value('nombre') === 'administrador';
         $todas = (bool) ($datos['todas_las_sedes'] ?? false);
         $sedes = array_map('intval', $datos['sedes'] ?? []);
 
-        if (! $esAdmin && ! $todas && ! $sedes) {
+        if (! $this->rolVeTodas((int) $datos['rol_id']) && ! $todas && ! $sedes) {
             throw ValidationException::withMessages(['sedes' => 'Marca al menos una sede, o «Todas las sedes».']);
         }
 
-        DB::transaction(function () use ($usuario, $todas, $sedes) {
+        // Los grados marcados de cada sede asignada (con «todas las sedes» no hay límite de grado).
+        $grados = [];
+        foreach ($todas ? [] : $sedes as $sede) {
+            foreach (array_unique(array_map('intval', $datos['grados'][$sede] ?? [])) as $grado) {
+                $grados[] = ['user_id' => $usuario->id, 'sede_id' => $sede, 'grado_id' => $grado];
+            }
+        }
+
+        DB::transaction(function () use ($usuario, $todas, $sedes, $grados) {
             $usuario->forceFill(['todas_las_sedes' => $todas])->save();
             DB::table('sede_user')->where('user_id', $usuario->id)->delete();
             DB::table('sede_user')->insert(array_map(fn ($id) => ['user_id' => $usuario->id, 'sede_id' => $id, 'created_at' => now()], $todas ? [] : $sedes));
+            // Sedes y grados juntos: en cada sede, solo los grados marcados (o todos).
+            DB::table('sede_user_grado')->where('user_id', $usuario->id)->delete();
+            DB::table('sede_user_grado')->insert($grados);
         });
         Alcance::olvidar($usuario);
+    }
+
+    /** Si con ese rol se ven todas las sedes: el administrador, o el permiso «Ver todas las sedes». */
+    private function rolVeTodas(int $rolId): bool
+    {
+        return Rol::where('id', $rolId)->value('nombre') === 'administrador'
+            || DB::table('rol_permiso')->where('rol_id', $rolId)->where('permiso', 'todas-las-sedes')->exists();
     }
 
     /** Saca al usuario de las sesiones que tenga abiertas en otros equipos. */
@@ -159,6 +185,10 @@ class UsuarioController extends Controller
             'todas_las_sedes' => ['sometimes', 'boolean'],
             'sedes' => ['sometimes', 'array'],
             'sedes.*' => ['integer', 'distinct', 'exists:sedes,id'],
+            // En una sede, solo estos grados (sin grados: todos los de la sede).
+            'grados' => ['sometimes', 'array'],
+            'grados.*' => ['array'],
+            'grados.*.*' => ['integer', 'distinct', 'exists:grados,id'],
         ];
     }
 

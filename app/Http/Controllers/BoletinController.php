@@ -290,9 +290,9 @@ class BoletinController extends Controller
             ->join('grados as gr', 'gr.id', '=', 'g.grado_id')
             ->join('anios_lectivos as al', 'al.id', '=', 'g.anio_lectivo_id')
             ->where('g.id', $id)->where('gr.numero', Boletines::GRADO)->where('al.estado', 'activo')
-            ->first(['g.id', 'g.sede_id']);
+            ->first(['g.id', 'g.sede_id', 'g.grado_id']);
         abort_unless($g, 404);
-        Alcance::exigirSede($user, $g->sede_id);
+        Alcance::exigir($user, $g->sede_id, $g->grado_id);
 
         return $g;
     }
@@ -306,9 +306,9 @@ class BoletinController extends Controller
             ->where('m.id', $id)
             ->where('gr.numero', Boletines::GRADO)
             ->where('al.estado', 'activo')
-            ->first(['m.id', 'm.sede_id', 'm.anio_lectivo_id']);
+            ->first(['m.id', 'm.sede_id', 'm.grado_id', 'm.anio_lectivo_id']);
         abort_unless($m, 404);
-        Alcance::exigirSede($user, $m->sede_id);
+        Alcance::exigir($user, $m->sede_id, $m->grado_id);
 
         return $m;
     }

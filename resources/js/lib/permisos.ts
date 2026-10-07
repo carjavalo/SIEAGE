@@ -11,6 +11,7 @@ export type Permiso =
     | 'matricular'
     | 'escribir-boletines'
     | 'configurar-boletines'
+    | 'todas-las-sedes'
     | 'ver-sedes'
     | 'gestionar-sedes'
     | 'cambiar-cupos'

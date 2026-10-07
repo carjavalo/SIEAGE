@@ -32,6 +32,7 @@ final class Permisos
             'configurar-boletines' => ['Firmas y jornada', 'Quién firma el boletín y cómo sale la jornada.'],
         ],
         'Sedes y grupos' => [
+            'todas-las-sedes' => ['Ver todas las sedes', 'Estudiantes, inscritos y grupos de todas las sedes. Apagado, cada persona ve solo las que tiene marcadas en Usuarios.'],
             'ver-sedes' => ['Ver sedes', 'Las sedes con sus grupos.'],
             'gestionar-sedes' => ['Crear y cambiar sedes y grupos', 'Agregar, editar y quitar sedes y grupos.'],
             'cambiar-cupos' => ['Cambiar cupos', 'Cuántos estudiantes caben en cada grupo.'],
