@@ -450,7 +450,8 @@ function Editor({
                                         onClick={() => ir(e.matricula_id)}
                                         aria-current={activo ? 'true' : undefined}
                                         className={cn(
-                                            'flex w-full cursor-pointer items-center gap-2.5 rounded-[14px] px-3 py-2 text-left text-[14px] transition focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none',
+                                            // relative: el «, sin escribir» oculto queda dentro del botón (si no, alarga la página).
+                                            'relative flex w-full cursor-pointer items-center gap-2.5 rounded-[14px] px-3 py-2 text-left text-[14px] transition focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none',
                                             activo
                                                 ? 'bg-white font-semibold text-[#1E3A7B] shadow-[0_1px_2px_rgba(22,34,63,0.08)]'
                                                 : 'text-[#3E4A68] hover:bg-white/60',
@@ -701,7 +702,7 @@ function DialogoCopiar({
                     const lleno = tiene(e);
                     return (
                         <li key={e.matricula_id}>
-                            <label className="flex cursor-pointer items-center gap-3 rounded-[12px] px-3 py-2 transition hover:bg-[#F5F8FF]">
+                            <label className="relative flex cursor-pointer items-center gap-3 rounded-[12px] px-3 py-2 transition hover:bg-[#F5F8FF]">
                                 <input
                                     type="checkbox"
                                     checked={marcado}
