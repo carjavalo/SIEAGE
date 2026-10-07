@@ -38,7 +38,7 @@ class UsuarioController extends Controller
         $enLinea = Presencia::enLinea()->flip();
 
         return Inertia::render('usuarios/index', [
-            'usuarios' => User::with('rol:id,nombre')
+            'usuarios' => User::with('rol:id,nombre,etiqueta')
                 ->orderByDesc('activo')
                 ->orderBy('name')
                 ->get(['id', 'name', 'usuario', 'email', 'rol_id', 'activo', 'todas_las_sedes', 'ultimo_acceso', 'ultima_actividad', 'created_at'])

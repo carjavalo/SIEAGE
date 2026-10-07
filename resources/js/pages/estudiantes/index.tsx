@@ -23,6 +23,7 @@ import {
     cumpleTexto,
     palabras,
 } from '@/lib/estudiantes';
+import { puede } from '@/lib/permisos';
 import { type SharedData } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
 import { FileText, NotebookPen } from 'lucide-react';
@@ -213,16 +214,18 @@ export default function Estudiantes({
                         !navegando && (
                             <>
                                 {/* Informe del año y la sede que se están viendo (vista previa para guardar en PDF); allí se elige el grado. */}
-                                <Link
-                                    href={`/informes/matricula?anio=${anio}${sede ? `&sede=${encodeURIComponent(sede)}` : ''}`}
-                                    className="flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none"
-                                >
-                                    <FileText className="size-4" />
-                                    Informe
-                                </Link>
-                                <BotonConstancias anio={anio} grado={grado} grupo={grupo} sede={sede} sedes={sedes} />
+                                {puede(auth, 'informes') && (
+                                    <Link
+                                        href={`/informes/matricula?anio=${anio}${sede ? `&sede=${encodeURIComponent(sede)}` : ''}`}
+                                        className="flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none"
+                                    >
+                                        <FileText className="size-4" />
+                                        Informe
+                                    </Link>
+                                )}
+                                {puede(auth, 'constancias') && <BotonConstancias anio={anio} grado={grado} grupo={grupo} sede={sede} sedes={sedes} />}
                                 {/* Transición tiene boletín de texto: escribirlo e imprimirlo (también los docentes). */}
-                                {grado.numero === 0 && anio === anioEnCurso && (
+                                {grado.numero === 0 && anio === anioEnCurso && puede(auth, 'escribir-boletines') && (
                                     <Link
                                         href={`/boletines${grupo ? `?grupo=${grupo.id}` : ''}`}
                                         className="flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none"

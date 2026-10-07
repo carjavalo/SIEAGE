@@ -8,7 +8,7 @@ import { Lock } from 'lucide-react';
 import { type FormEventHandler } from 'react';
 import { sileo } from 'sileo';
 
-type Props = { rol: string | null };
+type Props = { rol: { nombre: string; etiqueta: string | null } | null };
 
 /** Mi perfil: nombre y correo. El usuario con que se ingresa solo lo cambia un administrador. */
 export default function Perfil({ rol }: Props) {

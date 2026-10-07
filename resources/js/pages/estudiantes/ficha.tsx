@@ -2,6 +2,7 @@ import { AgregarAcudiente, EditarAcudiente, EditarEstudiante } from '@/component
 import { Condicion, Estado, Sede, iniciales } from '@/components/estudiantes/etiquetas';
 import PanelLayout from '@/layouts/panel-layout';
 import { type FichaDetalle, parentescoDe, telefono } from '@/lib/estudiantes';
+import { puede } from '@/lib/permisos';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
@@ -73,7 +74,8 @@ function Dato({ etiqueta, children }: { etiqueta: string; children: ReactNode })
 const sisben = (nivel: string) => (nivel === 'ninguno' ? 'No tiene' : `Nivel ${nivel}`);
 
 export default function Ficha({ estudiante, actual, historia, acudientes, boletines, boletin, parentescos, institucion }: Props) {
-    const editable = usePage<SharedData>().props.auth.puedeEditarDatos;
+    const { auth } = usePage<SharedData>().props;
+    const editable = auth.puedeEditarDatos;
     const anios = edad(estudiante.fecha_nacimiento);
     const telefonos = [estudiante.telefono_1, estudiante.telefono_2].filter((t, i, todos): t is string => !!t && todos.indexOf(t) === i);
     const cronologia = [...historia].reverse();
@@ -122,7 +124,7 @@ export default function Ficha({ estudiante, actual, historia, acudientes, boleti
                             Boletín
                         </Link>
                     )}
-                    {actual && (
+                    {actual && puede(auth, 'constancias') && (
                         <Link
                             href={`/estudiantes/${estudiante.id}/constancia?anio=${actual.anio}`}
                             className="flex h-10 items-center gap-2 rounded-xl bg-[#1E3A7B] px-4 text-sm font-semibold text-white transition hover:bg-[#172E63]"

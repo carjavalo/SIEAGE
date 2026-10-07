@@ -3,18 +3,20 @@ import { Lavado } from '@/components/lavado';
 import { MenuUsuario } from '@/components/menu-usuario';
 import { SaltarAlContenido } from '@/components/saltar-al-contenido';
 import { usePulso } from '@/hooks/use-pulso';
+import { type Permiso, puede } from '@/lib/permisos';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { Building2, ClipboardList, GraduationCap, UploadCloud, UserCog } from 'lucide-react';
 import { type ReactNode, useEffect, useLayoutEffect, useState } from 'react';
 
-const enlaces = [
-    { titulo: 'Estudiantes', href: '/estudiantes', icono: GraduationCap },
-    { titulo: 'Inscritos', href: '/inscritos', icono: ClipboardList },
-    { titulo: 'Importar datos', href: '/dashboard', icono: UploadCloud },
-    { titulo: 'Sedes', href: '/sedes', icono: Building2 },
-    { titulo: 'Usuarios', href: '/usuarios', icono: UserCog, soloAdministrador: true },
+/** El menú: cada entrada se ve solo con su permiso (Usuarios → Roles y permisos). */
+const enlaces: { titulo: string; href: string; icono: typeof GraduationCap; permiso: Permiso }[] = [
+    { titulo: 'Estudiantes', href: '/estudiantes', icono: GraduationCap, permiso: 'ver-estudiantes' },
+    { titulo: 'Inscritos', href: '/inscritos', icono: ClipboardList, permiso: 'ver-inscritos' },
+    { titulo: 'Importar datos', href: '/dashboard', icono: UploadCloud, permiso: 'importar-datos' },
+    { titulo: 'Sedes', href: '/sedes', icono: Building2, permiso: 'ver-sedes' },
+    { titulo: 'Usuarios', href: '/usuarios', icono: UserCog, permiso: 'gestionar-usuarios' },
 ];
 
 /** La página que se mostró antes: para saber si se llega de otra (fundido) o es la misma con otros datos. */
@@ -44,7 +46,14 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
 
     const { auth } = pagina.props;
     const pendientes = pagina.props.inscritosPendientes;
-    const esAdministrador = auth.puedeGestionarUsuarios;
+    // «Usuarios» también lo ve quien solo maneja roles: entra directo a Roles y permisos.
+    const menu = enlaces
+        .map((e) =>
+            e.href === '/usuarios' && !puede(auth, e.permiso) && puede(auth, 'gestionar-roles')
+                ? { ...e, href: '/usuarios/roles', permiso: 'gestionar-roles' as const }
+                : e,
+        )
+        .filter((e) => puede(auth, e.permiso));
 
     return (
         <>
@@ -55,7 +64,7 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
                 <header className="sticky top-0 z-30 border-b border-[#E3E9F6] bg-white/90 backdrop-blur print:hidden">
                     {/* El mismo ancho que <main> en todas las páginas: el logo y el menú nunca se corren al cambiar de página. */}
                     <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-3 px-4 md:gap-6 md:px-8 2xl:max-w-[1760px]">
-                        <Link href="/estudiantes" className="flex shrink-0 items-center gap-3">
+                        <Link href="/" className="flex shrink-0 items-center gap-3">
                             <img src="/sieage-logo.webp" alt="SIEAGE" className="h-10 w-auto rounded-md object-contain" />
                             <div className="hidden leading-tight sm:block">
                                 <p className="text-[15px] font-semibold tracking-tight">SIEAGE</p>
@@ -64,37 +73,35 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
                         </Link>
 
                         <nav aria-label="Principal" className="flex items-center gap-1 rounded-full bg-[#EEF2FB] p-1">
-                            {enlaces
-                                .filter((e) => !e.soloAdministrador || esAdministrador)
-                                .map(({ titulo: t, href, icono: Icono }) => {
-                                    const activo = pagina.url.startsWith(href);
-                                    return (
-                                        <Link
-                                            key={href}
-                                            href={href}
-                                            aria-current={activo ? 'page' : undefined}
-                                            className={cn(
-                                                'flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition md:px-3.5',
-                                                activo ? 'bg-white text-[#1E3A7B] shadow-sm' : 'text-[#56627F] hover:text-[#1E3A7B]',
-                                            )}
-                                        >
-                                            <Icono aria-hidden className="size-4" />
-                                            {/* En celular solo se ve el ícono, pero el lector de pantalla sigue leyendo el nombre. */}
-                                            <span className="sr-only md:not-sr-only">{t}</span>
-                                            {href === '/inscritos' && pendientes > 0 && (
-                                                <>
-                                                    <span
-                                                        aria-hidden
-                                                        className="min-w-5 rounded-full bg-[#1E3A7B] px-1.5 text-center text-[11px] leading-5 font-semibold text-white tabular-nums"
-                                                    >
-                                                        {pendientes}
-                                                    </span>
-                                                    <span className="sr-only">, {pendientes} pendientes</span>
-                                                </>
-                                            )}
-                                        </Link>
-                                    );
-                                })}
+                            {menu.map(({ titulo: t, href, icono: Icono }) => {
+                                const activo = pagina.url.startsWith(href.replace('/roles', ''));
+                                return (
+                                    <Link
+                                        key={href}
+                                        href={href}
+                                        aria-current={activo ? 'page' : undefined}
+                                        className={cn(
+                                            'flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition md:px-3.5',
+                                            activo ? 'bg-white text-[#1E3A7B] shadow-sm' : 'text-[#56627F] hover:text-[#1E3A7B]',
+                                        )}
+                                    >
+                                        <Icono aria-hidden className="size-4" />
+                                        {/* En celular solo se ve el ícono, pero el lector de pantalla sigue leyendo el nombre. */}
+                                        <span className="sr-only md:not-sr-only">{t}</span>
+                                        {href === '/inscritos' && pendientes > 0 && (
+                                            <>
+                                                <span
+                                                    aria-hidden
+                                                    className="min-w-5 rounded-full bg-[#1E3A7B] px-1.5 text-center text-[11px] leading-5 font-semibold text-white tabular-nums"
+                                                >
+                                                    {pendientes}
+                                                </span>
+                                                <span className="sr-only">, {pendientes} pendientes</span>
+                                            </>
+                                        )}
+                                    </Link>
+                                );
+                            })}
                         </nav>
 
                         <div className="ml-auto flex items-center gap-2">

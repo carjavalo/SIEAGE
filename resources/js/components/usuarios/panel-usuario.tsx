@@ -22,7 +22,7 @@ export type Usuario = {
     usuario: string;
     email: string | null;
     rol_id: number | null;
-    rol: { id: number; nombre: string } | null;
+    rol: { id: number; nombre: string; etiqueta: string | null } | null;
     activo: boolean;
     /** Ve todas las sedes (incluidas las que se creen). Los administradores siempre. */
     todas_las_sedes: boolean;
@@ -159,8 +159,8 @@ function FormularioUsuario({
                     marcas={
                         <>
                             <span className="inline-flex items-center gap-1.5 font-medium text-[#1E3A7B]">
-                                <span aria-hidden className={cn('size-2 rounded-full', puntoRol(usuario.rol?.nombre))} />
-                                {nombreRol(usuario.rol?.nombre)}
+                                <span aria-hidden className={cn('size-2 rounded-full', puntoRol(usuario.rol))} />
+                                {nombreRol(usuario.rol)}
                             </span>
                             <MarcaActivo activo={usuario.activo} />
                             {usuario.en_linea ? (
@@ -257,8 +257,8 @@ function FormularioUsuario({
                                         </span>
                                         <span className="min-w-0">
                                             <span className="flex items-center gap-2 text-[15px] font-medium text-[#16223F]">
-                                                <span aria-hidden className={cn('size-2 rounded-full', puntoRol(r.nombre))} />
-                                                {nombreRol(r.nombre)}
+                                                <span aria-hidden className={cn('size-2 rounded-full', puntoRol(r))} />
+                                                {nombreRol(r)}
                                             </span>
                                             {r.descripcion && (
                                                 <span className="mt-0.5 block text-[13px] leading-snug text-[#56627F]">{r.descripcion}</span>

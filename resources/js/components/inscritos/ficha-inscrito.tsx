@@ -15,7 +15,9 @@ import {
     padresListos,
     parentescoAcudiente,
 } from '@/lib/inscritos';
-import { Link } from '@inertiajs/react';
+import { puede } from '@/lib/permisos';
+import { type SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/react';
 import { Check, FileCheck2, GraduationCap, MapPin, UserPen } from 'lucide-react';
 import { type ReactNode, type RefObject } from 'react';
 
@@ -46,6 +48,7 @@ const ROLES: { clave: Rol; titulo: string; fallecido: string }[] = [
 
 function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel'> & { ficha: Ficha }) {
     const { solicitud: s, padres, documentos, matricula } = ficha;
+    const { auth } = usePage<SharedData>().props;
     const anios = edad(s.fecha_nacimiento);
     const documento = s.tipo_documento === 'Otro' ? s.tipo_documento_otro : s.tipo_documento;
 
@@ -71,13 +74,18 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
             }
             accion={
                 // Cada etapa lleva a su paso: madre y padre → documentos → grupo → el estudiante ya matriculado.
+                // Sin permiso para matricular, solo a ver la inscripción.
                 matricula
-                    ? { href: enlaceEstudiante(matricula), texto: 'Verlo en Estudiantes', icono: GraduationCap }
-                    : !padresListos(padres) || s.estado !== 'pendiente'
-                      ? { href: `/inscritos/${s.id}`, texto: 'Completar madre y padre', icono: UserPen }
-                      : documentos.listos === 0
-                        ? { href: `/inscritos/${s.id}/documentos`, texto: 'Recibir documentos', icono: FileCheck2 }
-                        : { href: `/inscritos/${s.id}/grupo`, texto: 'Elegir grupo y matricular', icono: GraduationCap }
+                    ? puede(auth, 'ver-estudiantes')
+                        ? { href: enlaceEstudiante(matricula), texto: 'Verlo en Estudiantes', icono: GraduationCap }
+                        : { href: `/inscritos/${s.id}`, texto: 'Ver la inscripción', icono: UserPen }
+                    : !puede(auth, 'matricular')
+                      ? { href: `/inscritos/${s.id}`, texto: 'Ver la inscripción', icono: UserPen }
+                      : !padresListos(padres) || s.estado !== 'pendiente'
+                        ? { href: `/inscritos/${s.id}`, texto: 'Completar madre y padre', icono: UserPen }
+                        : documentos.listos === 0
+                          ? { href: `/inscritos/${s.id}/documentos`, texto: 'Recibir documentos', icono: FileCheck2 }
+                          : { href: `/inscritos/${s.id}/grupo`, texto: 'Elegir grupo y matricular', icono: GraduationCap }
             }
         >
             <BloquesSolicitud solicitud={s} padres={padres} documentos={documentos} />
@@ -95,6 +103,7 @@ export function BloquesSolicitud({
     padres?: Ficha['padres'];
     documentos?: Ficha['documentos'];
 }) {
+    const marca = puede(usePage<SharedData>().props.auth, 'matricular');
     return (
         <div>
             <Bloque titulo="Acudiente">
@@ -142,12 +151,14 @@ export function BloquesSolicitud({
                                     </li>
                                 ))}
                             </ul>
-                            <Link
-                                href={`/inscritos/${s.id}/documentos`}
-                                className="mt-2 inline-block text-[14px] font-semibold text-[#1E3A7B] underline-offset-4 hover:underline"
-                            >
-                                Marcar documentos
-                            </Link>
+                            {marca && (
+                                <Link
+                                    href={`/inscritos/${s.id}/documentos`}
+                                    className="mt-2 inline-block text-[14px] font-semibold text-[#1E3A7B] underline-offset-4 hover:underline"
+                                >
+                                    Marcar documentos
+                                </Link>
+                            )}
                         </>
                     )}
                 </Bloque>

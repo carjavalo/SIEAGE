@@ -9,8 +9,8 @@ import { LoaderCircle, SlidersHorizontal } from 'lucide-react';
 import { useState } from 'react';
 import { sileo } from 'sileo';
 
-/** Mismo permiso que deshabilitar: administración, coordinación y secretaría. */
-export const puedeEditarCupos = (auth: SharedData['auth']) => !!(auth as { puedeDeshabilitar?: boolean }).puedeDeshabilitar;
+/** Permiso «Cambiar cupos» (Usuarios → Roles y permisos). */
+export const puedeEditarCupos = (auth: SharedData['auth']) => !!auth.puedeEditarCupos;
 
 const campo =
     'h-10 w-20 rounded-[10px] border-[1.5px] border-[#D3DDF3] bg-white px-3 text-center text-[15px] font-semibold text-[#16223F] tabular-nums outline-none transition focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] aria-invalid:border-[#E0897D]';

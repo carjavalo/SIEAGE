@@ -396,7 +396,7 @@ class BoletinesTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('name', 'Ana Lucía Pérez Gómez')
             ->assertJsonPath('usuario', 'aperez')
-            ->assertJsonPath('rol', 'docente');
+            ->assertJsonPath('rol', 'Docente');
         $nueva = User::find($r->json('id'));
         $this->assertTrue($nueva->activo);
         $this->assertSame('docente', $nueva->rol->nombre);
@@ -411,7 +411,7 @@ class BoletinesTest extends TestCase
             ->etc());
 
         // Coordinación, con un usuario que no se repite.
-        $crear('Andrés Pérez Lara', 'coordinador')->assertCreated()->assertJsonPath('usuario', 'aperez2')->assertJsonPath('rol', 'coordinacion');
+        $crear('Andrés Pérez Lara', 'coordinador')->assertCreated()->assertJsonPath('usuario', 'aperez2')->assertJsonPath('rol', 'Coordinación');
 
         // El mismo nombre otra vez, un solo nombre o con números: no.
         $crear('ana lucía pérez gómez')->assertJsonValidationErrors(['nombre' => 'aperez']);
