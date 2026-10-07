@@ -55,9 +55,11 @@ Route::middleware(['auth'])->group(function () {
     // Boletines de transición: escribir el texto de cada estudiante (todos, también los docentes) e imprimirlos.
     Route::get('boletines', [BoletinController::class, 'index'])->name('boletines.index');
     Route::get('boletines/imprimir', [BoletinController::class, 'imprimir'])->name('boletines.imprimir');
+    Route::post('boletines/copiar', [BoletinController::class, 'copiar'])->name('boletines.copiar');
     Route::put('boletines/{matricula}/{periodo}', [BoletinController::class, 'guardar'])->whereNumber(['matricula', 'periodo'])->name('boletines.guardar');
-    // Quién firma y la jornada del grupo: todos menos los docentes.
+    // Quién firma y la jornada del grupo: todos menos los docentes; crear a alguien nuevo que firme, solo administradores.
     Route::put('boletines/grupos/{grupo}', [BoletinController::class, 'configurar'])->whereNumber('grupo')->middleware('can:gestionar-sedes')->name('boletines.grupo');
+    Route::post('boletines/grupos/{grupo}/firmantes', [BoletinController::class, 'crearFirmante'])->whereNumber('grupo')->middleware('can:gestionar-usuarios')->name('boletines.firmantes');
 
     // Informe de matrícula del año (vista previa para guardar como PDF).
     Route::get('informes/matricula', [InformeController::class, 'matricula'])->name('informes.matricula');

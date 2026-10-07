@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Rol;
 use App\Models\User;
 use App\Support\Alcance;
 use App\Support\Boletines;
@@ -11,7 +12,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -59,6 +62,8 @@ class BoletinController extends Controller
             'ver' => $ver,
             'maximo' => self::MAXIMO,
             'puedeConfigurar' => $configura,
+            // Crear ahí mismo a quien firma (es crear un usuario): solo administradores.
+            'puedeCrearFirmantes' => $configura && $user->can('gestionar-usuarios'),
             // Para elegir quién firma: quienes trabajan en la sede del grupo (los docentes primero).
             'usuarios' => $configura
                 ? $this->firmantes($grupo->sede_id)
@@ -92,15 +97,8 @@ class BoletinController extends Controller
             return DB::transaction(function () use ($m, $periodo, $texto, $compara, $datos, $user, $ahora) {
                 $actual = DB::table('boletines')->where('matricula_id', $m->id)->where('periodo_id', $periodo)->lockForUpdate()->first();
 
-                if ($compara && (string) ($datos['version'] ?? '') !== ($actual ? (string) $actual->revision : '')) {
-                    return response()->json([
-                        'conflicto' => [
-                            'texto' => $actual?->texto ?? '',
-                            'version' => $actual ? (string) $actual->revision : null,
-                            'por' => $actual ? DB::table('users')->where('id', $actual->actualizado_por)->value('name') : null,
-                            'en' => $actual?->updated_at,
-                        ],
-                    ], 409);
+                if ($compara && ! self::vigente($actual, $datos['version'] ?? null)) {
+                    return response()->json(['conflicto' => self::comoEsta($actual)], 409);
                 }
 
                 if ($texto === '') {
@@ -108,18 +106,8 @@ class BoletinController extends Controller
 
                     return response()->json(['version' => null, 'actualizado_en' => null, 'por' => null]);
                 }
-                if ($actual) {
-                    $revision = (int) $actual->revision + 1;
-                    DB::table('boletines')->where('id', $actual->id)->update(['texto' => $texto, 'revision' => $revision, 'actualizado_por' => $user->id, 'updated_at' => $ahora]);
-                } else {
-                    $revision = 1;
-                    DB::table('boletines')->insert([
-                        'matricula_id' => $m->id, 'periodo_id' => $periodo, 'texto' => $texto, 'revision' => $revision,
-                        'creado_por' => $user->id, 'actualizado_por' => $user->id, 'created_at' => $ahora, 'updated_at' => $ahora,
-                    ]);
-                }
 
-                return response()->json(['version' => (string) $revision, 'actualizado_en' => $ahora->toDateTimeString(), 'por' => $user->name]);
+                return response()->json(self::escribir($actual, $m->id, $periodo, $texto, $user, $ahora));
             });
         } catch (UniqueConstraintViolationException $e) {
             // Otro guardado lo creó entre la lectura y el insert: otra vuelta, ya con la fila (y su versión).
@@ -129,35 +117,135 @@ class BoletinController extends Controller
         }
     }
 
+    /**
+     * «Copiar a otros»: el mismo texto en varios estudiantes a la vez. Como al
+     * guardar, no pisa a quien alguien cambió después de abrir la página: esos
+     * vuelven en «omitidos» con lo que tienen guardado.
+     */
+    public function copiar(Request $request): JsonResponse
+    {
+        $datos = $request->validate([
+            'periodo' => ['required', 'integer'],
+            'texto' => ['required', 'string', 'max:'.self::MAXIMO],
+            'para' => ['required', 'array', 'min:1', 'max:200'],
+            'para.*.matricula' => ['required', 'integer', 'distinct'],
+            'para.*.version' => ['present', 'nullable', 'string'],
+        ], ['max' => 'Es demasiado largo: máximo :max caracteres.', 'texto.required' => 'No hay nada que copiar.']);
+        $texto = self::limpiar($datos['texto']);
+        if ($texto === '') {
+            throw ValidationException::withMessages(['texto' => 'No hay nada que copiar.']);
+        }
+
+        // Primero que pueda escribir en todos; después se escribe.
+        $user = $request->user();
+        $anios = collect($datos['para'])->map(fn ($p) => $this->matricula($user, (int) $p['matricula'])->anio_lectivo_id)->unique();
+        $anioPeriodo = DB::table('periodos')->where('id', $datos['periodo'])->value('anio_lectivo_id');
+        abort_unless($anioPeriodo && $anios->count() === 1 && (int) $anios->first() === (int) $anioPeriodo, 404);
+
+        $periodo = (int) $datos['periodo'];
+        $ahora = now();
+        $copiados = [];
+        $omitidos = [];
+        foreach ($datos['para'] as $p) {
+            $m = (int) $p['matricula'];
+            $fila = fn () => DB::table('boletines')->where('matricula_id', $m)->where('periodo_id', $periodo);
+            try {
+                DB::transaction(function () use ($fila, $p, $m, $periodo, $texto, $user, $ahora, &$copiados, &$omitidos) {
+                    $actual = $fila()->lockForUpdate()->first();
+                    if (self::vigente($actual, $p['version'] ?? null)) {
+                        $copiados[$m] = self::escribir($actual, $m, $periodo, $texto, $user, $ahora);
+                    } else {
+                        $omitidos[$m] = self::comoEsta($actual);
+                    }
+                });
+            } catch (UniqueConstraintViolationException) {
+                // Alguien lo escribió en ese mismo instante: se deja lo suyo.
+                $omitidos[$m] = self::comoEsta($fila()->first());
+            }
+        }
+
+        return response()->json(['copiados' => (object) $copiados, 'omitidos' => (object) $omitidos]);
+    }
+
     /** Quién firma (director(a) del grupo y coordinador(a) de la sede) y cómo se escribe la jornada. Solo el año en curso. */
     public function configurar(Request $request, int $grupo): RedirectResponse
     {
-        $g = DB::table('grupos as g')
-            ->join('grados as gr', 'gr.id', '=', 'g.grado_id')
-            ->join('anios_lectivos as al', 'al.id', '=', 'g.anio_lectivo_id')
-            ->where('g.id', $grupo)->where('gr.numero', Boletines::GRADO)->where('al.estado', 'activo')
-            ->first(['g.id', 'g.sede_id']);
-        abort_unless($g, 404);
-        Alcance::exigirSede($request->user(), $g->sede_id);
+        $g = $this->grupo($request->user(), $grupo);
 
         // Solo alguien activo que trabaje en esa sede (o en todas).
         $firmante = Rule::exists('users', 'id')->where(fn ($q) => $this->deLaSede($q, $g->sede_id, 'users'));
         $datos = $request->validate([
-            'director_id' => ['nullable', 'integer', $firmante],
-            'coordinador_id' => ['nullable', 'integer', $firmante],
+            // Si no llega, se deja como está (p. ej. un director(a) que ya estaba y no tiene usuario).
+            'director_id' => ['sometimes', 'nullable', 'integer', $firmante],
+            'coordinador_id' => ['sometimes', 'nullable', 'integer', $firmante],
             'jornada_boletin' => ['nullable', 'string', 'max:60'],
         ], ['exists' => 'Elige a alguien de la lista.', 'max' => 'Es demasiado largo: máximo :max caracteres.']);
 
         DB::transaction(function () use ($g, $datos) {
+            $director = array_key_exists('director_id', $datos) ? ['director_id' => $datos['director_id'] ? $this->docenteDe((int) $datos['director_id']) : null] : [];
             DB::table('grupos')->where('id', $g->id)->update([
-                'director_id' => ($datos['director_id'] ?? null) ? $this->docenteDe((int) $datos['director_id']) : null,
+                ...$director,
                 'jornada_boletin' => trim((string) ($datos['jornada_boletin'] ?? '')) ?: null,
                 'updated_at' => now(),
             ]);
-            DB::table('sedes')->where('id', $g->sede_id)->update(['coordinador_id' => ($datos['coordinador_id'] ?? null) ?: null, 'updated_at' => now()]);
+            if (array_key_exists('coordinador_id', $datos)) {
+                DB::table('sedes')->where('id', $g->sede_id)->update(['coordinador_id' => $datos['coordinador_id'] ?: null, 'updated_at' => now()]);
+            }
         });
 
         return back()->with('success', 'Firmas y jornada guardadas.');
+    }
+
+    /**
+     * Crea a quien firma desde «Firmas y jornada», con el nombre tal como sale en el
+     * boletín: queda activo en la sede del grupo (docente si dirige el grupo,
+     * coordinación si coordina), con un usuario sacado del nombre y una clave
+     * aleatoria que nadie conoce; si va a entrar, el administrador se la pone en Usuarios.
+     */
+    public function crearFirmante(Request $request, int $grupo): JsonResponse
+    {
+        $g = $this->grupo($request->user(), $grupo);
+        if (is_string($n = $request->input('nombre'))) {
+            $request->merge(['nombre' => preg_replace('/\s+/u', ' ', trim($n))]);
+        }
+        $datos = $request->validate([
+            // Nombres y apellidos: al menos dos palabras, solo letras.
+            'nombre' => ['required', 'string', 'max:120', "regex:/^[\pL.'-]+( [\pL.'-]+)+$/u"],
+            'para' => ['required', Rule::in(['director', 'coordinador'])],
+        ], [
+            'required' => 'Escribe el nombre completo.',
+            'max' => 'Es demasiado largo: máximo :max caracteres.',
+            'regex' => 'Escribe nombres y apellidos, solo con letras.',
+        ]);
+
+        $igual = User::whereRaw('LOWER(name) = ?', [mb_strtolower($datos['nombre'])])->value('usuario');
+        if ($igual) {
+            throw ValidationException::withMessages(['nombre' => "Ya existe: es el usuario «{$igual}». Si no sale en la lista, revisa en Usuarios que esté activo y en esta sede."]);
+        }
+
+        $rol = $datos['para'] === 'director' ? 'docente' : 'coordinacion';
+        $nuevo = DB::transaction(function () use ($datos, $rol, $g) {
+            $u = User::create([
+                'name' => $datos['nombre'],
+                'usuario' => self::usuarioPara($datos['nombre']),
+                'password' => Str::random(48),
+                'rol_id' => Rol::where('nombre', $rol)->value('id'),
+                'activo' => true,
+            ]);
+            DB::table('sede_user')->insert(['user_id' => $u->id, 'sede_id' => $g->sede_id, 'created_at' => now()]);
+            // Si es el director(a) que el grupo ya tenía sin usuario, ese docente queda con este usuario (no se repite).
+            if ($datos['para'] === 'director') {
+                DB::table('docentes')
+                    ->where('id', DB::table('grupos')->where('id', $g->id)->value('director_id'))
+                    ->whereNull('user_id')
+                    ->whereRaw('LOWER(nombre_completo) = ?', [mb_strtolower($datos['nombre'])])
+                    ->update(['user_id' => $u->id, 'updated_at' => now()]);
+            }
+
+            return $u;
+        });
+
+        return response()->json(['id' => $nuevo->id, 'name' => $nuevo->name, 'usuario' => $nuevo->usuario, 'rol' => $rol], 201);
     }
 
     /**
@@ -190,6 +278,20 @@ class BoletinController extends Controller
             'estudiantes' => $conTexto,
             'sinTexto' => $uno ? 0 : $estudiantes->count() - $conTexto->count(),
         ]);
+    }
+
+    /** El grupo de transición del año en curso, si el usuario ve su sede. */
+    private function grupo(?User $user, int $id): object
+    {
+        $g = DB::table('grupos as g')
+            ->join('grados as gr', 'gr.id', '=', 'g.grado_id')
+            ->join('anios_lectivos as al', 'al.id', '=', 'g.anio_lectivo_id')
+            ->where('g.id', $id)->where('gr.numero', Boletines::GRADO)->where('al.estado', 'activo')
+            ->first(['g.id', 'g.sede_id']);
+        abort_unless($g, 404);
+        Alcance::exigirSede($user, $g->sede_id);
+
+        return $g;
     }
 
     /** La matrícula de transición del año en curso, si el usuario ve su sede. */
@@ -236,6 +338,60 @@ class BoletinController extends Controller
         }
 
         return (int) DB::table('docentes')->insertGetId(['user_id' => $userId, 'nombre_completo' => $nombre, 'activo' => true, 'created_at' => now(), 'updated_at' => now()]);
+    }
+
+    /** Si la versión con la que llega es la última guardada (null: estaba vacío). */
+    private static function vigente(?object $actual, ?string $version): bool
+    {
+        return (string) $version === ($actual ? (string) $actual->revision : '');
+    }
+
+    /** Lo que hay guardado, para quien llegó con una versión vieja. */
+    private static function comoEsta(?object $actual): array
+    {
+        return [
+            'texto' => $actual?->texto ?? '',
+            'version' => $actual ? (string) $actual->revision : null,
+            'por' => $actual ? DB::table('users')->where('id', $actual->actualizado_por)->value('name') : null,
+            'en' => $actual?->updated_at,
+        ];
+    }
+
+    /** Escribe el texto (crea la fila o sube su versión) y devuelve la versión nueva. */
+    private static function escribir(?object $actual, int $matricula, int $periodo, string $texto, User $user, \DateTimeInterface $ahora): array
+    {
+        if ($actual) {
+            $revision = (int) $actual->revision + 1;
+            DB::table('boletines')->where('id', $actual->id)->update(['texto' => $texto, 'revision' => $revision, 'actualizado_por' => $user->id, 'updated_at' => $ahora]);
+        } else {
+            $revision = 1;
+            DB::table('boletines')->insert([
+                'matricula_id' => $matricula, 'periodo_id' => $periodo, 'texto' => $texto, 'revision' => $revision,
+                'creado_por' => $user->id, 'actualizado_por' => $user->id, 'created_at' => $ahora, 'updated_at' => $ahora,
+            ]);
+        }
+
+        return ['version' => (string) $revision, 'actualizado_en' => $ahora->format('Y-m-d H:i:s'), 'por' => $user->name];
+    }
+
+    /**
+     * Un usuario para entrar sacado del nombre: inicial del primer nombre y primer
+     * apellido («Ana Lucía Pérez Gómez» → «aperez», «Juan Ríos Mejía» → «jrios»),
+     * con un número si ya está tomado.
+     */
+    public static function usuarioPara(string $nombre): string
+    {
+        $partes = array_values(array_filter(array_map(fn ($p) => preg_replace('/[^a-z0-9]/', '', $p), explode(' ', Str::lower(Str::ascii($nombre))))));
+        // Con cuatro palabras o más, el primer apellido es la penúltima; con dos o tres, la segunda.
+        $apellido = count($partes) >= 4 ? $partes[count($partes) - 2] : ($partes[1] ?? '');
+        $base = str_pad(substr(substr($partes[0] ?? '', 0, 1).$apellido, 0, 40), 3, 'x');
+
+        $usuario = $base;
+        for ($i = 2; User::where('usuario', $usuario)->exists(); $i++) {
+            $usuario = $base.$i;
+        }
+
+        return $usuario;
     }
 
     /**

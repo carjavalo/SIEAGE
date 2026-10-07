@@ -231,9 +231,9 @@ class BoletinesTest extends TestCase
     public function test_firmas_y_jornada_las_fija_coordinacion_y_no_el_docente()
     {
         $directora = $this->usuario('docente', [$this->sedeA]);
-        $directora->update(['name' => 'Maria Eunices Prueba Ortiz']);
+        $directora->update(['name' => 'Ana Lucía Prueba Gómez']);
         $coordinadora = $this->usuario('coordinacion', [$this->sedeA]);
-        $coordinadora->update(['name' => 'Betty Prueba Chavez']);
+        $coordinadora->update(['name' => 'Carmen Prueba Ruiz']);
         $grupo = $this->grupos['0-1'];
         $datos = ['director_id' => $directora->id, 'coordinador_id' => $coordinadora->id, 'jornada_boletin' => 'Unica de 6:45AM a 12:00PM'];
 
@@ -245,8 +245,8 @@ class BoletinesTest extends TestCase
         $this->assertSame($coordinadora->id, (int) DB::table('sedes')->where('id', $this->sedeA)->value('coordinador_id'));
 
         $g = Boletines::datosGrupo($grupo);
-        $this->assertSame('MARIA EUNICES PRUEBA ORTIZ', $g->director);
-        $this->assertSame('BETTY PRUEBA CHAVEZ', $g->coordinador);
+        $this->assertSame('ANA LUCÍA PRUEBA GÓMEZ', $g->director);
+        $this->assertSame('CARMEN PRUEBA RUIZ', $g->coordinador);
         $this->assertSame('UNICA DE 6:45AM A 12:00PM', $g->jornada);
 
         // Otra vez el mismo director: no se duplica el docente.
@@ -327,6 +327,139 @@ class BoletinesTest extends TestCase
 
         $this->actingAs($admin)->get("/estudiantes/{$transicion}")->assertInertia(fn (Assert $page) => $page->where('boletin', true)->etc());
         $this->actingAs($admin)->get("/estudiantes/{$primero}")->assertInertia(fn (Assert $page) => $page->where('boletin', false)->etc());
+    }
+
+    public function test_copiar_el_mismo_texto_a_varios()
+    {
+        $docente = $this->usuario('docente', [$this->sedeA]);
+        $ana = $this->mat['Prueba Uno Ana María'];
+        $luis = $this->mat['Ejemplo Dos Luis'];
+        // Luis ya tenía texto (versión 1); Ana no.
+        $this->actingAs($docente)->putJson("/boletines/{$luis}/{$this->periodo1}", ['texto' => 'Lo de Luis.'])->assertOk();
+
+        $this->actingAs($docente)->postJson('/boletines/copiar', [
+            'periodo' => $this->periodo1,
+            'texto' => "Se destaca   en el juego.\n\n\nComparte con todos.",
+            'para' => [['matricula' => $ana, 'version' => null], ['matricula' => $luis, 'version' => '1']],
+        ])->assertOk()
+            ->assertJsonPath("copiados.{$ana}.version", '1')
+            ->assertJsonPath("copiados.{$luis}.version", '2')
+            ->assertJsonPath("copiados.{$luis}.por", $docente->name)
+            ->assertJsonPath('omitidos', []);
+        $this->assertSame(
+            ["Se destaca en el juego.\nComparte con todos.", "Se destaca en el juego.\nComparte con todos."],
+            DB::table('boletines')->where('periodo_id', $this->periodo1)->orderBy('matricula_id')->pluck('texto')->all(),
+        );
+
+        // Con una versión vieja (alguien lo cambió después de abrir la página): no lo pisa y devuelve lo que tiene.
+        $this->actingAs($docente)->putJson("/boletines/{$luis}/{$this->periodo1}", ['texto' => 'Luis, a mano.', 'version' => '2'])->assertOk();
+        $this->actingAs($docente)->postJson('/boletines/copiar', [
+            'periodo' => $this->periodo1,
+            'texto' => 'Otro texto.',
+            'para' => [['matricula' => $ana, 'version' => '1'], ['matricula' => $luis, 'version' => '2']],
+        ])->assertOk()
+            ->assertJsonPath("copiados.{$ana}.version", '2')
+            ->assertJsonPath("omitidos.{$luis}.texto", 'Luis, a mano.')
+            ->assertJsonPath("omitidos.{$luis}.version", '3');
+        $this->assertSame('Luis, a mano.', DB::table('boletines')->where('matricula_id', $luis)->value('texto'));
+        $this->assertSame('Otro texto.', DB::table('boletines')->where('matricula_id', $ana)->value('texto'));
+    }
+
+    public function test_copiar_revisa_todos_antes_de_escribir()
+    {
+        $docente = $this->usuario('docente', [$this->sedeA]);
+        $ana = $this->mat['Prueba Uno Ana María'];
+        $copiar = fn (array $para, array $mas = []) => $this->actingAs($docente)->postJson('/boletines/copiar', [
+            'periodo' => $this->periodo1, 'texto' => 'Igual para todos.', 'para' => array_map(fn ($m) => ['matricula' => $m, 'version' => null], $para), ...$mas,
+        ]);
+
+        // Uno de otra sede o de primero en la lista: no se escribe en ninguno.
+        $copiar([$ana, $this->mat['Otra Sede Cuatro']])->assertNotFound();
+        $copiar([$ana, $this->mat['Primero Cinco Juan']])->assertNotFound();
+        $this->assertSame(0, DB::table('boletines')->count());
+
+        // Un periodo de otro año, nadie a quién o un texto vacío: no.
+        $otro = DB::table('anios_lectivos')->insertGetId(['anio' => 2025, 'estado' => 'cerrado']);
+        $copiar([$ana], ['periodo' => DB::table('periodos')->insertGetId(['anio_lectivo_id' => $otro, 'numero' => 1])])->assertNotFound();
+        $copiar([])->assertJsonValidationErrors('para');
+        $copiar([$ana], ['texto' => " \n "])->assertJsonValidationErrors('texto');
+        $this->assertSame(0, DB::table('boletines')->count());
+    }
+
+    public function test_el_administrador_crea_a_quien_firma_desde_firmas()
+    {
+        $admin = $this->usuario('administrador');
+        $grupo = $this->grupos['0-1'];
+        $crear = fn (string $nombre, string $para = 'director') => $this->actingAs($admin)->postJson("/boletines/grupos/{$grupo}/firmantes", ['nombre' => $nombre, 'para' => $para]);
+
+        $r = $crear('  Ana Lucía   Pérez Gómez ')
+            ->assertCreated()
+            ->assertJsonPath('name', 'Ana Lucía Pérez Gómez')
+            ->assertJsonPath('usuario', 'aperez')
+            ->assertJsonPath('rol', 'docente');
+        $nueva = User::find($r->json('id'));
+        $this->assertTrue($nueva->activo);
+        $this->assertSame('docente', $nueva->rol->nombre);
+        $this->assertSame([$this->sedeA], DB::table('sede_user')->where('user_id', $nueva->id)->pluck('sede_id')->map(fn ($id) => (int) $id)->all());
+
+        // Se elige y sale en el boletín tal cual.
+        $this->actingAs($admin)->put("/boletines/grupos/{$grupo}", ['director_id' => $nueva->id])->assertSessionHasNoErrors();
+        $this->actingAs($admin)->get("/boletines?grupo={$grupo}")->assertInertia(fn (Assert $page) => $page
+            ->where('grupo.director', 'ANA LUCÍA PÉREZ GÓMEZ')
+            ->where('puedeCrearFirmantes', true)
+            ->where('usuarios', fn ($u) => collect($u)->pluck('id')->contains($nueva->id))
+            ->etc());
+
+        // Coordinación, con un usuario que no se repite.
+        $crear('Andrés Pérez Lara', 'coordinador')->assertCreated()->assertJsonPath('usuario', 'aperez2')->assertJsonPath('rol', 'coordinacion');
+
+        // El mismo nombre otra vez, un solo nombre o con números: no.
+        $crear('ana lucía pérez gómez')->assertJsonValidationErrors(['nombre' => 'aperez']);
+        $crear('Ana')->assertJsonValidationErrors('nombre');
+        $crear('Ana 123')->assertJsonValidationErrors('nombre');
+        $crear('Ana Pérez', 'rector')->assertJsonValidationErrors('para');
+        $this->assertSame(2, User::where('usuario', 'like', 'aperez%')->count());
+    }
+
+    public function test_el_director_sin_usuario_se_conserva_y_se_le_crea_el_usuario()
+    {
+        // Un docente que dirige el grupo pero no tiene usuario (así vienen de otros sistemas).
+        $admin = $this->usuario('administrador');
+        $grupo = $this->grupos['0-1'];
+        $docente = DB::table('docentes')->insertGetId(['nombre_completo' => 'Rosa Elena Prueba Díaz', 'activo' => true]);
+        DB::table('grupos')->where('id', $grupo)->update(['director_id' => $docente]);
+        $this->actingAs($admin)->get("/boletines?grupo={$grupo}")->assertInertia(fn (Assert $page) => $page
+            ->where('grupo.director', 'ROSA ELENA PRUEBA DÍAZ')->where('grupo.director_id', null)->etc());
+
+        // Guardar sin elegir otro director: se queda.
+        $this->actingAs($admin)->put("/boletines/grupos/{$grupo}", ['coordinador_id' => null, 'jornada_boletin' => 'Única'])->assertSessionHasNoErrors();
+        $this->assertSame($docente, (int) DB::table('grupos')->where('id', $grupo)->value('director_id'));
+
+        // Crearle el usuario con su mismo nombre: el docente queda con ese usuario, sin repetirse.
+        $id = $this->actingAs($admin)->postJson("/boletines/grupos/{$grupo}/firmantes", ['nombre' => 'Rosa Elena Prueba Díaz', 'para' => 'director'])->assertCreated()->json('id');
+        $this->assertSame($id, (int) DB::table('docentes')->where('id', $docente)->value('user_id'));
+        $this->actingAs($admin)->put("/boletines/grupos/{$grupo}", ['director_id' => $id, 'coordinador_id' => null])->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('docentes', 1);
+        $this->assertSame($id, Boletines::datosGrupo($grupo)->director_id);
+    }
+
+    public function test_solo_el_administrador_crea_firmantes()
+    {
+        $coordinadora = $this->usuario('coordinacion', [$this->sedeA]);
+        $this->actingAs($coordinadora)->postJson("/boletines/grupos/{$this->grupos['0-1']}/firmantes", ['nombre' => 'Ana Pérez', 'para' => 'director'])->assertForbidden();
+        $this->actingAs($coordinadora)->get("/boletines?grupo={$this->grupos['0-1']}")->assertInertia(fn (Assert $page) => $page->where('puedeCrearFirmantes', false)->etc());
+
+        // Un grupo que no es de transición: no.
+        $this->actingAs($this->usuario('administrador'))->postJson("/boletines/grupos/{$this->grupos['1-1']}/firmantes", ['nombre' => 'Ana Pérez', 'para' => 'director'])->assertNotFound();
+        $this->assertFalse(User::where('name', 'Ana Pérez')->exists());
+    }
+
+    public function test_usuario_sacado_del_nombre()
+    {
+        $this->assertSame('jrios', BoletinController::usuarioPara('Juan Ríos Mejía'));
+        $this->assertSame('aperez', BoletinController::usuarioPara('Ana Lucía Pérez Gómez'));
+        $this->assertSame('lnunez', BoletinController::usuarioPara('Luz Núñez'));
+        $this->assertSame('mdelavega', BoletinController::usuarioPara('María José De-la-Vega Ruiz'));
     }
 
     public function test_limpiar_parrafos()

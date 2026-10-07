@@ -1,6 +1,7 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "laravel", "runtimeExecutable": "php", "runtimeArgs": ["artisan", "serve", "--port=8000"], "port": 8000 }
+    { "name": "laravel", "runtimeExecutable": "php", "runtimeArgs": ["artisan", "serve", "--port=8000"], "port": 8000 },
+    { "name": "prueba-boletines", "runtimeExecutable": "cmd", "runtimeArgs": ["/c", "C:\\Users\\KECHAV~1\\AppData\\Local\\Temp\\claude\\C--Users-Kechavarro-Documents-GitHub-SIEAGE\\be50fa43-d64a-4325-9a3c-983dff018703\\scratchpad\\verif\\servir.cmd"], "port": 8010 }
   ]
 }

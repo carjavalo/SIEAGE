@@ -18,7 +18,7 @@ import { hace } from '@/lib/inscritos';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Link, router, useForm, usePage } from '@inertiajs/react';
-import { Check, ChevronDown, ChevronUp, CircleAlert, CloudOff, LoaderCircle, PenLine, Printer, UserPen } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, CircleAlert, CloudOff, Copy, LoaderCircle, PenLine, Printer, UserPen, UserPlus } from 'lucide-react';
 import { type FormEventHandler, type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { sileo } from 'sileo';
 
@@ -36,6 +36,7 @@ type Props = {
     ver: number | null;
     maximo: number;
     puedeConfigurar: boolean;
+    puedeCrearFirmantes: boolean;
     usuarios: Usuario[];
 };
 
@@ -45,6 +46,12 @@ type Estado = 'guardado' | 'pendiente' | 'guardando' | 'error' | 'conflicto';
 type Conflicto = { matricula: number; texto: string; version: string | null; por: string | null; en: string | null };
 
 const xsrf = () => decodeURIComponent(document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]+)/)?.[1] ?? '');
+const cabeceras = () => ({
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    'X-XSRF-TOKEN': xsrf(),
+    'X-Requested-With': 'XMLHttpRequest',
+});
 const tituloPeriodo = (p: Periodo) => p.etiqueta.charAt(0) + p.etiqueta.slice(1).toLowerCase();
 
 /**
@@ -88,6 +95,7 @@ function Editor({
     ver,
     maximo,
     puedeConfigurar,
+    puedeCrearFirmantes,
     usuarios,
 }: Props & { grupo: GrupoBoletin; periodoActual: Periodo }) {
     const { auth } = usePage<SharedData>().props;
@@ -144,12 +152,7 @@ function Editor({
                 credentials: 'same-origin',
                 // Sobrevive a cerrar la pestaña (hasta 64 KB).
                 keepalive: cuerpo.length < 60_000,
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                    'X-XSRF-TOKEN': xsrf(),
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
+                headers: cabeceras(),
                 body: cuerpo,
             });
             if (r.status === 409) {
@@ -279,6 +282,66 @@ function Editor({
         window.addEventListener('keydown', alPulsar);
         return () => window.removeEventListener('keydown', alPulsar);
     });
+
+    /**
+     * «Copiar a otros»: primero queda guardado este; después el mismo texto va a los
+     * marcados (en la fila, como los guardados). A los que alguien cambió mientras
+     * tanto no los pisa: quedan con lo suyo.
+     */
+    const [copiarAbierto, setCopiarAbierto] = useState(false);
+    const copiar = async (para: number[]): Promise<boolean> => {
+        if (elegido === null) return false;
+        if (!(await guardarAhora())) {
+            noSeGuardo();
+            return false;
+        }
+        const texto = textos.current[elegido] ?? '';
+        const turno = fila.current.then(async () => {
+            const r = await fetch('/boletines/copiar', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: cabeceras(),
+                body: JSON.stringify({
+                    periodo: periodoActual.id,
+                    texto,
+                    para: para.map((m) => ({ matricula: m, version: confirmado.current[m]?.version ?? null })),
+                }),
+            });
+            if (!r.ok) throw new Error(String(r.status));
+            return (await r.json()) as {
+                copiados: Record<string, { version: string; actualizado_en: string; por: string }>;
+                omitidos: Record<string, Guardado>;
+            };
+        });
+        fila.current = turno.catch(() => undefined);
+        try {
+            const { copiados, omitidos } = await turno;
+            const nuevos = { ...confirmado.current };
+            for (const [m, d] of Object.entries(copiados)) {
+                nuevos[Number(m)] = { texto, version: d.version, por: d.por, en: d.actualizado_en };
+                textos.current[Number(m)] = texto;
+            }
+            for (const [m, d] of Object.entries(omitidos)) {
+                nuevos[Number(m)] = d;
+                textos.current[Number(m)] = d.texto;
+            }
+            confirmado.current = nuevos;
+            setGuardados(nuevos);
+            const n = Object.keys(copiados).length;
+            const k = Object.keys(omitidos).length;
+            const saltados = k === 1 ? '1 no se copió' : `${k} no se copiaron`;
+            if (n === 0) sileo.warning({ title: 'No se copió', description: 'Alguien los cambió mientras tanto: quedaron con lo suyo.' });
+            else
+                sileo.success({
+                    title: n === 1 ? 'Copiado a 1 estudiante' : `Copiado a ${n} estudiantes`,
+                    description: k ? `${saltados}: alguien lo cambió mientras tanto.` : 'Puedes ajustar cada uno cuando quieras.',
+                });
+            return true;
+        } catch {
+            sileo.error({ title: 'No se pudo copiar', description: 'Revisa la conexión e intenta de nuevo.' });
+            return false;
+        }
+    };
 
     const imprimir = (soloEste: boolean) =>
         void conTodoGuardado(() => {
@@ -423,7 +486,7 @@ function Editor({
                                 </span>
                             </p>
                         )}
-                        {puedeConfigurar && <BotonFirmas grupo={grupo} usuarios={usuarios} />}
+                        {puedeConfigurar && <BotonFirmas grupo={grupo} usuarios={usuarios} puedeCrear={puedeCrearFirmantes} />}
                         <button type="button" onClick={() => imprimir(false)} disabled={escritos === 0} className={cn(botonPrimario, 'w-full')}>
                             <Printer className="size-[18px]" />
                             Imprimir todos ({escritos})
@@ -463,6 +526,16 @@ function Editor({
                                     <EstadoGuardado estado={estado} guardado={guardado} error={errorGuardar} />
                                 </div>
                                 <AvisoHoja nombre={estudiante.nombres_apellidos} texto={texto} maximo={maximo} />
+                                <button
+                                    type="button"
+                                    onClick={() => setCopiarAbierto(true)}
+                                    disabled={!texto || estudiantes.length < 2}
+                                    title={texto ? 'Poner este mismo texto en otros estudiantes del grupo' : 'Primero escribe el texto'}
+                                    className="flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent"
+                                >
+                                    <Copy className="size-4" />
+                                    Copiar a otros
+                                </button>
                                 <button
                                     type="button"
                                     onClick={() => imprimir(true)}
@@ -514,7 +587,169 @@ function Editor({
                     )}
                 </section>
             </div>
+
+            <Dialog open={copiarAbierto} onOpenChange={setCopiarAbierto}>
+                <DialogContent className="flex max-h-[calc(100dvh-2rem)] max-w-[520px] flex-col gap-0 overflow-hidden rounded-[22px] border-[#E3E9F6] p-0 font-sans text-[#16223F] sm:rounded-[22px]">
+                    {copiarAbierto && estudiante && (
+                        <DialogoCopiar
+                            desde={estudiante}
+                            estudiantes={estudiantes}
+                            guardados={guardados}
+                            texto={texto}
+                            periodo={tituloPeriodo(periodoActual)
+                                .replace(/ \d+%$/, '')
+                                .toLowerCase()}
+                            onCopiar={copiar}
+                            onListo={() => setCopiarAbierto(false)}
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
         </PanelLayout>
+    );
+}
+
+const sinTildes = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+/** Si el texto nombra a alguien (por ejemplo «Ian se destaca…»): al copiarlo hay que cambiarlo. */
+const nombra = (texto: string, nombre: string) =>
+    /^\p{L}{2,}$/u.test(nombre) && new RegExp(`(^|[^\\p{L}])${sinTildes(nombre)}($|[^\\p{L}])`, 'u').test(sinTildes(texto));
+
+/** «Copiar a otros»: a quiénes del grupo poner el mismo texto. De entrada, a los que aún no tienen. */
+function DialogoCopiar({
+    desde,
+    estudiantes,
+    guardados,
+    texto,
+    periodo,
+    onCopiar,
+    onListo,
+}: {
+    desde: EstudianteBoletin;
+    estudiantes: EstudianteBoletin[];
+    guardados: Record<number, Guardado>;
+    texto: string;
+    periodo: string;
+    onCopiar: (para: number[]) => Promise<boolean>;
+    onListo: () => void;
+}) {
+    const otros = estudiantes.filter((e) => e.matricula_id !== desde.matricula_id);
+    const tiene = (e: EstudianteBoletin) => (guardados[e.matricula_id]?.texto ?? '') !== '';
+    const vacios = otros.filter((e) => !tiene(e)).map((e) => e.matricula_id);
+    const [marcados, setMarcados] = useState(() => new Set(vacios));
+    const [ocupado, setOcupado] = useState(false);
+    const reemplaza = otros.filter((e) => marcados.has(e.matricula_id) && tiene(e)).length;
+    // Nombres del grupo que aparecen en el texto (el de quien se copia u otro que quedó de antes).
+    const nombrados = [...new Set([desde, ...otros].map((e) => e.nombres_apellidos.split(' ')[0] ?? ''))]
+        .filter((n) => nombra(texto, n))
+        .map(aTitulo);
+
+    const alternar = (id: number, si: boolean) =>
+        setMarcados((antes) => {
+            const s = new Set(antes);
+            if (si) s.add(id);
+            else s.delete(id);
+            return s;
+        });
+    const enviar = async () => {
+        setOcupado(true);
+        const listo = await onCopiar(otros.filter((e) => marcados.has(e.matricula_id)).map((e) => e.matricula_id));
+        setOcupado(false);
+        if (listo) onListo();
+    };
+    const atajo =
+        'h-8 cursor-pointer rounded-full px-3 text-[13px] font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none';
+
+    return (
+        <>
+            <DialogHeader className="px-6 pt-6 pr-14 pb-3">
+                <DialogTitle className="text-xl font-semibold">Copiar a otros estudiantes</DialogTitle>
+                <DialogDescription className="text-[14px] leading-snug text-[#56627F]">
+                    El texto de <b className="font-semibold text-[#16223F]">{desde.nombre}</b> ({periodo}) queda igual en los que marques. Después
+                    puedes ajustar cada uno.
+                </DialogDescription>
+            </DialogHeader>
+
+            {nombrados.length > 0 && (
+                <p className="mx-6 mb-3 flex items-start gap-2 rounded-[14px] bg-[#FFF7E8] px-3 py-2 text-[13px] leading-snug text-[#6B4A0E]">
+                    <CircleAlert className="mt-0.5 size-4 shrink-0 text-[#B7862C]" />
+                    <span>
+                        El texto nombra a{' '}
+                        <b className="font-semibold">
+                            {nombrados.length > 1 ? `${nombrados.slice(0, -1).join(', ')} y ${nombrados.at(-1)}` : nombrados[0]}
+                        </b>
+                        : después de copiarlo, cambia el nombre en cada boletín.
+                    </span>
+                </p>
+            )}
+
+            <div className="flex flex-wrap items-center gap-2 px-6 pb-2">
+                <span className="text-[13px] text-[#56627F]">Marcar:</span>
+                <button type="button" onClick={() => setMarcados(new Set(vacios))} className={atajo}>
+                    Sin texto ({vacios.length})
+                </button>
+                <button type="button" onClick={() => setMarcados(new Set(otros.map((e) => e.matricula_id)))} className={atajo}>
+                    Todos ({otros.length})
+                </button>
+                <button type="button" onClick={() => setMarcados(new Set())} className={atajo}>
+                    Ninguno
+                </button>
+            </div>
+
+            <ul aria-label="Estudiantes" className="min-h-0 flex-1 overflow-y-auto border-y border-[#EEF2F9] px-3 py-2 [scrollbar-width:thin]">
+                {otros.map((e) => {
+                    const marcado = marcados.has(e.matricula_id);
+                    const lleno = tiene(e);
+                    return (
+                        <li key={e.matricula_id}>
+                            <label className="flex cursor-pointer items-center gap-3 rounded-[12px] px-3 py-2 transition hover:bg-[#F5F8FF]">
+                                <input
+                                    type="checkbox"
+                                    checked={marcado}
+                                    onChange={(ev) => alternar(e.matricula_id, ev.target.checked)}
+                                    className="peer sr-only"
+                                />
+                                <span
+                                    aria-hidden
+                                    className={cn(
+                                        'flex size-5 shrink-0 items-center justify-center rounded-[6px] transition peer-focus-visible:ring-4 peer-focus-visible:ring-[#DCE5F8]',
+                                        marcado ? 'bg-[#1E3A7B] text-white' : 'border-[1.5px] border-[#B7C6EA] bg-white',
+                                    )}
+                                >
+                                    {marcado && <Check className="size-3" strokeWidth={3} />}
+                                </span>
+                                <span className="min-w-0 flex-1 truncate text-[14.5px]">{e.nombre}</span>
+                                <span
+                                    className={cn(
+                                        'shrink-0 text-[12.5px]',
+                                        lleno && marcado ? 'font-semibold text-[#8A5A0B]' : lleno ? 'text-[#56627F]' : 'text-[#8C97B3]',
+                                    )}
+                                >
+                                    {lleno ? (marcado ? 'Se reemplaza' : 'Ya tiene texto') : 'Sin texto'}
+                                </span>
+                            </label>
+                        </li>
+                    );
+                })}
+            </ul>
+
+            <div className="space-y-3 px-6 py-4">
+                {reemplaza > 0 && (
+                    <p className="flex items-center gap-2 text-[13px] leading-snug text-[#8A5A0B]" aria-live="polite">
+                        <CircleAlert className="size-4 shrink-0 text-[#B7862C]" />
+                        {reemplaza === 1 ? 'Se reemplaza lo que ya tenía 1 estudiante.' : `Se reemplaza lo que ya tenían ${reemplaza} estudiantes.`}
+                    </p>
+                )}
+                <div className="flex items-center justify-end gap-2">
+                    <button type="button" onClick={onListo} className={botonSecundario}>
+                        Cancelar
+                    </button>
+                    <button type="button" onClick={() => void enviar()} disabled={ocupado || marcados.size === 0} className={botonPrimario}>
+                        {ocupado ? <LoaderCircle className="size-4 animate-spin" /> : <Copy className="size-4" />}
+                        {marcados.size === 0 ? 'Copiar' : marcados.size === 1 ? 'Copiar a 1' : `Copiar a ${marcados.size}`}
+                    </button>
+                </div>
+            </div>
+        </>
     );
 }
 
@@ -733,7 +968,7 @@ function HojaEditable({
 }
 
 /** «Firmas y jornada»: director(a) del grupo, coordinador(a) de la sede y cómo se escribe la jornada. */
-function BotonFirmas({ grupo, usuarios }: { grupo: GrupoBoletin; usuarios: Usuario[] }) {
+function BotonFirmas({ grupo, usuarios, puedeCrear }: { grupo: GrupoBoletin; usuarios: Usuario[]; puedeCrear: boolean }) {
     const [abierto, setAbierto] = useState(false);
     return (
         <>
@@ -743,29 +978,64 @@ function BotonFirmas({ grupo, usuarios }: { grupo: GrupoBoletin; usuarios: Usuar
             </button>
             <Dialog open={abierto} onOpenChange={setAbierto}>
                 <DialogContent className="flex max-w-[520px] flex-col gap-0 overflow-hidden rounded-[22px] border-[#E3E9F6] p-0 font-sans text-[#16223F] sm:rounded-[22px]">
-                    {abierto && <FormularioFirmas grupo={grupo} usuarios={usuarios} onListo={() => setAbierto(false)} />}
+                    {abierto && <FormularioFirmas grupo={grupo} usuarios={usuarios} puedeCrear={puedeCrear} onListo={() => setAbierto(false)} />}
                 </DialogContent>
             </Dialog>
         </>
     );
 }
 
+/** El director(a) que ya estaba sin usuario (no es un id de usuario). */
+const SIN_USUARIO = -1;
+/** «CAMILA RAMÍREZ» → «Camila Ramírez». */
+const aTitulo = (s: string) => s.toLowerCase().replace(/(^|\s)(\p{L})/gu, (_, a: string, b: string) => a + b.toUpperCase());
+
 const ROLES: Record<string, string> = { docente: 'Docente', coordinacion: 'Coordinación', secretaria: 'Secretaría', administrador: 'Administrador' };
 
-function FormularioFirmas({ grupo, usuarios, onListo }: { grupo: GrupoBoletin; usuarios: Usuario[]; onListo: () => void }) {
+function FormularioFirmas({
+    grupo,
+    usuarios,
+    puedeCrear,
+    onListo,
+}: {
+    grupo: GrupoBoletin;
+    usuarios: Usuario[];
+    puedeCrear: boolean;
+    onListo: () => void;
+}) {
+    // Un director(a) que ya estaba como docente pero sin usuario: se muestra (SIN_USUARIO) y se deja igual al guardar.
+    const sinUsuario = grupo.director && grupo.director_id === null ? aTitulo(grupo.director) : null;
     const form = useForm<{ director_id: number | null; coordinador_id: number | null; jornada_boletin: string }>({
-        director_id: grupo.director_id,
+        director_id: grupo.director_id ?? (sinUsuario ? SIN_USUARIO : null),
         coordinador_id: grupo.coordinador_id,
         jornada_boletin: grupo.jornada_boletin ?? '',
     });
+    // Los que se crean aquí mismo entran a la lista sin recargar la página.
+    const [nuevos, setNuevos] = useState<Usuario[]>([]);
     const opciones = [
         { valor: 0, etiqueta: 'Nadie todavía' },
-        ...usuarios.map((u) => ({ valor: u.id, etiqueta: u.name, detalle: u.rol ? (ROLES[u.rol] ?? u.rol) : undefined })),
+        ...[...usuarios, ...nuevos.filter((n) => !usuarios.some((u) => u.id === n.id))].map((u) => ({
+            valor: u.id,
+            etiqueta: u.name,
+            detalle: u.rol ? (ROLES[u.rol] ?? u.rol) : undefined,
+        })),
     ];
+    const opcionesDirector = sinUsuario
+        ? [opciones[0], { valor: SIN_USUARIO, etiqueta: sinUsuario, detalle: 'Sin usuario' }, ...opciones.slice(1)]
+        : opciones;
+    const creado = (campo: 'director_id' | 'coordinador_id') => (u: Usuario) => {
+        setNuevos((l) => [...l, u]);
+        form.setData(campo, u.id);
+    };
 
     const enviar: FormEventHandler = (e) => {
         e.preventDefault();
-        form.transform((d) => ({ ...d, director_id: d.director_id || null, coordinador_id: d.coordinador_id || null }));
+        form.transform(({ director_id, ...d }) => ({
+            ...d,
+            // Sin director_id: el que ya estaba (sin usuario) se queda.
+            ...(director_id === SIN_USUARIO ? {} : { director_id: director_id || null }),
+            coordinador_id: d.coordinador_id || null,
+        }));
         form.put(`/boletines/grupos/${grupo.id}`, {
             preserveScroll: true,
             onSuccess: () => {
@@ -780,35 +1050,42 @@ function FormularioFirmas({ grupo, usuarios, onListo }: { grupo: GrupoBoletin; u
             <DialogHeader className="px-6 pt-6 pr-14 pb-4">
                 <DialogTitle className="text-xl font-semibold">Firmas y jornada · {grupo.codigo}</DialogTitle>
                 <DialogDescription className="text-[14px] leading-snug text-[#56627F]">
-                    Salen en todos los boletines del grupo. Si alguien no está en la lista, créalo primero en Usuarios.
+                    Salen en todos los boletines del grupo, tal como están escritos aquí.
+                    {!puedeCrear && ' Si alguien no está en la lista, pídele al administrador que lo cree en Usuarios.'}
                 </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 px-6 pb-5">
-                <Campo id="director" etiqueta="Director(a) de grupo" error={form.errors.director_id}>
-                    <Desplegable
-                        id="director"
-                        etiqueta="Director(a) de grupo"
-                        valor={form.data.director_id ?? 0}
-                        opciones={opciones}
-                        onCambio={(v) => form.setData('director_id', v || null)}
-                        claseBoton={cn(claseLista, 'flex items-center')}
-                    />
-                </Campo>
-                <Campo
-                    id="coordinador"
-                    etiqueta="Rector(a) o coordinador(a)"
-                    ayuda={`Es el mismo para todos los grupos de la sede ${grupo.sede.charAt(0) + grupo.sede.slice(1).toLowerCase()}.`}
-                    error={form.errors.coordinador_id}
-                >
-                    <Desplegable
+                <div className="space-y-2">
+                    <Campo id="director" etiqueta="Director(a) de grupo" error={form.errors.director_id}>
+                        <Desplegable
+                            id="director"
+                            etiqueta="Director(a) de grupo"
+                            valor={form.data.director_id ?? 0}
+                            opciones={opcionesDirector}
+                            onCambio={(v) => form.setData('director_id', v || null)}
+                            claseBoton={cn(claseLista, 'flex items-center')}
+                        />
+                    </Campo>
+                    {puedeCrear && <CrearFirmante grupo={grupo} para="director" sugerido={sinUsuario} onCreado={creado('director_id')} />}
+                </div>
+                <div className="space-y-2">
+                    <Campo
                         id="coordinador"
                         etiqueta="Rector(a) o coordinador(a)"
-                        valor={form.data.coordinador_id ?? 0}
-                        opciones={opciones}
-                        onCambio={(v) => form.setData('coordinador_id', v || null)}
-                        claseBoton={cn(claseLista, 'flex items-center')}
-                    />
-                </Campo>
+                        ayuda={`Es el mismo para todos los grupos de la sede ${aTitulo(grupo.sede)}.`}
+                        error={form.errors.coordinador_id}
+                    >
+                        <Desplegable
+                            id="coordinador"
+                            etiqueta="Rector(a) o coordinador(a)"
+                            valor={form.data.coordinador_id ?? 0}
+                            opciones={opciones}
+                            onCambio={(v) => form.setData('coordinador_id', v || null)}
+                            claseBoton={cn(claseLista, 'flex items-center')}
+                        />
+                    </Campo>
+                    {puedeCrear && <CrearFirmante grupo={grupo} para="coordinador" onCreado={creado('coordinador_id')} />}
+                </div>
                 <Campo
                     id="jornada"
                     etiqueta="Jornada en el boletín"
@@ -836,5 +1113,135 @@ function FormularioFirmas({ grupo, usuarios, onListo }: { grupo: GrupoBoletin; u
                 </button>
             </div>
         </form>
+    );
+}
+
+/**
+ * Crear ahí mismo a quien firma y no está en la lista: con el nombre tal como debe
+ * salir en el boletín. Queda como usuario de la sede, sin clave conocida.
+ */
+function CrearFirmante({
+    grupo,
+    para,
+    sugerido = null,
+    onCreado,
+}: {
+    grupo: GrupoBoletin;
+    para: 'director' | 'coordinador';
+    /** El director(a) que está sin usuario: el nombre ya escrito. */
+    sugerido?: string | null;
+    onCreado: (u: Usuario) => void;
+}) {
+    const [abierto, setAbierto] = useState(false);
+    const [nombre, setNombre] = useState(sugerido ?? '');
+    const [error, setError] = useState<string | null>(null);
+    const [ocupado, setOcupado] = useState(false);
+    const [listo, setListo] = useState<string | null>(null);
+    const id = `nuevo-${para}`;
+
+    const crear = async () => {
+        if (ocupado || !nombre.trim()) return;
+        setOcupado(true);
+        setError(null);
+        try {
+            const r = await fetch(`/boletines/grupos/${grupo.id}/firmantes`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: cabeceras(),
+                body: JSON.stringify({ nombre, para }),
+            });
+            if (r.status === 422) {
+                const datos = (await r.json()) as { errors?: Record<string, string[]> };
+                setError(Object.values(datos.errors ?? {})[0]?.[0] ?? 'Revisa el nombre.');
+                return;
+            }
+            if (!r.ok) throw new Error(String(r.status));
+            const u = (await r.json()) as Usuario & { usuario: string };
+            onCreado(u);
+            setListo(u.usuario);
+            setNombre('');
+            setAbierto(false);
+            // El foco vuelve a la lista, ya con la persona elegida.
+            requestAnimationFrame(() => document.getElementById(para)?.focus());
+        } catch {
+            setError('No se pudo crear. Revisa la conexión e intenta de nuevo.');
+        } finally {
+            setOcupado(false);
+        }
+    };
+
+    if (!abierto)
+        return (
+            <div className="space-y-1.5">
+                {listo && (
+                    <p className="flex items-start gap-1.5 text-[13px] leading-snug text-[#1C6B4A]" aria-live="polite">
+                        <Check className="mt-0.5 size-3.5 shrink-0" strokeWidth={2.5} />
+                        <span>Listo: su usuario es «{listo}». Para que entre a SIEAGE, ponle clave en Usuarios.</span>
+                    </p>
+                )}
+                <button
+                    type="button"
+                    onClick={() => {
+                        setAbierto(true);
+                        setListo(null);
+                    }}
+                    className="flex cursor-pointer items-center gap-1.5 rounded-full text-[13px] font-semibold text-[#1E3A7B] hover:underline focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none"
+                >
+                    <UserPlus className="size-4" />
+                    {sugerido && !listo ? `Crear el usuario de ${sugerido}` : '¿No está en la lista? Crearlo aquí'}
+                </button>
+            </div>
+        );
+
+    return (
+        <div className="space-y-2 rounded-[16px] bg-[#F5F8FF] p-3 ring-1 ring-[#E3E9F6]">
+            <label htmlFor={id} className="block text-[13px] font-medium text-[#3E4A68]">
+                Nombre completo, tal como debe salir en el boletín
+            </label>
+            <div className="flex gap-2">
+                <input
+                    id={id}
+                    autoFocus
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    onKeyDown={(e) => {
+                        // Enter crea a la persona (no guarda todo el formulario).
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            void crear();
+                        }
+                    }}
+                    placeholder="Nombres y apellidos"
+                    maxLength={120}
+                    autoComplete="off"
+                    aria-invalid={error ? true : undefined}
+                    aria-describedby={`${id}-nota`}
+                    className={claseCampo}
+                />
+                <button
+                    type="button"
+                    onClick={() => void crear()}
+                    disabled={ocupado || !nombre.trim()}
+                    className={cn(botonPrimario, 'shrink-0 px-4')}
+                >
+                    {ocupado && <LoaderCircle className="size-4 animate-spin" />}
+                    Crear
+                </button>
+            </div>
+            <p id={`${id}-nota`} className={cn('text-[13px] leading-snug', error ? 'text-[#B42318]' : 'text-[#56627F]')}>
+                {error ??
+                    `Queda como usuario ${para === 'director' ? 'docente' : 'de coordinación'} de la sede ${aTitulo(grupo.sede)}, sin clave: si va a entrar a SIEAGE, se la pones en Usuarios.`}
+            </p>
+            <button
+                type="button"
+                onClick={() => {
+                    setAbierto(false);
+                    setError(null);
+                }}
+                className="cursor-pointer text-[13px] font-medium text-[#56627F] hover:text-[#16223F]"
+            >
+                Cancelar
+            </button>
+        </div>
     );
 }
