@@ -1,6 +1,8 @@
 /** Roles de los usuarios de SIEAGE (tabla roles). */
 
-export type Rol = { id: number; nombre: string; descripcion: string | null };
+/** `nombre` es la clave interna (no cambia); `etiqueta`, como se ve (se cambia en Roles y permisos). */
+export type Rol = { id: number; nombre: string; etiqueta: string | null; descripcion: string | null };
+type ConNombre = { nombre: string; etiqueta?: string | null };
 
 const NOMBRES: Record<string, string> = {
     administrador: 'Administrador',
@@ -9,7 +11,12 @@ const NOMBRES: Record<string, string> = {
     docente: 'Docente',
 };
 
-export const nombreRol = (nombre?: string | null) => (nombre ? (NOMBRES[nombre] ?? nombre) : 'Sin rol');
+/** Cómo se ve un rol: su etiqueta; si no llega, el nombre de siempre. */
+export const nombreRol = (rol?: ConNombre | string | null) => {
+    if (!rol) return 'Sin rol';
+    if (typeof rol === 'string') return NOMBRES[rol] ?? rol;
+    return rol.etiqueta || NOMBRES[rol.nombre] || rol.nombre;
+};
 
 /** Punto de color de cada rol, como las sedes: sin pastillas rellenas. */
 const PUNTOS: Record<string, string> = {
@@ -18,8 +25,14 @@ const PUNTOS: Record<string, string> = {
     secretaria: 'bg-[#3BA67A]',
     docente: 'bg-[#D99A2B]',
 };
+/** Los roles nuevos toman uno de estos, siempre el mismo para el mismo rol. */
+const OTROS = ['bg-[#8E6CC9]', 'bg-[#2E9AA6]', 'bg-[#C8607A]', 'bg-[#7A8F2E]', 'bg-[#B07A4A]', 'bg-[#4F6D9A]'];
 
-export const puntoRol = (nombre?: string | null) => PUNTOS[nombre ?? ''] ?? 'bg-[#AEB7CC]';
+export const puntoRol = (rol?: ConNombre | string | null) => {
+    const nombre = typeof rol === 'string' ? rol : rol?.nombre;
+    if (!nombre) return 'bg-[#AEB7CC]';
+    return PUNTOS[nombre] ?? OTROS[[...nombre].reduce((s, c) => s + c.charCodeAt(0), 0) % OTROS.length];
+};
 
 /** "Hace 5 min", "Ayer"… para el último ingreso. */
 export function haceCuanto(fecha: string | null) {

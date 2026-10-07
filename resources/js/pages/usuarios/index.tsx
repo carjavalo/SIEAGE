@@ -5,11 +5,12 @@ import { botonPrimario } from '@/components/formulario';
 import { EnLinea, MarcaActivo, PanelUsuario, type SedeOpcion, type Usuario } from '@/components/usuarios/panel-usuario';
 import PanelLayout from '@/layouts/panel-layout';
 import { palabras, plano } from '@/lib/estudiantes';
+import { puede } from '@/lib/permisos';
 import { type Rol, haceCuanto, inicialesPersona, nombreRol, puntoRol } from '@/lib/usuarios';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
-import { usePage } from '@inertiajs/react';
-import { Search, UserPlus, X } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { Search, ShieldCheck, UserPlus, X } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 type FiltroEstado = 'activos' | 'desactivados' | 'todos';
@@ -106,7 +107,10 @@ export default function Usuarios({ usuarios, roles, sedes }: { usuarios: Usuario
                     data-despues="false"
                     className={`order-last flex h-11 w-full min-w-0 snap-x scroll-px-1 items-stretch gap-0.5 overflow-x-auto rounded-[16px] bg-[#D3DDF3]/45 p-1 ring-1 ring-white/70 [--antes:#000] [--despues:#000] [mask-image:linear-gradient(to_right,var(--antes),#000_40px,#000_calc(100%-40px),var(--despues))] [scrollbar-width:none] data-[antes=true]:[--antes:transparent] data-[despues=true]:[--despues:transparent] xl:order-none xl:w-auto xl:flex-1 ${alto}:h-[52px] ${alto}:rounded-[18px]`}
                 >
-                    {[{ id: null, nombre: null } as { id: number | null; nombre: string | null }, ...roles].map((r) => {
+                    {[
+                        { id: null, nombre: null, etiqueta: null } as { id: number | null; nombre: string | null; etiqueta: string | null },
+                        ...roles,
+                    ].map((r) => {
                         const actual = r.id === rolId;
                         return (
                             <button
@@ -127,7 +131,7 @@ export default function Usuarios({ usuarios, roles, sedes }: { usuarios: Usuario
                             >
                                 {r.nombre && <span aria-hidden className={cn('size-2 rounded-full', puntoRol(r.nombre))} />}
                                 <span className={`text-[15px] font-semibold tracking-[-0.01em] whitespace-nowrap ${alto}:text-[16px]`}>
-                                    {r.nombre ? nombreRol(r.nombre) : 'Todos'}
+                                    {r.nombre ? nombreRol({ nombre: r.nombre, etiqueta: r.etiqueta }) : 'Todos'}
                                 </span>
                                 <span className={cn('text-[13px] tabular-nums', actual ? 'text-[#4863B8]' : 'text-[#56627F]')}>{conteo(r.id)}</span>
                             </button>
@@ -167,6 +171,17 @@ export default function Usuarios({ usuarios, roles, sedes }: { usuarios: Usuario
                             </kbd>
                         )}
                     </div>
+                    {puede(auth, 'gestionar-roles') && (
+                        <Link
+                            href="/usuarios/roles"
+                            aria-label="Roles y permisos"
+                            title="Roles y permisos"
+                            className={`flex h-10 shrink-0 items-center gap-2 rounded-full px-3 text-[15px] font-semibold whitespace-nowrap text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none 2xl:px-4 ${alto}:h-11`}
+                        >
+                            <ShieldCheck aria-hidden className="size-[18px]" />
+                            <span className="hidden 2xl:inline">Roles y permisos</span>
+                        </Link>
+                    )}
                     <button
                         type="button"
                         onClick={() => setAbierto('nuevo')}
@@ -189,7 +204,7 @@ export default function Usuarios({ usuarios, roles, sedes }: { usuarios: Usuario
                         className={`flex shrink-0 flex-col gap-2.5 border-b border-[#EEF2F9] px-4 py-2.5 md:h-[42px] md:flex-row md:items-center md:gap-4 md:px-5 md:py-0 ${alto}:md:h-12`}
                     >
                         <h2 className="text-[16px] font-semibold tracking-[-0.01em] whitespace-nowrap">
-                            {rolId === null ? 'Todos los usuarios' : nombreRol(roles.find((r) => r.id === rolId)?.nombre)}
+                            {rolId === null ? 'Todos los usuarios' : nombreRol(roles.find((r) => r.id === rolId))}
                         </h2>
                         <div role="group" aria-label="Estado" className="flex shrink-0 gap-0.5 rounded-[11px] bg-[#F1F4FA] p-[3px]">
                             {(
@@ -326,9 +341,9 @@ export default function Usuarios({ usuarios, roles, sedes }: { usuarios: Usuario
                                                     <span className="inline-flex items-center gap-2 text-[#16223F]">
                                                         <span
                                                             aria-hidden
-                                                            className={cn('size-2 rounded-full', u.activo ? puntoRol(u.rol?.nombre) : 'bg-[#AEB7CC]')}
+                                                            className={cn('size-2 rounded-full', u.activo ? puntoRol(u.rol) : 'bg-[#AEB7CC]')}
                                                         />
-                                                        {nombreRol(u.rol?.nombre)}
+                                                        {nombreRol(u.rol)}
                                                     </span>
                                                 </td>
                                                 <td className={cn(celda, 'hidden truncate text-[#3E4A68] lg:table-cell')}>
@@ -347,10 +362,10 @@ export default function Usuarios({ usuarios, roles, sedes }: { usuarios: Usuario
                                                             aria-hidden
                                                             className={cn(
                                                                 'size-1.5 shrink-0 rounded-full',
-                                                                u.activo ? puntoRol(u.rol?.nombre) : 'bg-[#AEB7CC]',
+                                                                u.activo ? puntoRol(u.rol) : 'bg-[#AEB7CC]',
                                                             )}
                                                         />
-                                                        <span className="truncate">{nombreRol(u.rol?.nombre)}</span>
+                                                        <span className="truncate">{nombreRol(u.rol)}</span>
                                                     </span>
                                                     <MarcaActivo activo={u.activo} />
                                                 </td>

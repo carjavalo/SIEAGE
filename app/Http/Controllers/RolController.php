@@ -36,6 +36,7 @@ class RolController extends Controller
         return Inertia::render('usuarios/roles', [
             'roles' => Rol::orderBy('id')->get()->map(fn (Rol $r) => [
                 'id' => $r->id,
+                'nombre' => $r->nombre,
                 'etiqueta' => $r->etiqueta ?? $r->nombre,
                 'descripcion' => $r->descripcion,
                 'sistema' => $r->esAdministrador(),

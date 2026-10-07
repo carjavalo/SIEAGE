@@ -2,12 +2,14 @@
 
 namespace Database\Factories;
 
+use App\Models\Rol;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
+ * @extends Factory<User>
  */
 class UserFactory extends Factory
 {
@@ -27,6 +29,8 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'usuario' => fake()->unique()->userName(),
             'activo' => true,
+            // Un rol con permisos de todos los días (sin administrar usuarios); las pruebas de permisos lo cambian.
+            'rol_id' => fn () => Rol::where('nombre', 'secretaria')->value('id'),
             // Por defecto ve todas las sedes; las pruebas de sedes lo restringen a propósito.
             'todas_las_sedes' => true,
             'email' => fake()->unique()->safeEmail(),

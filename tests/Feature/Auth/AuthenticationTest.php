@@ -66,9 +66,11 @@ class AuthenticationTest extends TestCase
 
     public function test_la_pagina_principal_es_estudiantes()
     {
-        $this->get('/')->assertRedirect('/estudiantes');
+        $this->get('/')->assertRedirect('/login');
 
-        // Con sesión, abrir el login también lleva a Estudiantes.
-        $this->actingAs(User::factory()->create())->get('/login')->assertRedirect('/estudiantes');
+        // Con sesión, «/» lleva a Estudiantes, y abrir el login también.
+        $user = User::factory()->create();
+        $this->actingAs($user)->get('/')->assertRedirect('/estudiantes');
+        $this->actingAs($user)->get('/login')->assertRedirect('/');
     }
 }

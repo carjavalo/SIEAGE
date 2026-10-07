@@ -1,15 +1,19 @@
 /** Lo que HandleInertiaRequests::share() manda en todas las páginas. */
 export interface Auth {
     user: User;
+    /** Lo que puede hacer: claves de App\Support\Permisos (ver lib/permisos). */
+    permisos: string[];
     /** Para mostrar el menú "Usuarios" solo a quien puede usarlo. */
     puedeGestionarUsuarios: boolean;
-    /** Promover al grado siguiente (todos menos docentes). */
+    /** Promover al grado siguiente. */
     puedePromover: boolean;
-    /** Deshabilitar o habilitar matrículas y editar cupos (todos menos docentes). */
+    /** Deshabilitar o habilitar matrículas. */
     puedeDeshabilitar: boolean;
-    /** Corregir los datos del estudiante y de sus acudientes (todos menos docentes). */
+    /** Cambiar los cupos de los grupos. */
+    puedeEditarCupos: boolean;
+    /** Corregir los datos del estudiante y de sus acudientes. */
     puedeEditarDatos: boolean;
-    /** Crear y cambiar sedes y grupos (todos menos docentes). */
+    /** Crear y cambiar sedes y grupos. */
     puedeGestionarSedes: boolean;
     /** Ve todas las sedes (administrador o "todas las sedes"); si no, solo las de `sedes`. */
     todasLasSedes: boolean;

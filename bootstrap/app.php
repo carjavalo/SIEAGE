@@ -18,8 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // En todas las respuestas, también errores y redirecciones.
         $middleware->append(CabecerasSeguridad::class);
 
-        // Quien ya tiene sesión y abre /login va a la página principal.
-        $middleware->redirectUsersTo('/estudiantes');
+        // Quien ya tiene sesión y abre /login va a «/»: la primera pantalla que su rol puede abrir.
+        $middleware->redirectUsersTo('/');
 
         $middleware->web(append: [
             HandleInertiaRequests::class,
