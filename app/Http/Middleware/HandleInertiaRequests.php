@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Support\Alcance;
+use App\Support\Permisos;
 use App\Support\Pulso;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -42,12 +43,14 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
-                // Para mostrar el menú "Usuarios" solo a quien puede usarlo.
+                // Lo que puede hacer (claves de App\Support\Permisos), para mostrar u ocultar menús y botones.
+                'permisos' => fn () => Permisos::de($request->user()),
                 'puedeGestionarUsuarios' => fn () => (bool) $request->user()?->can('gestionar-usuarios'),
                 'puedePromover' => fn () => (bool) $request->user()?->can('promover-estudiantes'),
-                'puedeDeshabilitar' => fn () => (bool) $request->user()?->can('gestionar-matriculas'),
-                // Corregir datos del estudiante y sus acudientes: el mismo permiso.
-                'puedeEditarDatos' => fn () => (bool) $request->user()?->can('gestionar-matriculas'),
+                'puedeDeshabilitar' => fn () => (bool) $request->user()?->can('deshabilitar-matriculas'),
+                'puedeEditarCupos' => fn () => (bool) $request->user()?->can('cambiar-cupos'),
+                // Corregir datos del estudiante y sus acudientes.
+                'puedeEditarDatos' => fn () => (bool) $request->user()?->can('editar-estudiantes'),
                 'puedeGestionarSedes' => fn () => (bool) $request->user()?->can('gestionar-sedes'),
                 // Ve todas las sedes, o solo estas (para mostrarlas en la cabecera).
                 'todasLasSedes' => fn () => Alcance::todas($request->user()),
@@ -56,7 +59,7 @@ class HandleInertiaRequests extends Middleware
                     : [],
             ],
             // Para el aviso del menú "Inscritos": solo con sesión iniciada.
-            'inscritosPendientes' => fn () => $request->user()
+            'inscritosPendientes' => fn () => $request->user()?->can('ver-inscritos')
                 ? Alcance::filtrarSolicitudes(DB::table('solicitudes_inscripcion as s'), $request->user())->where('s.estado', 'pendiente')->count()
                 : 0,
             // Cómo estaban los datos cuando se armó esta página: el navegador lo compara con GET /pulso.

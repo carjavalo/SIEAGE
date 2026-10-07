@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Support\Permisos;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -37,7 +38,7 @@ class AuthenticatedSessionController extends Controller
 
         // Recarga completa, no una visita de Inertia: la página del login solo trae las
         // rutas públicas (ver @routes en app.blade.php) y el panel necesita todas.
-        return Inertia::location(redirect()->intended(route('estudiantes.index', absolute: false))->getTargetUrl());
+        return Inertia::location(redirect()->intended(Permisos::inicio($request->user()))->getTargetUrl());
     }
 
     /**
