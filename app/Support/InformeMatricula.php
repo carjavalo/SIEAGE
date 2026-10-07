@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -38,17 +39,17 @@ final class InformeMatricula
      * @param  int|null  $gradoId  solo este grado (null = todos)
      * @param  int|null  $grupoId  solo este grupo (null = todos)
      */
-    private function __construct(private object $anio, private ?array $sedes = null, private ?int $gradoId = null, private ?int $grupoId = null)
+    private function __construct(private object $anio, private ?array $sedes = null, private ?int $gradoId = null, private ?int $grupoId = null, private ?User $alcance = null)
     {
         $this->referencia = CarbonImmutable::create($anio->anio, 3, 31);
     }
 
     /** @return array<string, mixed>|null null si el año no existe */
-    public static function del(int $anio, ?array $sedes = null, ?int $gradoId = null, ?int $grupoId = null): ?array
+    public static function del(int $anio, ?array $sedes = null, ?int $gradoId = null, ?int $grupoId = null, ?User $alcance = null): ?array
     {
         $fila = DB::table('anios_lectivos')->where('anio', $anio)->first(['id', 'anio']);
 
-        return $fila ? (new self($fila, $sedes, $gradoId, $grupoId))->armar() : null;
+        return $fila ? (new self($fila, $sedes, $gradoId, $grupoId, $alcance))->armar() : null;
     }
 
     /** @return array<string, mixed> */
@@ -101,6 +102,8 @@ final class InformeMatricula
             ->leftJoin('parentescos as p', 'p.id', '=', 'ea.parentesco_id')
             ->where('m.anio_lectivo_id', $this->anio->id)
             ->when($this->sedes !== null, fn ($q) => $q->whereIn('m.sede_id', $this->sedes))
+            // Quien lo pide ve solo los grados que tenga marcados en cada sede.
+            ->when($this->alcance, fn ($q) => Alcance::filtrar($q, $this->alcance, 'm.sede_id', 'm.grado_id'))
             ->when($this->gradoId !== null, fn ($q) => $q->where('m.grado_id', $this->gradoId))
             ->when($this->grupoId !== null, fn ($q) => $q->where('m.grupo_id', $this->grupoId))
             ->whereNull('e.deleted_at')
@@ -144,6 +147,7 @@ final class InformeMatricula
             ->join('sedes as s', 's.id', '=', 'g.sede_id')
             ->where('g.anio_lectivo_id', $this->anio->id)
             ->when($this->sedes !== null, fn ($q) => $q->whereIn('g.sede_id', $this->sedes))
+            ->when($this->alcance, fn ($q) => Alcance::filtrar($q, $this->alcance, 'g.sede_id', 'g.grado_id'))
             ->when($this->gradoId !== null, fn ($q) => $q->where('g.grado_id', $this->gradoId))
             ->when($this->grupoId !== null, fn ($q) => $q->where('g.id', $this->grupoId))
             ->orderBy('gr.numero')->orderByDesc('s.es_principal')->orderBy('s.nombre')->orderBy('g.numero')
@@ -263,6 +267,7 @@ final class InformeMatricula
             ->join('grados as gr', 'gr.id', '=', 'si.grado_id')
             ->where('si.anio_lectivo_id', $this->anio->id)
             ->tap(fn ($q) => Alcance::solicitudesDeSedes($q, $this->sedes, 'si'))
+            ->when($this->alcance, fn ($q) => Alcance::filtrarSolicitudes($q, $this->alcance, 'si'))
             ->when($this->gradoId !== null, fn ($q) => $q->where('si.grado_id', $this->gradoId))
             // De un grupo, solo las que ya se matricularon en él.
             ->when($this->grupoId !== null, fn ($q) => $q->whereExists(fn ($m) => $m->from('matriculas as im')

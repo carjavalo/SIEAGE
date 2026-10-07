@@ -50,7 +50,7 @@ class InformeController extends Controller
         }
         $grado = ! empty($filtros['grado']) ? (DB::table('grados')->where('id', $filtros['grado'])->first(['id', 'numero', 'nombre']) ?? abort(404)) : null;
 
-        $informe = InformeMatricula::del($anio, $sede ? [$sede->id] : $permitidas, $grado?->id, $grupo?->id) ?? abort(404);
+        $informe = InformeMatricula::del($anio, $sede ? [$sede->id] : $permitidas, $grado?->id, $grupo?->id, $request->user()) ?? abort(404);
 
         return Inertia::render('informes/matricula', [
             ...$informe,
@@ -110,7 +110,10 @@ class InformeController extends Controller
             'anio' => ['required', 'integer'],
             'sede' => ['required', 'string', 'max:5'],
         ]);
-        Alcance::exigirSede($request->user(), DB::table('sedes')->where('codigo', $datos['sede'])->value('id'));
+        $sedeId = DB::table('sedes')->where('codigo', $datos['sede'])->value('id');
+        Alcance::exigirSede($request->user(), $sedeId);
+        // El libro trae todos los grados de la sede: no para quien solo ve algunos.
+        abort_if(isset(Alcance::grados($request->user())[(int) $sedeId]), 403);
         [$libro, $archivo] = LibroMatriculaSede::generar((int) $datos['anio'], $datos['sede']) ?? abort(404);
 
         return response()->streamDownload(function () use ($libro) {

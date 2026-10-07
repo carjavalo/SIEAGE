@@ -76,7 +76,7 @@ export default function Roles({ roles, areas, requiere, elegido, puedeUsuarios }
                         Roles y permisos
                     </h1>
                     <p className="mt-0.5 text-[14px] text-[#56627F]">
-                        Qué puede hacer cada rol en SIEAGE. Las sedes que ve cada persona se eligen en Usuarios.
+                        Qué puede hacer cada rol en SIEAGE. Si un rol no ve todas las sedes, las de cada persona se marcan en Usuarios.
                     </p>
                 </div>
                 <button

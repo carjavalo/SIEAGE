@@ -181,7 +181,7 @@ class InscritoController extends Controller
             'anio' => DB::table('anios_lectivos')->where('id', $anioId)->value('anio'),
             'gradoNumero' => DB::table('grados')->where('id', $solicitud->grado_id)->value('numero'),
             // Solo los grupos de las sedes del usuario.
-            'grupos' => Grupos::conOcupacion($anioId, $solicitud->grado_id, Alcance::sedes(request()->user())),
+            'grupos' => Grupos::conOcupacion($anioId, $solicitud->grado_id, Alcance::sedesDelGrado(request()->user(), (int) $solicitud->grado_id)),
         ]);
     }
 
@@ -199,7 +199,7 @@ class InscritoController extends Controller
                 'required',
                 'integer',
                 Rule::exists('grupos', 'id')->where('grado_id', $solicitud->grado_id)->where('anio_lectivo_id', $anioId)
-                    ->when(Alcance::sedes($request->user()) !== null, fn ($r) => $r->whereIn('sede_id', Alcance::sedes($request->user()))),
+                    ->when(! Alcance::todas($request->user()), fn ($r) => $r->whereIn('sede_id', Alcance::sedesDelGrado($request->user(), (int) $solicitud->grado_id))),
             ],
         ], [
             'grupo_id.required' => 'Elige el grupo.',

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Rol;
 use App\Models\User;
+use App\Support\Alcance;
 use App\Support\Permisos;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +35,8 @@ class RolesTest extends TestCase
     {
         $docente = ['constancias', 'escribir-boletines', 'importar-datos', 'informes', 'matricular', 'ver-estudiantes', 'ver-inscritos', 'ver-sedes'];
         $this->assertSame($docente, $this->permisosDe('docente'));
-        $resto = collect(Permisos::claves())->reject(fn ($p) => in_array($p, ['gestionar-usuarios', 'gestionar-roles'], true))->sort()->values()->all();
+        // Todo menos administrar y ver todas las sedes (eso sigue siendo de cada usuario).
+        $resto = collect(Permisos::claves())->reject(fn ($p) => in_array($p, ['gestionar-usuarios', 'gestionar-roles', 'todas-las-sedes'], true))->sort()->values()->all();
         $this->assertSame($resto, $this->permisosDe('coordinacion'));
         $this->assertSame($resto, $this->permisosDe('secretaria'));
         $this->assertSame(Permisos::claves(), Permisos::de($this->usuario('administrador')));
@@ -158,6 +160,38 @@ class RolesTest extends TestCase
             ->assertSessionHasErrors('rol_id');
         $this->actingAs($coordinadora)->put("/usuarios/{$admin->id}/clave", ['password' => 'otra-clave-123'])->assertSessionHasErrors('rol_id');
         $this->assertSame($this->rol('coordinacion')->id, $coordinadora->fresh()->rol_id);
+    }
+
+    public function test_ver_todas_las_sedes_se_da_por_rol()
+    {
+        DB::table('instituciones')->insert(['id' => 1, 'nombre' => 'Institución de prueba']);
+        $sedeA = DB::table('sedes')->insertGetId(['institucion_id' => 1, 'codigo' => 'AA', 'nombre' => 'Sede A Prueba']);
+        $sedeB = DB::table('sedes')->insertGetId(['institucion_id' => 1, 'codigo' => 'BB', 'nombre' => 'Sede B Prueba']);
+        $docente = $this->rol('docente');
+        $profe = User::factory()->create(['rol_id' => $docente->id, 'todas_las_sedes' => false]);
+        DB::table('sede_user')->insert(['user_id' => $profe->id, 'sede_id' => $sedeA]);
+
+        // Como hoy: solo la suya.
+        $this->assertSame([$sedeA], Alcance::sedes($profe));
+        $this->actingAs($profe)->get('/estudiantes')->assertInertia(fn (Assert $page) => $page->where('auth.todasLasSedes', false)->etc());
+
+        // Con «Ver todas las sedes» en su rol: todas, sin tocar su usuario.
+        $admin = $this->usuario('administrador');
+        $permisos = [...$this->permisosDe('docente'), 'todas-las-sedes'];
+        $this->actingAs($admin)->put("/roles/{$docente->id}", ['etiqueta' => 'Docente', 'permisos' => $permisos])->assertSessionHasNoErrors();
+        $this->actingAs($profe)->get('/estudiantes')->assertInertia(fn (Assert $page) => $page->where('auth.todasLasSedes', true)->etc());
+        $this->assertFalse($profe->fresh()->todas_las_sedes);
+
+        // En Usuarios, ese rol no pide marcar sedes.
+        $this->actingAs($admin)->get('/usuarios')->assertInertia(fn (Assert $page) => $page
+            ->where('roles', fn ($r) => collect($r)->firstWhere('nombre', 'docente')['ve_todas'] === true
+                && collect($r)->firstWhere('nombre', 'secretaria')['ve_todas'] === false)
+            ->etc());
+        $this->actingAs($admin)->post('/usuarios', ['name' => 'Otra Docente Prueba', 'usuario' => 'otra.prueba', 'rol_id' => $docente->id, 'password' => 'clave-de-prueba-1', 'sedes' => []])
+            ->assertSessionHasNoErrors();
+        $this->actingAs($admin)->post('/usuarios', ['name' => 'Otra Secretaria Prueba', 'usuario' => 'otra.secre', 'rol_id' => $this->rol('secretaria')->id, 'password' => 'clave-de-prueba-1', 'sedes' => []])
+            ->assertSessionHasErrors('sedes');
+        $this->assertNotNull($sedeB);
     }
 
     public function test_completar_agrega_lo_que_cada_permiso_necesita()

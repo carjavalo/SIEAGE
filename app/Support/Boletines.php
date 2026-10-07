@@ -89,7 +89,7 @@ final class Boletines
             ->join('sedes as s', 's.id', '=', 'g.sede_id')
             ->where('g.anio_lectivo_id', $anioId)
             ->where('gr.numero', self::GRADO)
-            ->tap(fn ($q) => Alcance::filtrar($q, $user, 'g.sede_id'))
+            ->tap(fn ($q) => Alcance::filtrar($q, $user, 'g.sede_id', 'g.grado_id'))
             ->orderByDesc('s.es_principal')
             ->orderBy('s.nombre')
             ->orderBy('g.codigo')

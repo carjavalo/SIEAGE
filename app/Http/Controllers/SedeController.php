@@ -40,7 +40,7 @@ class SedeController extends Controller
             ->join('grados as gr', 'gr.id', '=', 'g.grado_id')
             ->leftJoin('matriculas as m', 'm.grupo_id', '=', 'g.id')
             ->where('g.anio_lectivo_id', $anio?->id)
-            ->when($permitidas !== null, fn ($q) => $q->whereIn('g.sede_id', $permitidas))
+            ->tap(fn ($q) => Alcance::filtrar($q, $request->user(), 'g.sede_id', 'g.grado_id'))
             ->groupBy('g.id', 'g.sede_id', 'g.codigo', 'g.numero', 'g.jornada', 'g.cupos_proyectados', 'gr.id', 'gr.numero', 'gr.nombre')
             ->orderBy('gr.numero')
             ->orderBy('g.numero')

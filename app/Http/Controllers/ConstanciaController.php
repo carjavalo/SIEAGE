@@ -23,7 +23,7 @@ class ConstanciaController extends Controller
             ->join('estudiantes as e', 'e.id', '=', 'm.estudiante_id')
             ->where('m.estudiante_id', $estudiante)
             ->whereNull('e.deleted_at')
-            ->tap(fn ($q) => Alcance::filtrar($q, $request->user(), 'm.sede_id'))
+            ->tap(fn ($q) => Alcance::filtrar($q, $request->user(), 'm.sede_id', 'm.grado_id'))
             ->where('al.estado', '<>', 'planeado')
             ->when($request->filled('anio'), fn ($q) => $q->where('al.anio', (int) $request->query('anio')))
             ->orderByDesc('al.anio')
@@ -66,7 +66,7 @@ class ConstanciaController extends Controller
             ->when(! $grupo && $grado, fn ($q) => $q->where('m.grado_id', $grado->id))
             ->when(! $grupo && $sede, fn ($q) => $q->where('m.sede_id', $sede->id))
             // Sin sede pedida: todas las que puede ver (un grupo de otra sede no trae a nadie).
-            ->tap(fn ($q) => Alcance::filtrar($q, $request->user(), 'm.sede_id'))
+            ->tap(fn ($q) => Alcance::filtrar($q, $request->user(), 'm.sede_id', 'm.grado_id'))
             ->orderByDesc('s.es_principal')
             ->orderBy('s.nombre')
             ->orderBy('gr.numero')

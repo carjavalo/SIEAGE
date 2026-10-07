@@ -9,8 +9,11 @@ use Illuminate\Support\Facades\DB;
 /**
  * Qué sedes puede ver y modificar un usuario.
  *
- * - Administrador, o usuario con "todas las sedes": todas (`sedes()` devuelve null).
+ * - Administrador, usuario con "todas las sedes" o con un rol que tiene el permiso
+ *   «Ver todas las sedes»: todas (`sedes()` devuelve null).
  * - Los demás: solo las sedes asignadas en sede_user. Sin ninguna, ninguna.
+ * - Y en cada sede asignada, si tiene grados marcados (sede_user_grado), solo
+ *   esos grados (p. ej. Rafael Pombo → Transición); sin grados marcados, todos.
  *
  * Todo lo que lee o modifica datos de estudiantes, grupos, inscritos o informes
  * pasa por aquí: el filtro se aplica en el servidor, no solo en la pantalla.
@@ -31,7 +34,7 @@ final class Alcance
             return $guardado;
         }
 
-        $sedes = $user->esAdministrador() || $user->todas_las_sedes
+        $sedes = $user->esAdministrador() || $user->todas_las_sedes || Permisos::tiene($user, 'todas-las-sedes')
             ? null
             : DB::table('sede_user')->where('user_id', $user->id)->pluck('sede_id')->map(fn ($id) => (int) $id)->all();
         request()->attributes->set($clave, $sedes);
@@ -51,12 +54,101 @@ final class Alcance
         return $sedes === null || ($sedeId !== null && in_array((int) $sedeId, $sedes, true));
     }
 
-    /** Limita una consulta a las sedes del usuario por la columna indicada (p. ej. 'm.sede_id'). */
-    public static function filtrar(Builder $consulta, ?User $user, string $columna): Builder
+    /**
+     * Las sedes donde solo ve algunos grados: [sede_id => [grado_id, …]]. Las
+     * sedes que no aparecen se ven con todos sus grados.
+     *
+     * @return array<int, list<int>>
+     */
+    public static function grados(?User $user): array
     {
         $sedes = self::sedes($user);
+        if (! $user || $sedes === null || $sedes === []) {
+            return [];
+        }
 
-        return $sedes === null ? $consulta : $consulta->whereIn($columna, $sedes);
+        $clave = "alcance.grados.{$user->id}";
+        $guardado = request()->attributes->get($clave);
+        if ($guardado === null) {
+            $guardado = DB::table('sede_user_grado')->where('user_id', $user->id)->whereIn('sede_id', $sedes)->get(['sede_id', 'grado_id'])
+                ->groupBy('sede_id')->map(fn ($filas) => $filas->pluck('grado_id')->map(fn ($id) => (int) $id)->values()->all())->all();
+            request()->attributes->set($clave, $guardado);
+        }
+
+        return $guardado;
+    }
+
+    /** Si puede ver ese grado en esa sede. */
+    public static function puedeVer(?User $user, int|string|null $sedeId, int|string|null $gradoId): bool
+    {
+        if (! self::puedeVerSede($user, $sedeId)) {
+            return false;
+        }
+        $limitados = self::grados($user)[(int) $sedeId] ?? null;
+
+        return $limitados === null || ($gradoId !== null && in_array((int) $gradoId, $limitados, true));
+    }
+
+    /** Como puedeVer, pero responde 404 si no puede. */
+    public static function exigir(?User $user, int|string|null $sedeId, int|string|null $gradoId): void
+    {
+        abort_unless(self::puedeVer($user, $sedeId, $gradoId), 404);
+    }
+
+    /** Las sedes donde puede ver ese grado (null = todas). */
+    public static function sedesDelGrado(?User $user, ?int $gradoId): ?array
+    {
+        $sedes = self::sedes($user);
+        if ($sedes === null) {
+            return null;
+        }
+        $limitados = self::grados($user);
+
+        return array_values(array_filter($sedes, fn ($s) => ! isset($limitados[$s]) || ($gradoId !== null && in_array($gradoId, $limitados[$s], true))));
+    }
+
+    /** Los grados que puede ver (null = todos), en una sede o en todas las suyas. */
+    public static function gradosVisibles(?User $user, ?int $sedeId = null): ?array
+    {
+        $sedes = self::sedes($user);
+        if ($sedes === null) {
+            return null;
+        }
+        $limitados = self::grados($user);
+        $grados = [];
+        foreach ($sedeId !== null ? array_intersect($sedes, [$sedeId]) : $sedes as $s) {
+            if (! isset($limitados[$s])) {
+                return null;
+            }
+            $grados = [...$grados, ...$limitados[$s]];
+        }
+
+        return array_values(array_unique($grados));
+    }
+
+    /**
+     * Limita una consulta a las sedes del usuario por la columna indicada (p. ej.
+     * 'm.sede_id') y, con `$grado` (p. ej. 'm.grado_id'), a los grados que tenga
+     * marcados en cada sede.
+     */
+    public static function filtrar(Builder $consulta, ?User $user, string $columna, ?string $grado = null): Builder
+    {
+        $sedes = self::sedes($user);
+        if ($sedes === null) {
+            return $consulta;
+        }
+        $limitados = $grado ? self::grados($user) : [];
+        if ($limitados === []) {
+            return $consulta->whereIn($columna, $sedes);
+        }
+        $libres = array_values(array_diff($sedes, array_keys($limitados)));
+
+        return $consulta->where(function ($w) use ($columna, $grado, $libres, $limitados) {
+            $w->whereIn($columna, $libres);
+            foreach ($limitados as $sede => $grados) {
+                $w->orWhere(fn ($o) => $o->where($columna, $sede)->whereIn($grado, $grados));
+            }
+        });
     }
 
     /**
@@ -65,9 +157,7 @@ final class Alcance
      */
     public static function puedeVerEstudiante(?User $user, int $estudianteId): bool
     {
-        $sedes = self::sedes($user);
-
-        return $sedes === null || DB::table('matriculas')->where('estudiante_id', $estudianteId)->whereIn('sede_id', $sedes)->exists();
+        return self::todas($user) || self::filtrar(DB::table('matriculas')->where('estudiante_id', $estudianteId), $user, 'sede_id', 'grado_id')->exists();
     }
 
     /** Como puedeVerEstudiante, pero responde 404 (no revela que existe) si no puede. */
@@ -89,7 +179,21 @@ final class Alcance
      */
     public static function filtrarSolicitudes(Builder $consulta, ?User $user, string $alias = 's'): Builder
     {
-        return self::solicitudesDeSedes($consulta, self::sedes($user), $alias);
+        $sedes = self::sedes($user);
+        $limitados = self::grados($user);
+        if ($sedes === null || $limitados === []) {
+            return self::solicitudesDeSedes($consulta, $sedes, $alias);
+        }
+
+        // En las sedes con grados marcados, solo las solicitudes de esos grados.
+        $libres = array_values(array_diff($sedes, array_keys($limitados)));
+
+        return $consulta->where(function ($w) use ($libres, $limitados, $alias) {
+            $w->where(fn ($q) => self::solicitudesDeSedes($q, $libres, $alias));
+            foreach ($limitados as $sede => $grados) {
+                $w->orWhere(fn ($q) => self::solicitudesDeSedes($q, [$sede], $alias)->whereIn("{$alias}.grado_id", $grados));
+            }
+        });
     }
 
     /**
@@ -125,5 +229,6 @@ final class Alcance
     public static function olvidar(User $user): void
     {
         request()->attributes->remove("alcance.sedes.{$user->id}");
+        request()->attributes->remove("alcance.grados.{$user->id}");
     }
 }
