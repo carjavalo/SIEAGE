@@ -15,9 +15,9 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Gestor básico de usuarios (solo administradores, ver la regla
- * 'gestionar-usuarios'). No se borran usuarios: se desactivan, para no perder
- * quién registró qué.
+ * Gestor básico de usuarios (permiso 'gestionar-usuarios'). No se borran
+ * usuarios: se desactivan, para no perder quién registró qué. A los
+ * administradores solo los toca otro administrador.
  */
 class UsuarioController extends Controller
 {
@@ -49,7 +49,7 @@ class UsuarioController extends Controller
                     'en_linea' => $enLinea->has($u->id),
                     'ultima_vez' => ($u->ultima_actividad ?? $u->ultimo_acceso)?->toIso8601String(),
                 ]),
-            'roles' => Rol::orderBy('id')->get(['id', 'nombre', 'descripcion']),
+            'roles' => Rol::orderBy('id')->get(['id', 'nombre', 'etiqueta', 'descripcion']),
             // Para asignar a cada usuario las sedes que puede ver.
             'sedes' => DB::table('sedes')->orderByDesc('es_principal')->orderBy('nombre')->get(['id', 'codigo', 'nombre']),
         ]);
@@ -61,6 +61,7 @@ class UsuarioController extends Controller
             ...$this->reglas(),
             'password' => ['required', 'string', 'min:8', 'max:72'],
         ], self::MENSAJES);
+        $this->soloAdministradores($request, null, (int) $datos['rol_id']);
 
         // En una transacción: si faltan sedes, el usuario no queda creado a medias.
         DB::transaction(fn () => $this->asignarSedes(User::create([...collect($datos)->except('sedes')->all(), 'activo' => true]), $datos));
@@ -75,6 +76,7 @@ class UsuarioController extends Controller
             'activo' => ['required', 'boolean'],
         ], self::MENSAJES);
 
+        $this->soloAdministradores($request, $usuario, (int) $datos['rol_id']);
         $this->protegerAdministradores($request, $usuario, (int) $datos['rol_id'], (bool) $datos['activo']);
 
         DB::transaction(function () use ($usuario, $datos) {
@@ -93,6 +95,7 @@ class UsuarioController extends Controller
         $datos = $request->validate([
             'password' => ['required', 'string', 'min:8', 'max:72'],
         ], self::MENSAJES);
+        $this->soloAdministradores($request, $usuario);
 
         // La clave anterior deja de servir, también en los equipos donde quedó recordada.
         $usuario->forceFill(['password' => $datos['password'], 'remember_token' => null])->save();
@@ -157,6 +160,22 @@ class UsuarioController extends Controller
             'sedes' => ['sometimes', 'array'],
             'sedes.*' => ['integer', 'distinct', 'exists:sedes,id'],
         ];
+    }
+
+    /**
+     * Quien gestiona usuarios sin ser administrador (si un rol tiene ese permiso)
+     * no puede dar el rol de administrador ni tocar a un administrador: así nadie
+     * se sube a sí mismo por encima de su rol.
+     */
+    private function soloAdministradores(Request $request, ?User $usuario, ?int $rolId = null): void
+    {
+        if ($request->user()->esAdministrador()) {
+            return;
+        }
+        $adminId = (int) Rol::where('nombre', 'administrador')->value('id');
+        if (($usuario && (int) $usuario->rol_id === $adminId) || $rolId === $adminId) {
+            throw ValidationException::withMessages(['rol_id' => 'Solo un administrador puede dar ese rol o cambiar a un administrador.']);
+        }
     }
 
     /**

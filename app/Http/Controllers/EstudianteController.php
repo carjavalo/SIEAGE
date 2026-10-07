@@ -227,7 +227,7 @@ class EstudianteController extends Controller
             'estudiante' => $alumno,
             'actual' => $actual,
             // Transición del año en curso: escribe e imprime su boletín (ver BoletinController).
-            'boletin' => $actual && (int) $actual->grado_numero === Boletines::GRADO && $actual->estado === 'activo'
+            'boletin' => $actual && request()->user()->can('escribir-boletines') && (int) $actual->grado_numero === Boletines::GRADO && $actual->estado === 'activo'
                 && $actual->grupo_id !== null && Alcance::puedeVerSede(request()->user(), $actual->sede_id)
                 && DB::table('anios_lectivos')->where('anio', $actual->anio)->value('estado') === 'activo',
             'documentos' => $this->documentos($historia->pluck('id')),

@@ -18,7 +18,7 @@ class ProfileController extends Controller
     public function edit(Request $request): Response
     {
         return Inertia::render('settings/profile', [
-            'rol' => $request->user()->rol?->nombre,
+            'rol' => $request->user()->rol?->etiqueta ?? $request->user()->rol?->nombre,
         ]);
     }
 

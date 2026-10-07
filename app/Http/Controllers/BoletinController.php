@@ -50,7 +50,7 @@ class BoletinController extends Controller
         $periodo = $request->filled('periodo') ? $periodos->firstWhere('id', $request->integer('periodo')) : Boletines::periodoActual($periodos);
         abort_if($request->filled('periodo') && ! $periodo, 404);
 
-        $configura = $grupo && $user->can('gestionar-sedes');
+        $configura = $grupo && $user->can('configurar-boletines');
 
         return Inertia::render('boletines/index', [
             'anio' => $anio->anio,
@@ -68,7 +68,7 @@ class BoletinController extends Controller
             'usuarios' => $configura
                 ? $this->firmantes($grupo->sede_id)
                     ->orderByRaw("CASE r.nombre WHEN 'docente' THEN 0 WHEN 'coordinacion' THEN 1 ELSE 2 END")->orderBy('u.name')
-                    ->get(['u.id', 'u.name', 'r.nombre as rol'])
+                    ->get(['u.id', 'u.name', DB::raw('COALESCE(r.etiqueta, r.nombre) as rol')])
                 : [],
         ]);
     }
@@ -223,13 +223,16 @@ class BoletinController extends Controller
             throw ValidationException::withMessages(['nombre' => "Ya existe: es el usuario «{$igual}». Si no sale en la lista, revisa en Usuarios que esté activo y en esta sede."]);
         }
 
-        $rol = $datos['para'] === 'director' ? 'docente' : 'coordinacion';
+        $rol = Rol::where('nombre', $datos['para'] === 'director' ? 'docente' : 'coordinacion')->first();
+        if (! $rol) {
+            throw ValidationException::withMessages(['nombre' => 'Ya no existe el rol con que se crea: créalo en Usuarios con el rol que corresponda.']);
+        }
         $nuevo = DB::transaction(function () use ($datos, $rol, $g) {
             $u = User::create([
                 'name' => $datos['nombre'],
                 'usuario' => self::usuarioPara($datos['nombre']),
                 'password' => Str::random(48),
-                'rol_id' => Rol::where('nombre', $rol)->value('id'),
+                'rol_id' => $rol->id,
                 'activo' => true,
             ]);
             DB::table('sede_user')->insert(['user_id' => $u->id, 'sede_id' => $g->sede_id, 'created_at' => now()]);
@@ -245,7 +248,7 @@ class BoletinController extends Controller
             return $u;
         });
 
-        return response()->json(['id' => $nuevo->id, 'name' => $nuevo->name, 'usuario' => $nuevo->usuario, 'rol' => $rol], 201);
+        return response()->json(['id' => $nuevo->id, 'name' => $nuevo->name, 'usuario' => $nuevo->usuario, 'rol' => $rol->etiqueta ?? $rol->nombre], 201);
     }
 
     /**
