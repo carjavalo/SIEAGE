@@ -5,7 +5,7 @@ import { type FichaDetalle, parentescoDe, telefono } from '@/lib/estudiantes';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { ArrowLeft, Camera, FileBadge, Home, Mail, MessageSquareText, Phone, Printer, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Camera, FileBadge, Home, Mail, MessageSquareText, NotebookPen, Phone, Printer, ShieldCheck } from 'lucide-react';
 import { type ReactNode } from 'react';
 
 type Institucion = { nombre: string; nit: string | null; codigo_dane: string | null; resolucion: string | null; municipio: string | null };
@@ -72,7 +72,7 @@ function Dato({ etiqueta, children }: { etiqueta: string; children: ReactNode })
 
 const sisben = (nivel: string) => (nivel === 'ninguno' ? 'No tiene' : `Nivel ${nivel}`);
 
-export default function Ficha({ estudiante, actual, historia, acudientes, boletines, parentescos, institucion }: Props) {
+export default function Ficha({ estudiante, actual, historia, acudientes, boletines, boletin, parentescos, institucion }: Props) {
     const editable = usePage<SharedData>().props.auth.puedeEditarDatos;
     const anios = edad(estudiante.fecha_nacimiento);
     const telefonos = [estudiante.telefono_1, estudiante.telefono_2].filter((t, i, todos): t is string => !!t && todos.indexOf(t) === i);
@@ -113,6 +113,15 @@ export default function Ficha({ estudiante, actual, historia, acudientes, boleti
                         <Printer className="size-4" />
                         Imprimir ficha
                     </button>
+                    {boletin && (
+                        <Link
+                            href={`/boletines?ver=${estudiante.id}`}
+                            className="flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB]"
+                        >
+                            <NotebookPen className="size-4" />
+                            Boletín
+                        </Link>
+                    )}
                     {actual && (
                         <Link
                             href={`/estudiantes/${estudiante.id}/constancia?anio=${actual.anio}`}

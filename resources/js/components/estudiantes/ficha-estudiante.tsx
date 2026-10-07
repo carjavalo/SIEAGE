@@ -7,8 +7,8 @@ import { Bloque, ContenidoFicha, PanelFicha, Sep, TarjetaContacto } from '@/comp
 import { type FichaDetalle, type Grado, edad, fecha, parentescoDe } from '@/lib/estudiantes';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
-import { usePage } from '@inertiajs/react';
-import { CircleAlert, FileText, StickyNote } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { CircleAlert, FileText, NotebookPen, StickyNote } from 'lucide-react';
 import { type RefObject } from 'react';
 
 type Props = {
@@ -154,6 +154,15 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
                         <p className="mt-1 text-[14px] text-[#56627F]">
                             Matriculado el {fecha(m.fecha_matricula) ?? '—'} <Sep /> Nació el {fecha(e.fecha_nacimiento) ?? '—'}
                         </p>
+                        {ficha.boletin && (
+                            <Link
+                                href={`/boletines?ver=${e.id}`}
+                                className="mt-2 inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#1E3A7B] underline-offset-4 hover:underline"
+                            >
+                                <NotebookPen className="size-4" />
+                                Boletín de transición
+                            </Link>
+                        )}
                     </Bloque>
                 )}
 

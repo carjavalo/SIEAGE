@@ -181,7 +181,31 @@ html.panel {
     margin: 0;
 }
 
+/* Boletines de transición: hojas carta sin márgenes (el diseño ya los trae), una
+   o más por estudiante. En pantalla, cada hoja con su sombra de papel. */
+@page boletin {
+    size: 215.9mm 279.4mm;
+    margin: 0;
+}
+
+@media screen {
+    .hoja-boletin {
+        box-shadow:
+            0 1px 2px rgba(22, 34, 63, 0.08),
+            0 18px 40px -20px rgba(22, 34, 63, 0.35);
+    }
+}
+
 @media print {
+    .hoja-boletin {
+        page: boletin;
+        break-before: page;
+    }
+
+    main > :first-child > .hoja-boletin:first-child {
+        break-before: auto;
+    }
+
     .pliego {
         break-after: page;
     }

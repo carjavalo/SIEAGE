@@ -135,6 +135,8 @@ export const parentescoDe = (a: Pick<Acudiente, 'parentesco' | 'parentesco_otro'
 export type FichaDetalle = {
     estudiante: DatosEstudiante;
     actual: Matricula | null;
+    /** Está en transición este año: tiene boletín para escribir e imprimir. */
+    boletin: boolean;
     /** Matrícula del año siguiente (planeado), si ya fue promovido. */
     promocion: {
         anio: number;
