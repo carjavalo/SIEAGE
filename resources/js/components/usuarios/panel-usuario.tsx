@@ -533,7 +533,7 @@ function CasillaSede({
     return (
         <label
             className={cn(
-                'flex items-center gap-3 rounded-[16px] border-[1.5px] px-3.5 py-2.5 transition',
+                'relative flex items-center gap-3 rounded-[16px] border-[1.5px] px-3.5 py-2.5 transition',
                 desactivada ? 'cursor-default opacity-60' : 'cursor-pointer',
                 marcada ? 'border-[#1E3A7B] bg-[#F7F9FF]' : 'border-[#E3E9F6] hover:border-[#B9C8EC]',
             )}

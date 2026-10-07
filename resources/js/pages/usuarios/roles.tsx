@@ -339,7 +339,8 @@ function Interruptor({
     return (
         <label
             className={cn(
-                'flex items-center justify-between gap-4 rounded-[16px] border-[1.5px] px-4 py-3 transition',
+                // relative: la casilla oculta queda dentro del interruptor (si no, alarga la página).
+                'relative flex items-center justify-between gap-4 rounded-[16px] border-[1.5px] px-4 py-3 transition',
                 bloqueado ? 'cursor-default border-[#E3E9F6] bg-[#FAFBFE]' : 'cursor-pointer hover:border-[#B9C8EC]',
                 !bloqueado && (activo ? 'border-[#C4D2F1] bg-[#F7F9FF]' : 'border-[#E3E9F6]'),
             )}
@@ -428,7 +429,7 @@ function FormularioNuevo({
                                     <label
                                         key={r.id}
                                         className={cn(
-                                            'flex h-9 cursor-pointer items-center rounded-full px-3.5 text-[14px] font-medium ring-1 transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#6E8BD6]',
+                                            'relative flex h-9 cursor-pointer items-center rounded-full px-3.5 text-[14px] font-medium ring-1 transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#6E8BD6]',
                                             elegido ? 'bg-[#1E3A7B] text-white ring-[#1E3A7B]' : 'text-[#3E4A68] ring-[#D3DDF3] hover:bg-[#EEF2FB]',
                                         )}
                                     >

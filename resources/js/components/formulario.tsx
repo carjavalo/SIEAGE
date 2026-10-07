@@ -188,7 +188,7 @@ export function Interruptor({
     return (
         <label
             className={cn(
-                'flex items-center justify-between gap-4 rounded-[16px] border-[1.5px] px-4 py-3 transition',
+                'relative flex items-center justify-between gap-4 rounded-[16px] border-[1.5px] px-4 py-3 transition',
                 desactivado ? 'cursor-not-allowed border-[#E3E9F6] opacity-60' : 'cursor-pointer border-[#E3E9F6] hover:border-[#B9C8EC]',
             )}
         >
