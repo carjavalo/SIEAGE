@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Support\Documentos;
 use Database\Seeders\DatosInicialesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,7 @@ class InformeTest extends TestCase
     public function test_solo_con_sesion()
     {
         $this->get('/informes/matricula')->assertRedirect('/login');
+        $this->get('/informes/documentos')->assertRedirect('/login');
     }
 
     public function test_el_informe_cuadra_con_la_base()
@@ -120,6 +122,39 @@ class InformeTest extends TestCase
             $this->actingAs(User::first())->get("/informes/matricula?anio=2026&grupo={$otro}")->assertNotFound();
         }
         $this->actingAs(User::first())->get('/informes/matricula?anio=2026&grupo=999999')->assertNotFound();
+    }
+
+    public function test_el_informe_de_documentos_lista_a_quienes_les_falta_algo()
+    {
+        $this->seed(DatosInicialesSeeder::class);
+        $anioId = DB::table('anios_lectivos')->where('anio', 2026)->value('id');
+        $grupo = DB::table('grupos as g')->join('sedes as s', 's.id', '=', 'g.sede_id')->join('grados as gr', 'gr.id', '=', 'g.grado_id')
+            ->where('g.anio_lectivo_id', $anioId)->where('gr.numero', 7)->orderBy('g.id')->first(['g.id', 'g.codigo', 'g.grado_id', 's.codigo as sede']);
+        $matriculas = DB::table('matriculas')->where('grupo_id', $grupo->id)->where('estado', 'activo')->orderBy('id')->pluck('id');
+        $todos = collect(Documentos::lista(7, 'T.I.', null))->mapWithKeys(fn ($d) => [$d['clave'] => 'entregado'])->all();
+        // El primero lo trajo todo; el segundo solo debe el SIMAT, que marcó como «no aplica», y la carpeta.
+        DB::table('matriculas')->where('id', $matriculas[0])->update(['documentos' => json_encode($todos)]);
+        DB::table('matriculas')->where('id', $matriculas[1])->update(['documentos' => json_encode([...$todos, 'simat' => 'no_aplica', 'carpeta' => null])]);
+
+        $this->actingAs(User::first())->get("/informes/documentos?anio=2026&grupo={$grupo->id}")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('informes/documentos')
+                ->where('filtro.grupo', $grupo->id)
+                ->where('totales.activos', $matriculas->count())
+                ->where('totales.completos', 1)
+                ->where('totales.pendientes', $matriculas->count() - 1)
+                ->where('totales.sinRegistro', $matriculas->count() - 2)
+                ->has('grupos', 1)
+                ->where('grupos.0.grupo', $grupo->codigo)
+                ->has('grupos.0.estudiantes', $matriculas->count() - 1)
+                // Bachillerato: sin vacunas. El segundo: N/A en SIMAT y solo le falta la carpeta.
+                ->where('grupos.0.estudiantes', fn ($e) => collect($e)->every(fn ($x) => ! array_key_exists('vacunas', (array) $x['estados']))
+                    && collect($e)->contains(fn ($x) => $x['faltan'] === 1 && $x['estados']['simat'] === 'no_aplica' && $x['estados']['carpeta'] === 'falta'))
+                ->where('documentos', fn ($d) => collect($d)->firstWhere('clave', 'carpeta')['faltan'] === $matriculas->count() - 1));
+
+        // Mismos filtros y alcance que el de matrícula.
+        $this->actingAs(User::first())->get('/informes/documentos?anio=2026&sede=XX')->assertNotFound();
     }
 
     public function test_un_anio_que_no_existe_da_404()
