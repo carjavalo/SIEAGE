@@ -77,6 +77,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('can:informes')->group(function () {
         Route::get('informes/matricula', [InformeController::class, 'matricula'])->name('informes.matricula');
         Route::get('informes/matricula/excel', [InformeController::class, 'excel'])->name('informes.matricula.excel');
+        Route::get('informes/documentos', [InformeController::class, 'documentos'])->name('informes.documentos');
     });
 
     Route::middleware('can:ver-inscritos')->group(function () {

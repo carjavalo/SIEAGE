@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\Alcance;
+use App\Support\InformeDocumentos;
 use App\Support\InformeMatricula;
 use App\Support\LibroMatriculaSede;
 use Illuminate\Http\Request;
@@ -13,14 +14,43 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Informe de matrícula del año: una vista previa hoja por hoja (A4) que se
- * guarda como PDF desde el cuadro de impresión del navegador; y el libro de
- * matrícula de cada sede en Excel, con el formato que el colegio ya usa.
+ * Informes del año, con vista previa hoja por hoja (A4) que se guarda como PDF
+ * desde el cuadro de impresión del navegador: el de matrícula y el de documentos
+ * pendientes, con los mismos filtros. Y el libro de matrícula de cada sede en
+ * Excel, con el formato que el colegio ya usa.
  */
 class InformeController extends Controller
 {
     /** Todo el colegio, o solo una sede (?sede=P), un grado (?grado=ID) y un grupo (?grupo=ID). */
     public function matricula(Request $request): Response
+    {
+        $f = $this->filtros($request);
+        $informe = InformeMatricula::del($f['anio'], $f['sedes'], $f['grado']?->id, $f['grupo']?->id, $request->user()) ?? abort(404);
+
+        return Inertia::render('informes/matricula', [...$informe, ...$this->propiedades($f)]);
+    }
+
+    /** Documentos de matrícula pendientes por estudiante, con los mismos filtros. */
+    public function documentos(Request $request): Response
+    {
+        $f = $this->filtros($request);
+        $informe = InformeDocumentos::del($f['anio'], $f['sedes'], $f['grado']?->id, $f['grupo']?->id, $request->user()) ?? abort(404);
+
+        return Inertia::render('informes/documentos', [
+            ...$informe,
+            ...$this->propiedades($f),
+            'institucion' => DB::table('instituciones')->first(['nombre', 'municipio', 'codigo_dane']),
+            'anios' => DB::table('anios_lectivos')->orderByDesc('anio')->pluck('anio'),
+            'corte' => now()->toIso8601String(),
+        ]);
+    }
+
+    /**
+     * Año, sede, grado y grupo pedidos, validados contra lo que puede ver el usuario.
+     *
+     * @return array{anio: int, sede: object|null, grado: object|null, grupo: object|null, sedes: list<int>|null, permitidas: list<int>|null}
+     */
+    private function filtros(Request $request): array
     {
         $filtros = $request->validate([
             'anio' => ['nullable', 'integer'],
@@ -50,20 +80,24 @@ class InformeController extends Controller
         }
         $grado = ! empty($filtros['grado']) ? (DB::table('grados')->where('id', $filtros['grado'])->first(['id', 'numero', 'nombre']) ?? abort(404)) : null;
 
-        $informe = InformeMatricula::del($anio, $sede ? [$sede->id] : $permitidas, $grado?->id, $grupo?->id, $request->user()) ?? abort(404);
+        return ['anio' => $anio, 'sede' => $sede, 'grado' => $grado, 'grupo' => $grupo, 'sedes' => $sede ? [$sede->id] : $permitidas, 'permitidas' => $permitidas];
+    }
 
-        return Inertia::render('informes/matricula', [
-            ...$informe,
+    /** Lo que necesitan los selectores de la barra: lo elegido y las opciones. */
+    private function propiedades(array $f): array
+    {
+        return [
+            'anio' => $f['anio'],
             'filtro' => [
-                'sede' => $sede?->codigo,
-                'sedeNombre' => $sede?->nombre,
-                'grado' => $grado?->id,
-                'gradoNombre' => $grado?->nombre,
-                'grupo' => $grupo?->id,
-                'grupoCodigo' => $grupo?->codigo,
+                'sede' => $f['sede']?->codigo,
+                'sedeNombre' => $f['sede']?->nombre,
+                'grado' => $f['grado']?->id,
+                'gradoNombre' => $f['grado']?->nombre,
+                'grupo' => $f['grupo']?->id,
+                'grupoCodigo' => $f['grupo']?->codigo,
             ],
-            'opciones' => $this->opciones($anio, $permitidas),
-        ]);
+            'opciones' => $this->opciones($f['anio'], $f['permitidas']),
+        ];
     }
 
     /**
