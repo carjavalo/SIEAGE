@@ -118,6 +118,30 @@ export type Informe = {
     }[];
 };
 
+/** Estado de un documento en el informe de pendientes; si no le corresponde (vacunas en bachillerato), no viene. */
+export type EstadoDocumentoInforme = 'entregado' | 'no_aplica' | 'falta';
+
+/** Informe de documentos pendientes (App\Support\InformeDocumentos), con los mismos filtros. */
+export type InformeDocumentos = Pick<Informe, 'institucion' | 'anio' | 'anios' | 'corte' | 'filtro' | 'opciones'> & {
+    totales: { activos: number; completos: number; pendientes: number; sinRegistro: number };
+    /** Cada documento, con cuántos estudiantes no lo han traído. */
+    documentos: { clave: string; corto: string; faltan: number }[];
+    /** Solo los estudiantes con pendientes, por grupo. */
+    grupos: {
+        grupo: string;
+        grado: string;
+        sede: string;
+        estudiantes: {
+            nombre: string;
+            documento: string;
+            acudiente: string | null;
+            telefono: string | null;
+            estados: Partial<Record<string, EstadoDocumentoInforme>>;
+            faltan: number;
+        }[];
+    }[];
+};
+
 /** "Los Farallones · Séptimo · Grupo 7-1", o null si es todo el colegio. */
 export const alcanceInforme = (f: Informe['filtro']) =>
     [f.sedeNombre, f.grupoCodigo ? null : f.gradoNombre, f.grupoCodigo && `Grupo ${f.grupoCodigo}`].filter(Boolean).join(' · ') || null;
