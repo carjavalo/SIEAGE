@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Support\Alcance;
 use App\Support\Barrios;
 use App\Support\CambiosFicha;
+use App\Support\Documentos;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -428,5 +429,29 @@ class DatosEstudianteController extends Controller
         $nuevo['barrio_id'] = Barrios::id($escrito);
 
         return (int) $nuevo['barrio_id'] === (int) $actualId ? [] : ['barrio' => [$antes, $escrito]];
+    }
+
+    /**
+     * Marca desde la ficha los documentos de matrícula que trajo el acudiente. Van
+     * en la matrícula actual; si vino de una inscripción, también en ella, para que
+     * Inscritos diga lo mismo.
+     */
+    public function documentos(Request $request, int $estudiante): RedirectResponse
+    {
+        Alcance::exigirEstudiante($request->user(), $estudiante);
+        $alumno = DB::table('estudiantes')->whereNull('deleted_at')->where('id', $estudiante)->first() ?? abort(404);
+        $actual = DB::table('matriculas as m')
+            ->join('anios_lectivos as al', 'al.id', '=', 'm.anio_lectivo_id')
+            ->join('grados as gr', 'gr.id', '=', 'm.grado_id')
+            ->where('m.estudiante_id', $estudiante)->where('al.estado', '<>', 'planeado')
+            ->orderByDesc('al.anio')
+            ->first(['m.id', 'gr.numero']) ?? abort(404);
+
+        $marcados = Documentos::validar($request, Documentos::lista((int) $actual->numero, $alumno->tipo_documento, $alumno->eps));
+        $registro = ['documentos_por' => $request->user()?->id, 'documentos_en' => now()];
+        DB::table('matriculas')->where('id', $actual->id)->update(['documentos' => json_encode($marcados), ...$registro]);
+        DB::table('solicitudes_inscripcion')->where('matricula_id', $actual->id)->update(['documentos' => json_encode($marcados), ...$registro]);
+
+        return back();
     }
 }

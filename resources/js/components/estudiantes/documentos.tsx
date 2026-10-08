@@ -9,11 +9,11 @@ import { sileo } from 'sileo';
 type Marcados = Partial<Record<string, EstadoDocumento>>;
 
 /**
- * Los documentos de matrícula de un estudiante que entró por el formulario de
- * inscripción. Si al matricular faltaron algunos, aquí se ve cuáles y se marcan
- * cuando el acudiente los traiga (se guardan en su inscripción, como en Inscritos).
+ * Los documentos de matrícula del estudiante (los de su matrícula actual). Aquí
+ * se ve cuáles faltan y se marcan cuando el acudiente los traiga. Si vino de una
+ * inscripción, también quedan marcados allá.
  */
-export function DocumentosEstudiante({ documentos: d, editable }: { documentos: Datos; editable: boolean }) {
+export function DocumentosEstudiante({ estudianteId, documentos: d, editable }: { estudianteId: number; documentos: Datos; editable: boolean }) {
     const inicial = Object.fromEntries(d.lista.filter((r) => r.estado).map((r) => [r.clave, r.estado])) as Marcados;
     const form = useForm<{ documentos: Marcados }>({ documentos: inicial });
 
@@ -26,7 +26,7 @@ export function DocumentosEstudiante({ documentos: d, editable }: { documentos: 
     };
 
     const guardar = () =>
-        form.put(`/inscritos/${d.solicitud}/documentos`, {
+        form.put(`/estudiantes/${estudianteId}/documentos`, {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {

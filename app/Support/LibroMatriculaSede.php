@@ -18,7 +18,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 /**
  * El libro de matrícula de una sede, con el mismo formato del Excel que el
  * colegio lleva a mano (p. ej. «PRINCIPAL-2026.xlsx»): una hoja por grupo con
- * sus 59 columnas y el bloque de totales, CONSOLIDADO, TOTAL MODALIDADES (si la
+ * sus columnas y el bloque de totales, CONSOLIDADO, TOTAL MODALIDADES (si la
  * sede tiene media técnica), DIRECTORES DE GRUPO y NO TOCAR. Las fórmulas son
  * las del libro original y funcionan (en el original, TOTAL MODALIDADES tenía #REF!).
  *
@@ -28,7 +28,10 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
  *   C–E fecha de matrícula · F nombre · G sede · H modalidad
  *   I–AF grupo y sede de cada uno de los 12 últimos años («No» si no estaba)
  *   AG jornada · AH género · AI–AK nacimiento · AL edad (fórmula) · AM–AN documento
- *   AO–AX boletín 1.º…10.º · AY fotos · AZ–BF acudiente · BG observaciones
+ *   AO–AX boletín 1.º…10.º · AY fotos · AZ–BF acudiente · BG–BK madre · BL–BP padre · BQ observaciones
+ *
+ * La madre y el padre no estaban en el libro original (eran 59 columnas, hasta BG):
+ * van junto al acudiente, y OBSERVACIONES pasó al final.
  */
 final class LibroMatriculaSede
 {
@@ -57,7 +60,10 @@ final class LibroMatriculaSede
 
     private const C_BOLETIN = 41;         // AO (1.º) … AX (10.º)
 
-    private const C_ULTIMA = 59;          // BG
+    private const C_ULTIMA = 69;          // BQ
+
+    /** Columnas de la madre y del padre: nombre, cédula, teléfono, ocupación y dirección. */
+    private const COLUMNAS_PADRES = ['madre' => ['BG', 'BH', 'BI', 'BJ', 'BK'], 'padre' => ['BL', 'BM', 'BN', 'BO', 'BP']];
 
     /** @var array<int, array<string, mixed>> Por grupo: filas y dónde quedaron los totales (para CONSOLIDADO). */
     private array $hojas = [];
@@ -86,6 +92,8 @@ final class LibroMatriculaSede
         $historia = $this->historia($matriculas->pluck('estudiante_id')->unique());
         $boletines = DB::table('boletines_excel')->whereIn('matricula_id', $matriculas->pluck('id'))->get()
             ->groupBy('matricula_id')->map(fn ($b) => $b->pluck('valor', 'numero'));
+        $padres = DB::table('padres')->whereIn('estudiante_id', $matriculas->pluck('estudiante_id')->unique())->get()
+            ->groupBy('estudiante_id')->map(fn ($p) => $p->keyBy('parentesco'));
 
         $libro = new Spreadsheet;
         $libro->getProperties()->setCreator('SIEAGE')->setTitle("Matrícula {$this->anio->anio} · Sede {$this->sede->nombre}");
@@ -95,7 +103,7 @@ final class LibroMatriculaSede
         foreach ($grupos as $g) {
             $hoja = new Worksheet($libro, $g->codigo);
             $libro->addSheet($hoja);
-            $this->hojaDeGrupo($hoja, $g, $matriculas->where('grupo_id', $g->id)->values(), $historia, $boletines);
+            $this->hojaDeGrupo($hoja, $g, $matriculas->where('grupo_id', $g->id)->values(), $historia, $boletines, $padres);
         }
 
         $this->consolidado($libro, $grupos);
@@ -167,7 +175,7 @@ final class LibroMatriculaSede
 
     // ------------------------------------------------------------------ hoja de grupo
 
-    private function hojaDeGrupo(Worksheet $h, object $g, Collection $filas, Collection $historia, Collection $boletines): void
+    private function hojaDeGrupo(Worksheet $h, object $g, Collection $filas, Collection $historia, Collection $boletines, Collection $padres): void
     {
         $anio = $this->anio->anio;
         $primerAnio = $anio - self::AÑOS_DE_HISTORIA + 1;
@@ -183,8 +191,13 @@ final class LibroMatriculaSede
             'H1' => 'MODALIDAD TÉCNICA', 'AG1' => 'JORNADA', 'AH1' => 'GENERO', 'AI1' => 'FECHA NACIMIENTO', 'AI2' => 'DÍA', 'AJ2' => 'MES',
             'AK2' => 'AÑO', 'AL1' => 'EDAD', 'AL2' => $anio, 'AM1' => 'TIPO DOC', 'AN1' => 'NUMERO', 'AO1' => 'BOLETIN', 'AY1' => 'FOTOS',
             'AZ1' => 'NOMBRE DEL ACUDIENTE', 'BA1' => 'CÉDULA', 'BB1' => 'PARENTESCO', 'BC1' => 'DIRECCIÓN', 'BD1' => 'BARRIO',
-            'BE1' => 'TELÉFONO FIJO', 'BF1' => 'TELÉFONO CELULAR', 'BG1' => 'OBSERVACIONES',
+            'BE1' => 'TELÉFONO FIJO', 'BF1' => 'TELÉFONO CELULAR', 'BG1' => 'MADRE', 'BL1' => 'PADRE', 'BQ1' => 'OBSERVACIONES',
         ];
+        foreach (self::COLUMNAS_PADRES as $cols) {
+            foreach (['NOMBRE', 'CÉDULA', 'TELÉFONO', 'OCUPACIÓN', 'DIRECCIÓN'] as $i => $texto) {
+                $titulos[$cols[$i].'2'] = $texto;
+            }
+        }
         foreach ($titulos as $celda => $texto) {
             $h->setCellValue($celda, $texto);
         }
@@ -192,7 +205,7 @@ final class LibroMatriculaSede
             $h->setCellValue($this->col(self::C_BOLETIN + $n - 1).'2', "{$n}º");
         }
         $combinar = ['A1:A2', 'B1:B2', 'C1:E1', 'F1:F2', 'G1:G2', 'H1:H2', 'AG1:AG2', 'AH1:AH2', 'AI1:AK1', 'AM1:AM2', 'AN1:AN2',
-            'AO1:AX1', 'AY1:AY2', 'AZ1:AZ2', 'BA1:BA2', 'BB1:BB2', 'BC1:BC2', 'BD1:BD2', 'BE1:BE2', 'BF1:BF2'];
+            'AO1:AX1', 'AY1:AY2', 'AZ1:AZ2', 'BA1:BA2', 'BB1:BB2', 'BC1:BC2', 'BD1:BD2', 'BE1:BE2', 'BF1:BF2', 'BG1:BK1', 'BL1:BP1'];
         for ($i = 0; $i < self::AÑOS_DE_HISTORIA; $i++) {
             $c = self::C_PRIMER_ANIO + 2 * $i;
             $h->setCellValue($this->col($c).'1', 'GRUPO'.($primerAnio + $i));
@@ -201,7 +214,7 @@ final class LibroMatriculaSede
         foreach ($combinar as $rango) {
             $h->mergeCells($rango);
         }
-        $h->getStyle('A1:BG2')->applyFromArray($this->estilo(12, true, self::VERDE, Border::BORDER_MEDIUM, true));
+        $h->getStyle('A1:BQ2')->applyFromArray($this->estilo(12, true, self::VERDE, Border::BORDER_MEDIUM, true));
         $h->getStyle('A1')->getFill()->setFillType(Fill::FILL_NONE);
         $h->getStyle('I1:AF1')->getNumberFormat()->setFormatCode('@');
 
@@ -239,7 +252,9 @@ final class LibroMatriculaSede
                 'BD' => $m->barrio,
                 'BE' => $this->numero($m->telefono_fijo),
                 'BF' => $this->numero($m->telefono_celular),
-                'BG' => $m->observaciones,
+                'BQ' => $m->observaciones,
+                ...$this->padre($padres->get($m->estudiante_id)?->get('madre'), 'madre'),
+                ...$this->padre($padres->get($m->estudiante_id)?->get('padre'), 'padre'),
             ];
             foreach ($valores as $col => $v) {
                 if ($v !== null && $v !== '') {
@@ -269,12 +284,21 @@ final class LibroMatriculaSede
         }
 
         // Estilo de las filas de estudiantes.
-        $h->getStyle("A3:BG{$ultima}")->applyFromArray($this->estilo(12, false, null, Border::BORDER_THIN));
+        $h->getStyle("A3:BQ{$ultima}")->applyFromArray($this->estilo(12, false, null, Border::BORDER_THIN));
         $h->getStyle("A3:A{$ultima}")->getFont()->setSize(10);
-        foreach (['F', 'AZ', 'BC'] as $col) {
+        foreach (['F', 'AZ', 'BC', 'BG', 'BJ', 'BK', 'BL', 'BO', 'BP'] as $col) {
             $h->getStyle("{$col}3:{$col}{$ultima}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_GENERAL);
         }
-        $h->getStyle("BG3:BG{$ultima}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+        $h->getStyle("BQ3:BQ{$ultima}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+        foreach (['BH', 'BM'] as $col) {
+            $h->getStyle("{$col}3:{$col}{$ultima}")->getNumberFormat()->setFormatCode('#,##0');
+        }
+        foreach (['BI', 'BN'] as $col) {
+            $h->getStyle("{$col}3:{$col}{$ultima}")->getNumberFormat()->setFormatCode('#\ ###\ ###0');
+        }
+        foreach (['BH', 'BI', 'BM', 'BN'] as $col) {
+            $h->getStyle("{$col}3:{$col}{$ultima}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        }
         $h->getStyle("I3:AF{$ultima}")->getNumberFormat()->setFormatCode('@');
         $h->getStyle("AN3:AN{$ultima}")->getNumberFormat()->setFormatCode('#,##0');
         $h->getStyle("AN3:AN{$ultima}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
@@ -303,9 +327,9 @@ final class LibroMatriculaSede
             $h->getStyle("A{$r}")->getFont()->setBold(true);
         }
 
-        // BG2, bajo OBSERVACIONES, lleva el director del grupo, como en el original.
+        // Bajo OBSERVACIONES va el director del grupo, como en el original.
         if ($g->director) {
-            $h->setCellValue('BG2', $g->director);
+            $h->setCellValue('BQ2', $g->director);
         }
 
         // Fila 1: cupo del grupo (B1) y cupos disponibles (A1), en rojo si ya no quedan.
@@ -327,7 +351,9 @@ final class LibroMatriculaSede
         // Anchos del libro original.
         $anchos = ['A' => 4.29, 'B' => 4.29, 'C' => 7.14, 'D' => 10.71, 'E' => 7.14, 'F' => 40, 'G' => 21.43, 'H' => 14.57,
             'AG' => 10.71, 'AH' => 8.57, 'AI' => 7.14, 'AN' => 15.71, 'AO' => 3.57, 'AY' => 7.14, 'AZ' => 40, 'BA' => 14.29,
-            'BB' => 14.29, 'BC' => 28.57, 'BE' => 14.43, 'BG' => 92.86];
+            'BB' => 14.29, 'BC' => 28.57, 'BE' => 14.43, 'BQ' => 92.86,
+            'BG' => 40, 'BH' => 14.29, 'BI' => 14.43, 'BJ' => 18, 'BK' => 28.57,
+            'BL' => 40, 'BM' => 14.29, 'BN' => 14.43, 'BO' => 18, 'BP' => 28.57];
         for ($i = 0; $i < self::AÑOS_DE_HISTORIA; $i++) {
             $anchos[$this->col(self::C_PRIMER_ANIO + 2 * $i)] = 5.71;
             $anchos[$this->col(self::C_PRIMER_ANIO + 2 * $i + 1)] = 2.86;
@@ -556,6 +582,32 @@ final class LibroMatriculaSede
     }
 
     // ------------------------------------------------------------------ utilidades
+
+    /**
+     * Las celdas de la madre o el padre en la fila del estudiante. Si falleció o no
+     * se registra, se dice en la columna del nombre.
+     *
+     * @return array<string, mixed>
+     */
+    private function padre(?object $p, string $rol): array
+    {
+        [$nombre, $cedula, $telefono, $ocupacion, $direccion] = self::COLUMNAS_PADRES[$rol];
+        if (! $p) {
+            return [];
+        }
+        if ($p->situacion !== 'registrado') {
+            return [$nombre => $p->situacion === 'fallecido' ? ($rol === 'madre' ? 'FALLECIDA' : 'FALLECIDO') : 'NO REGISTRA'];
+        }
+
+        return [
+            // Como la columna F: apellidos y nombres.
+            $nombre => implode(' ', array_filter([$p->primer_apellido, $p->segundo_apellido, $p->primer_nombre, $p->segundo_nombre])),
+            $cedula => $this->numero($p->numero_documento),
+            $telefono => $this->numero($p->telefono),
+            $ocupacion => $p->ocupacion,
+            $direccion => implode(', ', array_filter([$p->direccion, $p->barrio])),
+        ];
+    }
 
     private function col(int $n): string
     {
