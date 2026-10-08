@@ -6,8 +6,9 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Los videos de ayuda: «Cómo inscribir a un estudiante», que se abre desde el login, y el
- * tutorial del panel para el personal del colegio, que se abre con el «?» del encabezado.
+ * Los videos de ayuda: «Cómo inscribir a un estudiante», que se abre desde el login, el
+ * tutorial del panel para el personal del colegio, que se abre con el «?» del encabezado, y
+ * la clase de Boletines, que se abre con el «?» de esa pantalla.
  *
  * No se dejan en public/ porque el servidor de `artisan serve` no atiende peticiones por
  * rangos (Range): sin ellas Chrome no deja adelantar ni devolver el video y el iPhone no lo abre.
@@ -30,6 +31,12 @@ class AyudaController extends Controller
     public function operador(Request $request): Response
     {
         return $this->video($request, resource_path('ayuda/operador.mp4'));
+    }
+
+    /** La clase de Boletines (el «?» de esa pantalla): solo para quien escribe boletines. */
+    public function boletines(Request $request): Response
+    {
+        return $this->video($request, resource_path('ayuda/boletines.mp4'));
     }
 
     private function video(Request $request, string $ruta): Response

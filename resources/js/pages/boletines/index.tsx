@@ -1,3 +1,4 @@
+import { AyudaBoletines } from '@/components/ayuda-boletines';
 import {
     ANCHO,
     desenvolver,
@@ -375,7 +376,9 @@ function Editor({
 
     const texto = elegido !== null ? (textos.current[elegido] ?? '') : '';
     const guardado = elegido !== null ? guardados[elegido] : undefined;
-    const faltanFirmas = !grupo.director || !grupo.coordinador;
+    // Quién falta en las firmas («Falta el coordinador(a).», «Faltan el director(a) del grupo y el coordinador(a).»).
+    const faltan = [!grupo.director && 'el director(a) del grupo', !grupo.coordinador && 'el coordinador(a)'].filter((f): f is string => !!f);
+    const faltanFirmas = faltan.length > 0;
 
     return (
         <PanelLayout titulo={`Boletines · ${grupo.codigo}`} completa>
@@ -383,9 +386,12 @@ function Editor({
                 {/* ------------------------------------------------ estudiantes */}
                 <aside className="flex shrink-0 flex-col rounded-[28px] bg-[#F2F5FA] lg:min-h-0 lg:w-[310px]">
                     <div className="space-y-3 p-4 pb-3">
-                        <div>
-                            <h1 className="text-[20px] font-semibold tracking-[-0.015em]">Boletines</h1>
-                            <p className="text-[13px] text-[#56627F]">Transición · {anio}</p>
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <h1 className="text-[20px] font-semibold tracking-[-0.015em]">Boletines</h1>
+                                <p className="text-[13px] text-[#56627F]">Transición · {anio}</p>
+                            </div>
+                            <AyudaBoletines />
                         </div>
                         <Desplegable
                             etiqueta="Grupo"
@@ -479,11 +485,8 @@ function Editor({
                             <p className="flex items-start gap-2 rounded-[14px] bg-[#FFF7E8] px-3 py-2 text-[13px] leading-snug text-[#6B4A0E]">
                                 <CircleAlert className="mt-0.5 size-4 shrink-0 text-[#B7862C]" />
                                 <span>
-                                    Faltan{' '}
-                                    {[!grupo.director && 'el director(a) del grupo', !grupo.coordinador && 'el coordinador(a)']
-                                        .filter(Boolean)
-                                        .join(' y ')}
-                                    .{!puedeConfigurar && ' Pídele a coordinación que los agregue.'}
+                                    {faltan.length === 1 ? 'Falta' : 'Faltan'} {faltan.join(' y ')}.
+                                    {!puedeConfigurar && ` Pídele a coordinación que ${faltan.length === 1 ? 'lo' : 'los'} agregue.`}
                                 </span>
                             </p>
                         )}

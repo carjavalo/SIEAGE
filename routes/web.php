@@ -64,6 +64,8 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('can:escribir-boletines')->group(function () {
         Route::get('boletines', [BoletinController::class, 'index'])->name('boletines.index');
         Route::get('boletines/imprimir', [BoletinController::class, 'imprimir'])->name('boletines.imprimir');
+        // La clase en video (el «?» de Boletines), por trozos como las demás ayudas.
+        Route::get('ayuda/boletines.mp4', [AyudaController::class, 'boletines'])->name('ayuda.boletines');
         Route::post('boletines/copiar', [BoletinController::class, 'copiar'])->name('boletines.copiar');
         Route::put('boletines/{matricula}/{periodo}', [BoletinController::class, 'guardar'])->whereNumber(['matricula', 'periodo'])->name('boletines.guardar');
         // Quién firma y la jornada del grupo; crear ahí mismo a alguien que firme es crear un usuario.
