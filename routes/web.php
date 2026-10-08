@@ -109,6 +109,8 @@ Route::middleware(['auth'])->group(function () {
     // Corregir los datos del estudiante y de sus acudientes desde la ficha.
     Route::middleware('can:editar-estudiantes')->group(function () {
         Route::put('estudiantes/{estudiante}', [DatosEstudianteController::class, 'estudiante'])->whereNumber('estudiante')->name('estudiantes.actualizar');
+        // Los documentos de matrícula que faltaban, marcados desde la ficha.
+        Route::put('estudiantes/{estudiante}/documentos', [DatosEstudianteController::class, 'documentos'])->whereNumber('estudiante')->name('estudiantes.documentos');
         // POST y no GET: el documento no debe quedar en la dirección ni en los registros del servidor.
         Route::post('acudientes/buscar', [DatosEstudianteController::class, 'buscarAcudiente'])->name('acudientes.buscar');
         Route::post('estudiantes/{estudiante}/acudientes', [DatosEstudianteController::class, 'agregarAcudiente'])->whereNumber('estudiante')->name('estudiantes.acudientes.agregar');

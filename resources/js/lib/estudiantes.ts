@@ -153,13 +153,11 @@ export type FichaDetalle = {
     acudientes: Acudiente[];
     boletines: { numero: number; valor: string }[];
     parentescos: Parentesco[];
-    /** Si entró por el formulario de inscripción: los documentos de matrícula y cuáles se recibieron. */
+    /** Los documentos de matrícula de la matrícula actual y cuáles se recibieron (null si no tiene matrícula). */
     documentos: DocumentosEstudiante | null;
 };
 
 export type DocumentosEstudiante = {
-    /** La inscripción donde se guardan. */
-    solicitud: number;
     lista: (import('@/lib/inscritos').Requisito & { estado: import('@/lib/inscritos').EstadoDocumento | null })[];
     registro: { por: string | null; en: string } | null;
 };

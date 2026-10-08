@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SolicitudInscripcion;
 use App\Models\User;
 use App\Support\Alcance;
 use App\Support\Boletines;
 use App\Support\CambiosFicha;
 use App\Support\Documentos;
 use App\Support\Grupos;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -232,7 +231,7 @@ class EstudianteController extends Controller
             'boletin' => $actual && request()->user()->can('escribir-boletines') && (int) $actual->grado_numero === Boletines::GRADO && $actual->estado === 'activo'
                 && $actual->grupo_id !== null && Alcance::puedeVer(request()->user(), $actual->sede_id, $actual->grado_id)
                 && DB::table('anios_lectivos')->where('anio', $actual->anio)->value('estado') === 'activo',
-            'documentos' => $this->documentos($historia->pluck('id')),
+            'documentos' => $actual ? self::documentos($actual->id, (int) $actual->grado_numero, $alumno) : null,
             'novedades' => $novedades,
             // Matrícula del año siguiente, si ya fue promovido.
             'promocion' => $promocion,
@@ -244,27 +243,22 @@ class EstudianteController extends Controller
     }
 
     /**
-     * Los documentos de matrícula, si entró por el formulario de inscripción: la
-     * lista que le tocaba y cuáles se recibieron. Los que faltaron al matricular
-     * se marcan aquí cuando los traiga (se guardan en la misma solicitud).
+     * Los documentos de matrícula de la matrícula actual: la lista que le toca por
+     * su grado y cuáles se recibieron. Los que falten se marcan desde la ficha.
      *
-     * @param  Collection<int, int>  $matriculas
-     * @return array<string, mixed>|null
+     * @return array<string, mixed>
      */
-    private function documentos(Collection $matriculas): ?array
+    public static function documentos(int $matriculaId, int $grado, object $alumno): array
     {
-        $solicitud = SolicitudInscripcion::whereIn('matricula_id', $matriculas)->latest('id')->first();
-        if (! $solicitud) {
-            return null;
-        }
-        $marcados = $solicitud->documentos ?? [];
+        $m = DB::table('matriculas')->where('id', $matriculaId)->first(['documentos', 'documentos_por', 'documentos_en']);
+        $marcados = json_decode($m->documentos ?? '[]', true) ?: [];
 
         return [
-            'solicitud' => $solicitud->id,
-            'lista' => array_map(fn (array $d) => [...$d, 'estado' => $marcados[$d['clave']] ?? null], Documentos::para($solicitud)),
-            'registro' => $solicitud->documentos_en ? [
-                'por' => DB::table('users')->where('id', $solicitud->documentos_por)->value('name'),
-                'en' => $solicitud->documentos_en->toIso8601String(),
+            'lista' => array_map(fn (array $d) => [...$d, 'estado' => $marcados[$d['clave']] ?? null],
+                Documentos::lista($grado, $alumno->tipo_documento, $alumno->eps)),
+            'registro' => $m->documentos_en ? [
+                'por' => $m->documentos_por ? DB::table('users')->where('id', $m->documentos_por)->value('name') : null,
+                'en' => CarbonImmutable::parse($m->documentos_en)->toIso8601String(),
             ] : null,
         ];
     }

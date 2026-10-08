@@ -184,6 +184,46 @@ class InformeTest extends TestCase
         $this->assertIsNumeric($consolidado->getCell('B4')->getOldCalculatedValue());
     }
 
+    public function test_el_excel_trae_a_la_madre_y_al_padre_junto_al_acudiente()
+    {
+        $this->seed(DatosInicialesSeeder::class);
+        $anioId = DB::table('anios_lectivos')->where('anio', 2026)->value('id');
+        $grupo = DB::table('grupos as g')->join('sedes as s', 's.id', '=', 'g.sede_id')
+            ->where('g.anio_lectivo_id', $anioId)->where('s.codigo', 'P')->orderBy('g.id')->first(['g.id', 'g.codigo']);
+        // El primero de la lista (número de orden más bajo) es la fila 3.
+        $estudiante = DB::table('matriculas as m')->join('estudiantes as e', 'e.id', '=', 'm.estudiante_id')
+            ->where('m.grupo_id', $grupo->id)->whereNull('e.deleted_at')
+            ->orderByRaw('m.numero_orden is null')->orderBy('m.numero_orden')->orderBy('e.nombre_completo')->value('m.estudiante_id');
+        DB::table('padres')->where('estudiante_id', $estudiante)->delete();
+        DB::table('padres')->insert([
+            ['estudiante_id' => $estudiante, 'parentesco' => 'madre', 'situacion' => 'registrado', 'primer_nombre' => 'Martha', 'segundo_nombre' => null,
+                'primer_apellido' => 'Rentería', 'segundo_apellido' => 'Mier', 'numero_documento' => '67038408', 'telefono' => '3187184003',
+                'ocupacion' => 'Modista', 'direccion' => 'Calle 73 # 7M-18', 'barrio' => 'Alfonso López', 'created_at' => now(), 'updated_at' => now()],
+            ['estudiante_id' => $estudiante, 'parentesco' => 'padre', 'situacion' => 'fallecido', 'primer_nombre' => null, 'segundo_nombre' => null,
+                'primer_apellido' => null, 'segundo_apellido' => null, 'numero_documento' => null, 'telefono' => null,
+                'ocupacion' => null, 'direccion' => null, 'barrio' => null, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $respuesta = $this->actingAs(User::first())->get('/informes/matricula/excel?anio=2026&sede=P');
+        $archivo = tempnam(sys_get_temp_dir(), 'libro');
+        file_put_contents($archivo, $respuesta->streamedContent());
+        $hoja = IOFactory::load($archivo)->getSheetByName($grupo->codigo);
+        unlink($archivo);
+
+        // Encabezados: el acudiente sigue en AZ–BF; la madre, el padre y al final las observaciones.
+        $this->assertSame('NOMBRE DEL ACUDIENTE', $hoja->getCell('AZ1')->getValue());
+        $this->assertSame(['MADRE', 'PADRE', 'OBSERVACIONES'], [$hoja->getCell('BG1')->getValue(), $hoja->getCell('BL1')->getValue(), $hoja->getCell('BQ1')->getValue()]);
+        $this->assertSame(['NOMBRE', 'CÉDULA', 'TELÉFONO', 'OCUPACIÓN', 'DIRECCIÓN'], array_map(fn ($c) => $hoja->getCell("{$c}2")->getValue(), ['BG', 'BH', 'BI', 'BJ', 'BK']));
+
+        $this->assertSame('Rentería Mier Martha', $hoja->getCell('BG3')->getValue());
+        $this->assertEquals(67038408, $hoja->getCell('BH3')->getValue());
+        $this->assertEquals(3187184003, $hoja->getCell('BI3')->getValue());
+        $this->assertSame('Modista', $hoja->getCell('BJ3')->getValue());
+        $this->assertSame('Calle 73 # 7M-18, Alfonso López', $hoja->getCell('BK3')->getValue());
+        $this->assertSame('FALLECIDO', $hoja->getCell('BL3')->getValue());
+        $this->assertNull($hoja->getCell('BM3')->getValue());
+    }
+
     public function test_el_excel_de_una_sede_que_no_existe_da_404()
     {
         $this->seed(DatosInicialesSeeder::class);

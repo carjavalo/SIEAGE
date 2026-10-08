@@ -168,7 +168,7 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
 
                 {ficha.documentos && (
                     <Bloque titulo="Documentos de matrícula">
-                        <DocumentosEstudiante documentos={ficha.documentos} editable={editable} />
+                        <DocumentosEstudiante estudianteId={e.id} documentos={ficha.documentos} editable={editable} />
                     </Bloque>
                 )}
 

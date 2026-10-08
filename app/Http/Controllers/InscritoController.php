@@ -142,25 +142,15 @@ class InscritoController extends Controller
     public function guardarDocumentos(Request $request, SolicitudInscripcion $solicitud): RedirectResponse
     {
         Alcance::exigirSolicitud($request->user(), $solicitud->id);
-        $requisitos = collect(Documentos::para($solicitud))->keyBy('clave');
+        // Solo claves de la lista que le toca (primaria o bachillerato), en su orden.
+        $marcados = Documentos::validar($request, Documentos::para($solicitud));
 
-        $request->validate([
-            // Solo claves de la lista que le toca (primaria o bachillerato).
-            'documentos' => ['present', 'array:'.$requisitos->keys()->implode(',')],
-            ...$requisitos->mapWithKeys(fn (array $d, string $clave) => [
-                "documentos.{$clave}" => ['nullable', Rule::in($d['noAplica'] ? [Documentos::ENTREGADO, Documentos::NO_APLICA] : [Documentos::ENTREGADO])],
-            ])->all(),
-        ], [
-            'array' => 'Hay un documento que no está en la lista.',
-            'in' => 'Ese documento no se puede marcar así.',
-        ]);
-
-        $solicitud->forceFill([
-            // Solo lo marcado, en el orden de la lista.
-            'documentos' => $requisitos->keys()->mapWithKeys(fn ($clave) => [$clave => $request->input("documentos.{$clave}")])->filter()->all(),
-            'documentos_por' => $request->user()?->id,
-            'documentos_en' => now(),
-        ])->save();
+        $registro = ['documentos_por' => $request->user()?->id, 'documentos_en' => now()];
+        $solicitud->forceFill(['documentos' => $marcados, ...$registro])->save();
+        // Ya matriculado: la ficha del estudiante lee los de su matrícula.
+        if ($solicitud->matricula_id) {
+            DB::table('matriculas')->where('id', $solicitud->matricula_id)->update(['documentos' => json_encode($marcados), ...$registro]);
+        }
 
         // Si sigue pendiente, lo que sigue es elegir el grupo y matricular.
         return $solicitud->estado === SolicitudInscripcion::PENDIENTE
@@ -297,6 +287,10 @@ class InscritoController extends Controller
                 'condicion' => DB::table('matriculas')->where('estudiante_id', $estudianteId)->exists() ? 'antiguo' : 'nuevo',
                 'estado' => 'activo',
                 'observaciones' => "Inscrito por el formulario (solicitud {$s->id}).",
+                // Los documentos recibidos pasan a la matrícula; los que falten se marcan en la ficha del estudiante.
+                'documentos' => $s->documentos !== null ? json_encode($s->documentos) : null,
+                'documentos_por' => $s->documentos_por,
+                'documentos_en' => $s->documentos_en,
                 'created_at' => $ahora,
                 'updated_at' => $ahora,
             ]);

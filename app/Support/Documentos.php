@@ -3,7 +3,9 @@
 namespace App\Support;
 
 use App\Models\SolicitudInscripcion;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 /**
  * Documentos que el acudiente trae para matricular (paso N°1 del procedimiento
@@ -18,6 +20,10 @@ use Illuminate\Support\Facades\DB;
  * certificado de notas o el retiro del SIMAT de quien nunca estudió), como
  * "no aplica". Se puede matricular con documentos pendientes: quedan
  * anotados en la ficha del inscrito para pedirlos después.
+ *
+ * Se guardan en la inscripción mientras no se ha matriculado y, después, en la
+ * matrícula (matriculas.documentos): así los tienen también los estudiantes que
+ * vinieron del Excel, y la ficha de cualquiera dice cuáles faltan.
  */
 final class Documentos
 {
@@ -44,9 +50,18 @@ final class Documentos
      */
     public static function para(SolicitudInscripcion $solicitud): array
     {
-        $grado = self::grado($solicitud);
+        return self::lista(self::grado($solicitud), $solicitud->tipo_documento, $solicitud->eps);
+    }
+
+    /**
+     * La lista según el grado (número: 0 es Transición), el documento del estudiante y su EPS.
+     *
+     * @return list<array{clave: string, nombre: string, ayuda: string|null, noAplica: bool}>
+     */
+    public static function lista(int $grado, ?string $tipoDocumento, ?string $eps): array
+    {
         $primaria = $grado <= self::ULTIMO_DE_PRIMARIA;
-        $documento = self::DOCUMENTO_DEL_ESTUDIANTE[$solicitud->tipo_documento] ?? 'del documento de identidad';
+        $documento = self::DOCUMENTO_DEL_ESTUDIANTE[$tipoDocumento] ?? 'del documento de identidad';
         $anterior = $grado - 1;
 
         $lista = [
@@ -58,7 +73,7 @@ final class Documentos
                 'No aplica si no viene de otro grado.',
                 true,
             ],
-            ['eps', 'Fotocopia del carné de la EPS', $solicitud->eps ? "La familia escribió: {$solicitud->eps}." : null, false],
+            ['eps', 'Fotocopia del carné de la EPS', $eps ? "EPS registrada: {$eps}." : null, false],
             ...($primaria ? [['vacunas', 'Fotocopia del carné de vacunas', null, false]] : []),
             ['cedula_acudiente', 'Fotocopia de la cédula de la madre, el padre o el acudiente', null, false],
             ['simat', 'Retiro del SIMAT de la institución anterior', 'No aplica si no estuvo matriculado en otro colegio.', true],
@@ -66,6 +81,29 @@ final class Documentos
         ];
 
         return array_map(fn (array $d) => ['clave' => $d[0], 'nombre' => $d[1], 'ayuda' => $d[2], 'noAplica' => $d[3]], $lista);
+    }
+
+    /**
+     * Valida lo marcado contra la lista (solo sus claves; "no aplica" solo donde
+     * corresponde) y lo devuelve en el orden de la lista, sin los no marcados.
+     *
+     * @param  list<array{clave: string, nombre: string, ayuda: string|null, noAplica: bool}>  $lista
+     * @return array<string, string>
+     */
+    public static function validar(Request $request, array $lista): array
+    {
+        $requisitos = collect($lista)->keyBy('clave');
+        $request->validate([
+            'documentos' => ['present', 'array:'.$requisitos->keys()->implode(',')],
+            ...$requisitos->mapWithKeys(fn (array $d, string $clave) => [
+                "documentos.{$clave}" => ['nullable', Rule::in($d['noAplica'] ? [self::ENTREGADO, self::NO_APLICA] : [self::ENTREGADO])],
+            ])->all(),
+        ], [
+            'array' => 'Hay un documento que no está en la lista.',
+            'in' => 'Ese documento no se puede marcar así.',
+        ]);
+
+        return $requisitos->keys()->mapWithKeys(fn ($clave) => [$clave => $request->input("documentos.{$clave}")])->filter()->all();
     }
 
     public static function esPrimaria(SolicitudInscripcion $solicitud): bool
