@@ -443,6 +443,9 @@ export function Grupos({ informe: i, filas, primera }: { informe: Informe; filas
     const llenos = i.grupos.filter((g) => g.cupos > 0 && g.activos === g.cupos).length;
     const sobre = i.grupos.filter((g) => g.cupos > 0 && g.activos > g.cupos).length;
     const libres = i.grupos.reduce((s, g) => s + Math.max(0, g.cupos - g.activos), 0);
+    // Si la hoja empieza a mitad de una sede, su título dice «continúa».
+    const antes = i.grupos.findIndex((g) => g.id === filas[0]?.id) - 1;
+    const sigueDeAntes = antes >= 0 && i.grupos[antes].sede_codigo === filas[0].sede_codigo;
 
     return (
         <>
@@ -456,7 +459,7 @@ export function Grupos({ informe: i, filas, primera }: { informe: Informe; filas
                         </>
                     }
                 >
-                    Quedan {cantidad(libres, 'cupo libre', 'cupos libres')} en total. Los grupos van por grado, sede y número.
+                    Quedan {cantidad(libres, 'cupo libre', 'cupos libres')} en total. Los grupos van sede por sede y, en cada una, por grado y número.
                 </Titular>
             ) : (
                 <p className="text-[11px] font-semibold text-[#4863B8]">4 · Grupos (continuación)</p>
@@ -479,34 +482,52 @@ export function Grupos({ informe: i, filas, primera }: { informe: Informe; filas
                     </tr>
                 </thead>
                 <tbody>
-                    {filas.map((g) => {
+                    {filas.map((g, k) => {
                         const libresG = g.cupos - g.activos;
+                        // Un título cada vez que empieza una sede (y arriba de cada hoja), para no perderse.
+                        const nuevaSede = k === 0 || filas[k - 1].sede_codigo !== g.sede_codigo;
                         return (
-                            <tr key={g.id}>
-                                <td className={cn(td, 'font-bold')}>{g.codigo}</td>
-                                <td className={cn(td, 'text-[#56627F]')}>{g.grado_nombre}</td>
-                                <td className={td}>
-                                    <span className="flex items-center gap-[6px]">
-                                        <span className="size-[7px] shrink-0 rounded-full" style={{ background: colorDeSede(g.sede_codigo) }} />
-                                        <span className="truncate">{g.sede}</span>
-                                    </span>
-                                </td>
-                                <td className={cn(td, 'text-[#56627F]')}>{g.jornada ?? '—'}</td>
-                                <td className={cn(td, num)}>
-                                    <b className="font-semibold">{g.activos}</b>
-                                    <span className="text-[#8C97B3]">/{g.cupos}</span>
-                                </td>
-                                <td className={td}>
-                                    <Ocupacion activos={g.activos} cupos={g.cupos} />
-                                </td>
-                                <td className={cn(td, num, libresG < 0 && 'font-semibold text-[#B42318]')}>
-                                    {libresG < 0 ? `+${-libresG}` : libresG}
-                                </td>
-                                <td className={cn(td, num)}>{g.nuevos}</td>
-                                <td className={cn(td, num)}>{g.repitentes}</td>
-                                <td className={cn(td, num)}>{g.ninas}</td>
-                                <td className={cn(td, num)}>{g.ninos}</td>
-                            </tr>
+                            <Fragment key={g.id}>
+                                {nuevaSede && (
+                                    <tr>
+                                        <td colSpan={11} className="h-[26px] border-b border-[#D3DDF3] px-[6px] pt-[8px] align-bottom">
+                                            <span className="flex items-center gap-[7px] text-[11px] font-bold text-[#1E3A7B]">
+                                                <span
+                                                    className="size-[8px] shrink-0 rounded-full"
+                                                    style={{ background: colorDeSede(g.sede_codigo) }}
+                                                />
+                                                Sede {g.sede}
+                                                {k === 0 && sigueDeAntes && <span className="font-normal text-[#6B7690]">(continúa)</span>}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                )}
+                                <tr>
+                                    <td className={cn(td, 'font-bold')}>{g.codigo}</td>
+                                    <td className={cn(td, 'text-[#56627F]')}>{g.grado_nombre}</td>
+                                    <td className={td}>
+                                        <span className="flex items-center gap-[6px]">
+                                            <span className="size-[7px] shrink-0 rounded-full" style={{ background: colorDeSede(g.sede_codigo) }} />
+                                            <span className="truncate">{g.sede}</span>
+                                        </span>
+                                    </td>
+                                    <td className={cn(td, 'text-[#56627F]')}>{g.jornada ?? '—'}</td>
+                                    <td className={cn(td, num)}>
+                                        <b className="font-semibold">{g.activos}</b>
+                                        <span className="text-[#8C97B3]">/{g.cupos}</span>
+                                    </td>
+                                    <td className={td}>
+                                        <Ocupacion activos={g.activos} cupos={g.cupos} />
+                                    </td>
+                                    <td className={cn(td, num, libresG < 0 && 'font-semibold text-[#B42318]')}>
+                                        {libresG < 0 ? `+${-libresG}` : libresG}
+                                    </td>
+                                    <td className={cn(td, num)}>{g.nuevos}</td>
+                                    <td className={cn(td, num)}>{g.repitentes}</td>
+                                    <td className={cn(td, num)}>{g.ninas}</td>
+                                    <td className={cn(td, num)}>{g.ninos}</td>
+                                </tr>
+                            </Fragment>
                         );
                     })}
                 </tbody>
@@ -740,9 +761,11 @@ export function Retiros({ informe: i }: { informe: Informe }) {
 /** Índice del anexo: cada grupo con su página, agrupados por grado. */
 export function IndiceAnexo({ informe: i, paginas }: { informe: Informe; paginas: Map<number, number> }) {
     const conEstudiantes = i.grupos.filter((g) => paginas.has(g.id));
-    const porGrado = i.grados
-        .map((gr) => ({ grado: gr, grupos: conEstudiantes.filter((g) => g.grado === gr.numero) }))
-        .filter((x) => x.grupos.length > 0);
+    // Sede por sede, en el orden de las hojas.
+    const porSede = [...new Set(conEstudiantes.map((g) => g.sede_codigo))].map((codigo) => ({
+        codigo,
+        grupos: conEstudiantes.filter((g) => g.sede_codigo === codigo),
+    }));
 
     return (
         <>
@@ -755,16 +778,19 @@ export function IndiceAnexo({ informe: i, paginas }: { informe: Informe; paginas
                 }
             >
                 Una hoja por grupo con sus estudiantes activos, ordenados por apellido: documento, edad, sexo, condición y el acudiente principal con
-                su teléfono.
+                su teléfono. Van sede por sede y, en cada una, por grado.
             </Titular>
             <div className="mt-[22px] columns-3 gap-x-[30px]">
-                {porGrado.map(({ grado, grupos }) => (
-                    <div key={grado.numero} className="mb-[12px] break-inside-avoid">
-                        <p className="mb-[3px] text-[10px] font-semibold tracking-[0.5px] text-[#4863B8] uppercase">{grado.nombre}</p>
+                {porSede.map(({ codigo, grupos }) => (
+                    <div key={codigo} className="mb-[14px]">
+                        <p className="mb-[3px] flex break-after-avoid items-center gap-[6px] text-[10px] font-semibold tracking-[0.5px] text-[#4863B8] uppercase">
+                            <span className="size-[7px] shrink-0 rounded-full" style={{ background: colorDeSede(codigo) }} />
+                            {grupos[0].sede}
+                        </p>
                         {grupos.map((g) => (
-                            <div key={g.id} className="flex items-baseline gap-[6px] text-[11px] leading-[1.75]">
+                            <div key={g.id} className="flex break-inside-avoid items-baseline gap-[6px] text-[11px] leading-[1.75]">
                                 <b className="w-[34px] shrink-0 font-semibold">{g.codigo}</b>
-                                <span className="truncate text-[#56627F]">{g.sede}</span>
+                                <span className="truncate text-[#56627F]">{g.grado_nombre}</span>
                                 <span className="mb-[3px] min-w-[8px] flex-1 border-b border-dotted border-[#C4D2F1]" />
                                 <span className="tabular-nums">{paginas.get(g.id)}</span>
                             </div>

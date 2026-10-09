@@ -18,12 +18,15 @@ import { type ReactNode, useMemo } from 'react';
 const FILAS_POR_HOJA = 28;
 
 type Estudiante = Informe['grupos'][number]['estudiantes'][number];
-type Fila = { tipo: 'grupo'; grupo: Informe['grupos'][number]; continua: boolean } | { tipo: 'estudiante'; estudiante: Estudiante };
+type Fila =
+    | { tipo: 'sede'; sede: string }
+    | { tipo: 'grupo'; grupo: Informe['grupos'][number]; continua: boolean }
+    | { tipo: 'estudiante'; estudiante: Estudiante };
 
 /**
  * Documentos de matrícula pendientes por estudiante, con los mismos filtros del
- * informe de matrícula. La primera hoja resume; las demás listan, por grupo, a
- * quienes les falta algo y qué. Se guarda como PDF igual que el otro informe.
+ * informe de matrícula. La primera hoja resume; las demás listan, sede por sede
+ * y grupo por grupo, a quienes les falta algo y qué. Se guarda como PDF igual que el otro informe.
  */
 export default function InformeDocumentos(informe: Informe) {
     const { anio, anios, corte, institucion, filtro, opciones, totales, grupos } = informe;
@@ -79,12 +82,17 @@ export default function InformeDocumentos(informe: Informe) {
 function paginar(grupos: Informe['grupos']): Fila[][] {
     const hojas: Fila[][] = [];
     let actual: Fila[] = [];
+    let sede: string | null = null;
     for (const grupo of grupos) {
-        // Un título de grupo solo al final de la hoja no sirve: pasa a la siguiente.
-        if (actual.length >= FILAS_POR_HOJA - 1) {
+        // Vienen sede por sede: un título cuando empieza una.
+        const nuevaSede = grupo.sede !== sede;
+        sede = grupo.sede;
+        // Un título solo al final de la hoja no sirve: pasa a la siguiente.
+        if (actual.length >= FILAS_POR_HOJA - (nuevaSede ? 2 : 1)) {
             hojas.push(actual);
             actual = [];
         }
+        if (nuevaSede) actual.push({ tipo: 'sede', sede: grupo.sede });
         actual.push({ tipo: 'grupo', grupo, continua: false });
         for (const estudiante of grupo.estudiantes) {
             if (actual.length >= FILAS_POR_HOJA) {
@@ -214,7 +222,13 @@ function Listado({ filas, documentos, primera }: { filas: Fila[]; documentos: In
                 </thead>
                 <tbody>
                     {filas.map((f, k) =>
-                        f.tipo === 'grupo' ? (
+                        f.tipo === 'sede' ? (
+                            <tr key={`s-${k}`}>
+                                <td colSpan={2 + documentos.length} className="h-[30px] px-[6px] pt-[10px] align-bottom">
+                                    <span className="text-[13px] font-bold tracking-[-0.2px] text-[#16223F]">Sede {f.sede}</span>
+                                </td>
+                            </tr>
+                        ) : f.tipo === 'grupo' ? (
                             <tr key={`g-${k}`}>
                                 <td colSpan={2 + documentos.length} className="h-[30px] border-b border-[#D3DDF3] px-[6px] pt-[8px] align-bottom">
                                     <b className="text-[11.5px] text-[#1E3A7B]">{f.grupo.grupo}</b>
