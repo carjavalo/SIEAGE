@@ -52,7 +52,8 @@ final class InformeDocumentos
             ->when($grupoId !== null, fn ($q) => $q->where('m.grupo_id', $grupoId))
             // Quien lo pide ve solo los grados que tenga marcados en cada sede.
             ->when($alcance, fn ($q) => Alcance::filtrar($q, $alcance, 'm.sede_id', 'm.grado_id'))
-            ->orderBy('gr.numero')->orderByDesc('s.es_principal')->orderBy('s.nombre')->orderBy('g.numero')->orderBy('e.nombre_completo')
+            // Sede por sede (la principal primero), y en cada una por grado y grupo.
+            ->orderByDesc('s.es_principal')->orderBy('s.nombre')->orderBy('gr.numero')->orderBy('g.numero')->orderBy('e.nombre_completo')
             ->get([
                 'm.grupo_id', 'm.documentos', 'g.codigo as grupo', 'gr.numero as grado', 'gr.nombre as grado_nombre', 's.nombre as sede',
                 'e.nombre_completo as nombre', 'e.tipo_documento', 'e.numero_documento', 'e.eps',

@@ -7,7 +7,8 @@ import { Head } from '@inertiajs/react';
 import { type ReactNode, useMemo } from 'react';
 
 /** Filas por hoja: la primera del bloque lleva el titular, así que caben menos. */
-const FILAS_GRUPOS = { primera: 36, siguientes: 42 };
+// Los títulos de sede ocupan filas: se deja espacio para unos cuantos por hoja.
+const FILAS_GRUPOS = { primera: 32, siguientes: 38 };
 const FILAS_ANEXO = { primera: 36, siguientes: 40 };
 
 type Pieza = { clave: string; contenido: ReactNode; sinMarco?: boolean };

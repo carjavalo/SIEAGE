@@ -150,7 +150,9 @@ final class InformeMatricula
             ->when($this->alcance, fn ($q) => Alcance::filtrar($q, $this->alcance, 'g.sede_id', 'g.grado_id'))
             ->when($this->gradoId !== null, fn ($q) => $q->where('g.grado_id', $this->gradoId))
             ->when($this->grupoId !== null, fn ($q) => $q->where('g.id', $this->grupoId))
-            ->orderBy('gr.numero')->orderByDesc('s.es_principal')->orderBy('s.nombre')->orderBy('g.numero')
+            // Sede por sede (la principal primero), y en cada una por grado y número: así salen
+            // en la tabla de grupos, en el índice y en las hojas del anexo, sin mezclar sedes.
+            ->orderByDesc('s.es_principal')->orderBy('s.nombre')->orderBy('gr.numero')->orderBy('g.numero')
             ->get(['g.id', 'g.codigo', 'g.jornada', 'g.cupos_proyectados as cupos', 'gr.numero as grado', 'gr.nombre as grado_nombre', 'gr.nivel',
                 's.codigo as sede_codigo', 's.nombre as sede'])
             ->keyBy('id')
@@ -194,9 +196,11 @@ final class InformeMatricula
         ];
     }
 
+    /** Las sedes en el mismo orden que los grupos: la principal primero y las demás por nombre. */
     private function porSede(Collection $activas, Collection $grupos): Collection
     {
         $gruposPorSede = $grupos->groupBy('sede_codigo');
+        $orden = DB::table('sedes')->orderByDesc('es_principal')->orderBy('nombre')->pluck('codigo')->flip();
 
         return $activas->groupBy('sede_codigo')->map(fn (Collection $de, $codigo) => [
             'codigo' => $codigo,
@@ -209,7 +213,7 @@ final class InformeMatricula
             'ninos' => $de->where('genero', 'M')->count(),
             'jornadas' => $de->countBy(fn ($m) => $m->jornada ?: 'Sin jornada'),
             'grados' => $de->pluck('grado')->unique()->sort()->values(),
-        ])->sortByDesc('activos')->values();
+        ])->sortBy(fn ($s) => $orden[$s['codigo']] ?? PHP_INT_MAX)->values();
     }
 
     private function porNivel(Collection $activas, Collection $grupos): Collection
