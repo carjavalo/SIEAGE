@@ -94,7 +94,7 @@ class InscritoController extends Controller
                     'direccion', 'barrio', 'telefono_1', 'telefono_2', 'correo',
                     'acudiente_primer_nombre', 'acudiente_segundo_nombre', 'acudiente_primer_apellido', 'acudiente_segundo_apellido',
                     'acudiente_numero_documento', 'acudiente_ciudad_expedicion', 'acudiente_parentesco_otro',
-                    'acudiente_direccion', 'acudiente_barrio',
+                    'acudiente_direccion', 'acudiente_barrio', 'datos_adicionales',
                     'acudiente_telefono_1', 'acudiente_telefono_2', 'acudiente_correo',
                 ]),
                 'fecha_nacimiento' => $solicitud->fecha_nacimiento?->format('Y-m-d'),

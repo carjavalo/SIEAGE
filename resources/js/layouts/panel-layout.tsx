@@ -27,7 +27,19 @@ let paginaAnterior: string | null = null;
  * ventana y no se desplaza; cada panel interno se desplaza por su cuenta. En
  * celular vuelve al flujo normal con scroll, porque ahí no cabe todo junto.
  */
-export default function PanelLayout({ titulo, completa, children }: { titulo: string; completa?: boolean; children: ReactNode }) {
+export default function PanelLayout({
+    titulo,
+    completa,
+    tema = 'claro',
+    children,
+}: {
+    titulo: string;
+    completa?: boolean;
+    /** `sieage`: encabezado azul con el logo de fondo, como la interfaz anterior. Hoy solo lo usa Boletines. */
+    tema?: 'claro' | 'sieage';
+    children: ReactNode;
+}) {
+    const azul = tema === 'sieage';
     const pagina = usePage<SharedData>();
     // Lo que cambien otros (una inscripción nueva, una matrícula) llega sin recargar.
     usePulso();
@@ -59,20 +71,45 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
         <>
             <Head title={titulo} />
 
-            <div className="min-h-screen bg-white font-sans text-[#16223F] print:bg-white">
+            <div
+                className="min-h-screen bg-white font-sans text-[#16223F] print:bg-white"
+                style={
+                    azul
+                        ? {
+                              // Fondo del contenido: el mismo mosaico del logotipo que usa Sieage
+                              // (public/fondo-sieage.png, tomado de su interfaz). Va fijo para que
+                              // no se arrastre al desplazar la página.
+                              backgroundImage: 'url(/fondo-sieage.png)',
+                              backgroundRepeat: 'repeat',
+                              backgroundAttachment: 'fixed',
+                          }
+                        : undefined
+                }
+            >
                 <SaltarAlContenido />
-                <header className="sticky top-0 z-30 border-b border-[#E3E9F6] bg-white/90 backdrop-blur print:hidden">
+                <header
+                    className={cn(
+                        'sticky top-0 z-30 border-b print:hidden',
+                        azul ? 'border-[#16284F] bg-[#1E3A7B] text-white' : 'border-[#E3E9F6] bg-white/90 backdrop-blur',
+                    )}
+                >
                     {/* El mismo ancho que <main> en todas las páginas: el logo y el menú nunca se corren al cambiar de página. */}
                     <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-3 px-4 md:gap-6 md:px-8 2xl:max-w-[1760px]">
-                        <Link href="/" className="flex shrink-0 items-center gap-3">
+                        <Link
+                            href="/"
+                            className={cn(
+                                'flex shrink-0 items-center gap-3 rounded-xl focus-visible:ring-2 focus-visible:outline-none',
+                                azul ? 'focus-visible:ring-white/80' : 'focus-visible:ring-[#6E8BD6]',
+                            )}
+                        >
                             <img src="/sieage-logo.webp" alt="SIEAGE" className="h-10 w-auto rounded-md object-contain" />
                             <div className="hidden leading-tight sm:block">
                                 <p className="text-[15px] font-semibold tracking-tight">SIEAGE</p>
-                                <p className="text-xs text-[#56627F]">I.E. Alfonso López Pumarejo</p>
+                                <p className={cn('text-xs', azul ? 'text-white/75' : 'text-[#56627F]')}>I.E. Alfonso López Pumarejo</p>
                             </div>
                         </Link>
 
-                        <nav aria-label="Principal" className="flex items-center gap-1 rounded-full bg-[#EEF2FB] p-1">
+                        <nav aria-label="Principal" className={cn('flex items-center gap-1 rounded-full p-1', azul ? 'bg-white/10' : 'bg-[#EEF2FB]')}>
                             {menu.map(({ titulo: t, href, icono: Icono }) => {
                                 const activo = pagina.url.startsWith(href.replace('/roles', ''));
                                 return (
@@ -81,8 +118,13 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
                                         href={href}
                                         aria-current={activo ? 'page' : undefined}
                                         className={cn(
-                                            'flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition md:px-3.5',
-                                            activo ? 'bg-white text-[#1E3A7B] shadow-sm' : 'text-[#56627F] hover:text-[#1E3A7B]',
+                                            'flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition focus-visible:ring-2 focus-visible:outline-none md:px-3.5',
+                                            azul ? 'focus-visible:ring-white/80' : 'focus-visible:ring-[#6E8BD6]',
+                                            activo
+                                                ? 'bg-white text-[#1E3A7B] shadow-sm'
+                                                : azul
+                                                  ? 'text-white hover:bg-white/15'
+                                                  : 'text-[#56627F] hover:text-[#1E3A7B]',
                                         )}
                                     >
                                         <Icono aria-hidden className="size-4" />
@@ -92,7 +134,10 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
                                             <>
                                                 <span
                                                     aria-hidden
-                                                    className="min-w-5 rounded-full bg-[#1E3A7B] px-1.5 text-center text-[11px] leading-5 font-semibold text-white tabular-nums"
+                                                    className={cn(
+                                                        'min-w-5 rounded-full px-1.5 text-center text-[11px] leading-5 font-semibold tabular-nums',
+                                                        azul ? 'bg-white text-[#1E3A7B]' : 'bg-[#1E3A7B] text-white',
+                                                    )}
                                                 >
                                                     {pendientes}
                                                 </span>
@@ -105,8 +150,8 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
                         </nav>
 
                         <div className="ml-auto flex items-center gap-2">
-                            <AyudaOperador />
-                            {auth.user && <MenuUsuario user={auth.user} />}
+                            <AyudaOperador tono={azul ? 'azul' : 'claro'} />
+                            {auth.user && <MenuUsuario user={auth.user} tono={azul ? 'azul' : 'claro'} />}
                         </div>
                     </div>
                 </header>

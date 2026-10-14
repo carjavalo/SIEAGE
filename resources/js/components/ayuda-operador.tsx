@@ -1,6 +1,7 @@
 import { VIDEO_BOLETINES } from '@/components/ayuda-boletines';
 import { BOTON_AYUDA, VideoAyuda, type VideoDeAyuda } from '@/components/video-ayuda';
 import { puede } from '@/lib/permisos';
+import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
 import * as Dialogo from '@radix-ui/react-dialog';
@@ -10,7 +11,9 @@ import { CircleHelp } from 'lucide-react';
  * El «?» del encabezado del panel: las clases en video para el personal, en pestañas. La de
  * Boletines solo para quien escribe boletines; en esa pantalla, abre directo en ella.
  */
-export function AyudaOperador() {
+/** `tono="azul"`: el botón va sobre el encabezado azul y se pinta en blanco. */
+export function AyudaOperador({ tono = 'claro' }: { tono?: 'claro' | 'azul' } = {}) {
+    const azul = tono === 'azul';
     const { props, component } = usePage<SharedData>();
     const videos: VideoDeAyuda[] = [
         {
@@ -39,7 +42,12 @@ export function AyudaOperador() {
             <button
                 type="button"
                 title="Ayuda · videos tutoriales"
-                className="flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-[#56627F] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] hover:text-[#1E3A7B] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none"
+                className={cn(
+                    'flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full ring-1 transition focus-visible:ring-4 focus-visible:outline-none',
+                    azul
+                        ? 'text-white ring-white/45 hover:bg-white/15 hover:text-white focus-visible:ring-white/70'
+                        : 'text-[#56627F] ring-[#D3DDF3] hover:bg-[#EEF2FB] hover:text-[#1E3A7B] focus-visible:ring-[#B7C6EA]',
+                )}
             >
                 <CircleHelp className="size-5" />
                 <span className="sr-only">Ayuda: videos tutoriales del panel</span>

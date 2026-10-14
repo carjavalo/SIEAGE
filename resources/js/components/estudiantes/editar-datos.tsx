@@ -58,6 +58,11 @@ const SISBEN: Opcion<string>[] = [
     { valor: '1', etiqueta: 'Nivel 1' },
     { valor: '2', etiqueta: 'Nivel 2' },
     { valor: '3', etiqueta: 'Nivel 3' },
+    // SISBÉN IV (el que usa el formulario del colegio).
+    { valor: 'A', etiqueta: 'Grupo A' },
+    { valor: 'B', etiqueta: 'Grupo B' },
+    { valor: 'C', etiqueta: 'Grupo C' },
+    { valor: 'D', etiqueta: 'Grupo D' },
 ];
 
 /** Del Excel el nombre viene en una sola pieza; del formulario de inscripción, en cuatro. */

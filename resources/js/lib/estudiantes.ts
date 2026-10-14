@@ -170,6 +170,9 @@ export const cumpleEstado = (estado: string, filtro: FiltroEstado) =>
 
 export const numero = (n: number) => n.toLocaleString('es-CO');
 
+/** "ninguno" → No tiene; "2" → Nivel 2 (SISBÉN III); "B" → Grupo B (SISBÉN IV). */
+export const textoSisben = (valor: string) => (valor === 'ninguno' ? 'No tiene' : /^[A-D]$/.test(valor) ? `Grupo ${valor}` : `Nivel ${valor}`);
+
 /** Minúsculas y sin tildes, para comparar lo que se escribe con los nombres. */
 export const plano = (texto: string | null | undefined) => (texto ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 

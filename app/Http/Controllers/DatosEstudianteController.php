@@ -66,7 +66,7 @@ class DatosEstudianteController extends Controller
             'ciudad_nacimiento' => ['nullable', 'string', 'max:80'],
             'tipo_sangre' => ['nullable', Rule::in(['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'])],
             // 'string' a propósito: con el número 2, MariaDB lo tomaría como posición del ENUM.
-            'sisben' => ['nullable', 'string', Rule::in(['ninguno', '1', '2', '3'])],
+            'sisben' => ['nullable', 'string', Rule::in(['ninguno', '1', '2', '3', 'A', 'B', 'C', 'D'])],
             'eps' => ['nullable', 'string', 'max:80'],
             'grupo_etnico' => ['nullable', 'string', 'max:60'],
             'discapacidad' => ['nullable', 'string', 'max:300'],

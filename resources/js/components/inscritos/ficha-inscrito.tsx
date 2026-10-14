@@ -1,6 +1,6 @@
 import { Marca } from '@/components/estudiantes/etiquetas';
 import { Bloque, ContenidoFicha, PanelFicha, TarjetaContacto } from '@/components/ficha';
-import { edad, fecha, telefono } from '@/lib/estudiantes';
+import { edad, fecha, telefono, textoSisben } from '@/lib/estudiantes';
 import {
     type FichaInscrito as Ficha,
     type PadreGuardado,
@@ -186,13 +186,27 @@ export function BloquesSolicitud({
                 <Datos>
                     <Dato etiqueta="EPS">{s.eps}</Dato>
                     <Dato etiqueta="Tipo de sangre">{s.tipo_sangre}</Dato>
-                    <Dato etiqueta="SISBÉN">{s.sisben === 'ninguno' ? 'No tiene' : `Nivel ${s.sisben}`}</Dato>
+                    <Dato etiqueta="SISBÉN">{textoSisben(s.sisben)}</Dato>
                     <Dato etiqueta="Grupo étnico">{s.grupo_etnico}</Dato>
                     <Dato etiqueta="Discapacidad" ancho>
                         {s.discapacidad || 'Ninguna'}
                     </Dato>
                 </Datos>
             </Bloque>
+
+            {/* Lo que preguntó el formulario de Google del colegio y no tiene campo propio (ver ImportarInscripciones). */}
+            {s.datos_adicionales && s.datos_adicionales.length > 0 && (
+                <Bloque titulo="Otras respuestas del formulario">
+                    <dl className="space-y-2">
+                        {s.datos_adicionales.map((r) => (
+                            <div key={r.pregunta}>
+                                <dt className="text-[13px] text-[#5E6983]">{r.pregunta}</dt>
+                                <dd className="mt-0.5 text-[14px] break-words text-[#16223F]">{r.respuesta}</dd>
+                            </div>
+                        ))}
+                    </dl>
+                </Bloque>
+            )}
 
             <Bloque titulo="Residencia">
                 <p className="flex items-start gap-1.5 text-[14px] text-[#16223F]">

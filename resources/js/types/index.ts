@@ -31,13 +31,24 @@ export interface Pulso {
     ultima_inscripcion: number;
 }
 
+/** Lo que dejó la última importación del formulario de inscripción (App\Support\ImportarInscripciones). */
+export interface ResumenImportacion {
+    archivo: string;
+    anio: number;
+    creadas: number;
+    yaEstudian: number;
+    repetidas: number;
+    yaInscritas: number;
+    errores: { fila: number; nombre: string; error: string }[];
+}
+
 export interface SharedData {
     auth: Auth;
     /** Aviso del menú "Inscritos" (0 sin sesión). */
     inscritosPendientes: number;
     /** Los datos tal como estaban al armar la página; null sin sesión. */
     pulso: Pulso | null;
-    flash: { success: string | null };
+    flash: { success: string | null; importacion?: ResumenImportacion | null };
     [key: string]: unknown;
 }
 

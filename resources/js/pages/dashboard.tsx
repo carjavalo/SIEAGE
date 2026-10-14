@@ -1,9 +1,9 @@
 import { BotonGuardar, tarjeta } from '@/components/formulario';
 import PanelLayout from '@/layouts/panel-layout';
 import { cn } from '@/lib/utils';
-import { type SharedData } from '@/types';
-import { useForm, usePage } from '@inertiajs/react';
-import { CheckCircle2, FileSpreadsheet, UploadCloud, X } from 'lucide-react';
+import { type ResumenImportacion, type SharedData } from '@/types';
+import { Link, useForm, usePage } from '@inertiajs/react';
+import { ArrowRight, CheckCircle2, CircleAlert, FileSpreadsheet, UploadCloud, X } from 'lucide-react';
 import { type ChangeEvent, type DragEvent, type FormEventHandler, useState } from 'react';
 import { sileo } from 'sileo';
 
@@ -24,9 +24,10 @@ function validarArchivo(archivo: File): string | null {
 }
 
 /**
- * Importar datos: se sube el libro de Excel de matrículas y queda guardado en el
- * servidor para procesarlo. Es poco contenido: va centrado en la ventana (un poco
- * por encima del centro, que es donde el ojo lo lee centrado).
+ * Importar datos: se sube un Excel y queda guardado en el servidor. Si es la descarga
+ * del formulario de inscripción de Google del colegio, además se crean las
+ * inscripciones pendientes y se muestra el resumen. Es poco
+ * contenido: va centrado en la ventana (un poco por encima del centro).
  */
 export default function ImportarDatos() {
     const { flash } = usePage<SharedData>().props;
@@ -64,9 +65,12 @@ export default function ImportarDatos() {
         form.post(route('importaciones.store'), {
             forceFormData: true,
             preserveScroll: true,
-            onSuccess: () => {
+            onSuccess: (pagina) => {
                 form.reset();
-                sileo.success({ title: 'Archivo recibido', description: 'Quedó guardado en el servidor.' });
+                const r = (pagina.props as unknown as SharedData).flash.importacion;
+                if (r)
+                    sileo.success({ title: `${r.creadas} inscripciones importadas`, description: `Quedaron pendientes en Inscritos (${r.anio}).` });
+                else sileo.success({ title: 'Archivo recibido', description: 'Quedó guardado en el servidor.' });
             },
         });
     };
@@ -81,9 +85,11 @@ export default function ImportarDatos() {
             <div className="relative mx-auto flex w-full max-w-[640px] flex-col justify-center py-6 md:-mb-10 md:min-h-[calc(100dvh-82px)] [@media(min-height:720px)]:md:pb-[6vh]">
                 <h1 className="text-center text-[28px] leading-8 font-bold tracking-[-0.025em]">Importar datos</h1>
                 <p className="mx-auto mt-2 max-w-[520px] text-center text-[15px] text-balance text-[#56627F]">
-                    Sube el libro de Excel de matrículas, el mismo con el que se trabaja cada año. Queda guardado en el servidor para cargar
-                    estudiantes, acudientes y grupos.
+                    Sube el libro de Excel de matrículas, o el Excel con las respuestas del formulario de inscripción de Google: sus respuestas quedan
+                    como inscritos pendientes, listos para revisar y matricular.
                 </p>
+
+                {flash.importacion && !archivo && <Resumen r={flash.importacion} />}
 
                 {flash.success && !archivo && (
                     <p className="animate-in fade-in-0 slide-in-from-bottom-1 mt-6 flex items-center gap-3 rounded-[16px] bg-[#E3F4EC] px-4 py-3 text-[14px] font-medium text-[#1C6B4A] duration-300">
@@ -172,7 +178,7 @@ export default function ImportarDatos() {
                     </div>
 
                     <div className="flex flex-wrap items-center justify-end gap-3 border-t border-[#EEF2F9] px-6 py-3.5">
-                        <span className="mr-auto text-[14px] text-[#56627F]">Subirlo no cambia ningún dato todavía.</span>
+                        <span className="mr-auto text-[14px] text-[#56627F]">El formulario de inscripción queda en Inscritos.</span>
                         <BotonGuardar cargando={form.processing} disabled={!archivo}>
                             {form.processing ? 'Subiendo…' : 'Subir archivo'}
                         </BotonGuardar>
@@ -180,5 +186,56 @@ export default function ImportarDatos() {
                 </form>
             </div>
         </PanelLayout>
+    );
+}
+
+/** Qué pasó con cada respuesta del formulario de inscripción importado. */
+function Resumen({ r }: { r: ResumenImportacion }) {
+    const filas = [
+        { n: r.creadas, texto: r.creadas === 1 ? 'inscripción creada' : 'inscripciones creadas', destacada: true },
+        { n: r.yaEstudian, texto: 'ya estudian en el colegio (el formulario les decía que no lo llenaran)' },
+        { n: r.repetidas, texto: 'respuestas repetidas del mismo estudiante (quedó la última)' },
+        { n: r.yaInscritas, texto: `ya estaban inscritas en ${r.anio} (no se repiten)` },
+    ].filter((f) => f.destacada || f.n > 0);
+
+    return (
+        <div className="animate-in fade-in-0 slide-in-from-bottom-1 mt-6 rounded-[20px] bg-[#E3F4EC] px-5 py-4 text-[14px] text-[#1C6B4A] duration-300">
+            <p className="flex items-center gap-2.5 font-semibold">
+                <CheckCircle2 className="size-[18px] shrink-0" />
+                Formulario de inscripción {r.anio} importado
+            </p>
+            <p className="mt-0.5 truncate pl-[28px] text-[13px] text-[#2F7D5B]">{r.archivo}</p>
+            <ul className="mt-3 space-y-1 pl-[28px]">
+                {filas.map((f) => (
+                    <li key={f.texto} className={cn(f.destacada && 'font-semibold')}>
+                        <span className="tabular-nums">{f.n}</span> {f.texto}
+                    </li>
+                ))}
+            </ul>
+            {r.errores.length > 0 && (
+                <div className="mt-3 rounded-[14px] bg-white/70 px-4 py-3 text-[#8A3B12]">
+                    <p className="flex items-center gap-2 font-semibold">
+                        <CircleAlert className="size-4 shrink-0" />
+                        {r.errores.length === 1 ? '1 respuesta no se pudo importar' : `${r.errores.length} respuestas no se pudieron importar`}
+                    </p>
+                    <ul className="mt-1.5 space-y-0.5 text-[13px]">
+                        {r.errores.map((e) => (
+                            <li key={e.fila}>
+                                Fila {e.fila} · {e.nombre}: {e.error}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+            {r.creadas > 0 && (
+                <Link
+                    href="/inscritos"
+                    className="mt-3 ml-[28px] inline-flex items-center gap-1.5 font-semibold text-[#1C6B4A] underline-offset-4 hover:underline"
+                >
+                    Ver en Inscritos
+                    <ArrowRight className="size-4" />
+                </Link>
+            )}
+        </div>
     );
 }

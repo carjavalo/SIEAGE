@@ -90,6 +90,8 @@ class SolicitudInscripcion extends Model
             'autorizo_datos_en' => 'datetime',
             'documentos' => 'array',
             'documentos_en' => 'datetime',
+            // Las otras respuestas del formulario de Google (ver App\Support\ImportarInscripciones).
+            'datos_adicionales' => 'array',
         ];
     }
 

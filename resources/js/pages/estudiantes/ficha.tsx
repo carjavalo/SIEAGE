@@ -1,7 +1,7 @@
 import { AgregarAcudiente, EditarAcudiente, EditarEstudiante } from '@/components/estudiantes/editar-datos';
 import { Condicion, Estado, Sede, iniciales } from '@/components/estudiantes/etiquetas';
 import PanelLayout from '@/layouts/panel-layout';
-import { type FichaDetalle, parentescoDe, telefono } from '@/lib/estudiantes';
+import { type FichaDetalle, parentescoDe, telefono, textoSisben } from '@/lib/estudiantes';
 import { puede } from '@/lib/permisos';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
@@ -71,7 +71,7 @@ function Dato({ etiqueta, children }: { etiqueta: string; children: ReactNode })
     );
 }
 
-const sisben = (nivel: string) => (nivel === 'ninguno' ? 'No tiene' : `Nivel ${nivel}`);
+const sisben = textoSisben;
 
 export default function Ficha({ estudiante, actual, historia, acudientes, boletines, boletin, parentescos, institucion }: Props) {
     const { auth } = usePage<SharedData>().props;
