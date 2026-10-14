@@ -10,7 +10,9 @@ const opcion =
     'flex w-full cursor-pointer items-center gap-3 rounded-[12px] px-3 py-2.5 text-left text-[15px] text-[#16223F] transition-colors outline-none hover:bg-[#EEF2FB] hover:text-[#1E3A7B] focus-visible:bg-[#EEF2FB] focus-visible:text-[#1E3A7B]';
 
 /** Menú del usuario del encabezado: sus datos, la configuración y cerrar sesión. */
-export function MenuUsuario({ user }: { user: User }) {
+/** `tono="azul"`: el disparador va sobre el encabezado azul y se pinta en blanco. */
+export function MenuUsuario({ user, tono = 'claro' }: { user: User; tono?: 'claro' | 'azul' }) {
+    const azul = tono === 'azul';
     const [abierto, setAbierto] = useState(false);
     const contenedor = useRef<HTMLDivElement>(null);
     const boton = useRef<HTMLButtonElement>(null);
@@ -49,13 +51,17 @@ export function MenuUsuario({ user }: { user: User }) {
                 aria-expanded={abierto}
                 onClick={() => setAbierto((a) => !a)}
                 className={cn(
-                    'flex cursor-pointer items-center gap-2.5 rounded-full p-1 pr-3 text-sm transition-colors outline-none hover:bg-[#EEF2FB] focus-visible:ring-2 focus-visible:ring-[#6E8BD6]',
-                    abierto && 'bg-[#EEF2FB]',
+                    'flex cursor-pointer items-center gap-2.5 rounded-full p-1 pr-3 text-sm transition-colors outline-none focus-visible:ring-2',
+                    azul ? 'text-white hover:bg-white/15 focus-visible:ring-white/70' : 'hover:bg-[#EEF2FB] focus-visible:ring-[#6E8BD6]',
+                    abierto && (azul ? 'bg-white/20' : 'bg-[#EEF2FB]'),
                 )}
             >
-                <Avatar iniciales={iniciales} />
+                <Avatar iniciales={iniciales} tono={tono} />
                 <span className="hidden max-w-[160px] truncate font-medium sm:inline">{user.name}</span>
-                <ChevronDown aria-hidden className={cn('size-4 text-[#56627F] transition-transform duration-200', abierto && 'rotate-180')} />
+                <ChevronDown
+                    aria-hidden
+                    className={cn('size-4 transition-transform duration-200', azul ? 'text-white/85' : 'text-[#56627F]', abierto && 'rotate-180')}
+                />
             </button>
 
             {abierto && (
@@ -92,12 +98,13 @@ export function MenuUsuario({ user }: { user: User }) {
     );
 }
 
-function Avatar({ iniciales, grande }: { iniciales: string; grande?: boolean }) {
+function Avatar({ iniciales, grande, tono = 'claro' }: { iniciales: string; grande?: boolean; tono?: 'claro' | 'azul' }) {
     return (
         <span
             aria-hidden
             className={cn(
-                'flex shrink-0 items-center justify-center rounded-full bg-[#1E3A7B] font-semibold text-white',
+                'flex shrink-0 items-center justify-center rounded-full font-semibold',
+                tono === 'azul' ? 'bg-white text-[#1E3A7B]' : 'bg-[#1E3A7B] text-white',
                 grande ? 'size-10 text-[15px]' : 'size-8 text-[13px]',
             )}
         >

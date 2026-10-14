@@ -122,6 +122,8 @@ export type Solicitud = Nombres & {
     acudiente_telefono_1: string;
     acudiente_telefono_2: string;
     acudiente_correo: string | null;
+    /** Solo las importadas del formulario de Google: sus otras preguntas, en orden. */
+    datos_adicionales: { pregunta: string; respuesta: string }[] | null;
 };
 
 export type PadreGuardado = { [K in keyof DatosPadre]: DatosPadre[K] | null };

@@ -66,7 +66,7 @@ export default function Boletines(props: Props) {
 
     if (!grupo || !periodoActual) {
         return (
-            <PanelLayout titulo="Boletines">
+            <PanelLayout titulo="Boletines" tema="sieage">
                 <div className="mx-auto mt-16 max-w-md text-center">
                     <h1 className="text-xl font-semibold">Boletines de transición</h1>
                     <p className="mt-2 text-[15px] text-[#56627F]">
@@ -381,7 +381,7 @@ function Editor({
     const faltanFirmas = faltan.length > 0;
 
     return (
-        <PanelLayout titulo={`Boletines · ${grupo.codigo}`} completa>
+        <PanelLayout titulo={`Boletines · ${grupo.codigo}`} completa tema="sieage">
             <div className="flex flex-col gap-5 lg:h-full lg:min-h-0 lg:flex-row">
                 {/* ------------------------------------------------ estudiantes */}
                 <aside className="flex shrink-0 flex-col rounded-[28px] bg-[#F2F5FA] lg:min-h-0 lg:w-[310px]">
