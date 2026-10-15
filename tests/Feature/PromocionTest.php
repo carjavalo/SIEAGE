@@ -50,6 +50,12 @@ class PromocionTest extends TestCase
             ->where('m.estado', 'activo')->where('s.codigo', 'RP')->where('m.jornada', 'Mañana')
             ->first(['m.*']);
 
+        // Sin los grupos de cuarto de 2027 no se promueve: se crean antes en Sedes, según la proyección.
+        $this->actingAs($this->secretaria)->post('/promociones', ['anio' => 2026, 'estudiante_id' => $m->estudiante_id])
+            ->assertSessionHasErrors(['promocion' => 'Todavía no hay grupos de Cuarto en 2027: créalos en Sedes, según la proyección de matrícula, y vuelve a promover.']);
+        $this->assertNull($this->anioId(2027), 'el intento fallido no deja el año creado');
+        $this->crearGruposDelSiguiente(2026, [4]);
+
         $resumen = $this->promover(['estudiante_id' => $m->estudiante_id]);
 
         $this->assertSame(['anio' => 2027, 'promovidos' => 1, 'graduados' => 0], array_intersect_key($resumen, array_flip(['anio', 'promovidos', 'graduados'])));
@@ -62,12 +68,6 @@ class PromocionTest extends TestCase
         $this->assertSame('antiguo', $nueva->condicion);
         $this->assertSame('promovido', DB::table('matriculas')->where('id', $m->id)->value('resultado'));
 
-        // Los grupos de cuarto de 2027 se abrieron iguales a los de 2026.
-        $this->assertSame(
-            DB::table('grupos')->where('anio_lectivo_id', $this->anioId(2026))->where('grado_id', $this->grado(4))->count(),
-            DB::table('grupos')->where('anio_lectivo_id', $this->anioId(2027))->where('grado_id', $this->grado(4))->count(),
-        );
-
         // Promoverlo otra vez no hace nada.
         $this->assertSame(0, $this->promover(['estudiante_id' => $m->estudiante_id])['promovidos']);
         $this->assertSame(1, DB::table('matriculas')->where('estudiante_id', $m->estudiante_id)->where('anio_lectivo_id', $this->anioId(2027))->count());
@@ -75,6 +75,7 @@ class PromocionTest extends TestCase
 
     public function test_todos_pasan_a_su_mismo_grupo_sin_importar_el_cupo()
     {
+        $this->crearGruposDelSiguiente();
         $activos = DB::table('matriculas')->where('anio_lectivo_id', $this->anioId(2026))
             ->where('grado_id', $this->grado(10))->where('estado', 'activo')->count();
 
@@ -117,6 +118,7 @@ class PromocionTest extends TestCase
 
     public function test_aunque_su_grupo_este_lleno_pasa_a_el_y_se_avisa()
     {
+        $this->crearGruposDelSiguiente();
         $anio = $this->anioId(2026);
         $decimo = $this->grado(10);
 
@@ -139,6 +141,7 @@ class PromocionTest extends TestCase
 
     public function test_undecimo_se_gradua_y_todo_el_colegio_se_promueve()
     {
+        $this->crearGruposDelSiguiente();
         $anio = $this->anioId(2026);
         $undecimo = DB::table('matriculas')->where('anio_lectivo_id', $anio)->where('grado_id', $this->grado(11))->where('estado', 'activo')->count();
         $activos = DB::table('matriculas')->where('anio_lectivo_id', $anio)->where('estado', 'activo')->count();
@@ -151,9 +154,54 @@ class PromocionTest extends TestCase
         $this->assertSame(0, DB::table('matriculas')->where('anio_lectivo_id', $this->anioId(2027))->where('grado_id', $this->grado(11) + 1)->count());
         $this->assertSame($activos - $undecimo, DB::table('matriculas')->where('anio_lectivo_id', $this->anioId(2027))->count());
 
+        // Sexto queda sin grupo ni jornada y décimo sin técnica; los demás grados, con su grupo.
+        $de2027 = fn (int $grado) => DB::table('matriculas')->where('anio_lectivo_id', $this->anioId(2027))->where('grado_id', $this->grado($grado));
+        $this->assertGreaterThan(0, $de2027(6)->count());
+        $this->assertSame($de2027(6)->count(), $de2027(6)->whereNull('grupo_id')->whereNull('jornada')->count());
+        $this->assertSame($de2027(6)->count(), $resumen['sinGrupo']);
+        $this->assertSame(0, $de2027(10)->whereNotNull('modalidad_id')->count());
+        $this->assertSame(0, $de2027(7)->whereNull('grupo_id')->count());
+
         // El panel de 2026 muestra a dónde quedó cada uno.
         $this->actingAs($this->secretaria)->get('/estudiantes?anio=2026&grado='.$this->grado(9))
             ->assertInertia(fn ($page) => $page->where('estudiantes.0.promovido_a', fn ($g) => str_starts_with((string) $g, '10-')));
+    }
+
+    public function test_quinto_pasa_a_sexto_sin_grupo_ni_jornada()
+    {
+        // Uno de quinto de Rafael Pombo; sexto solo se da en Los Farallones. Para sexto
+        // no hacen falta los grupos de 2027: se arman después con la proyección de cupos.
+        $m = DB::table('matriculas as m')->join('sedes as s', 's.id', '=', 'm.sede_id')
+            ->where('m.anio_lectivo_id', $this->anioId(2026))->where('m.grado_id', $this->grado(5))
+            ->where('m.estado', 'activo')->where('s.codigo', 'RP')
+            ->first(['m.*']);
+
+        $resumen = $this->promover(['estudiante_id' => $m->estudiante_id]);
+
+        $nueva = DB::table('matriculas')->where('estudiante_id', $m->estudiante_id)->where('anio_lectivo_id', $this->anioId(2027))->first();
+        $this->assertSame($this->grado(6), (int) $nueva->grado_id);
+        $this->assertNull($nueva->grupo_id);
+        $this->assertNull($nueva->jornada);
+        $this->assertSame((int) DB::table('sedes')->where('codigo', 'LF')->value('id'), (int) $nueva->sede_id);
+        $this->assertSame(1, $resumen['sinGrupo']);
+        $this->assertSame(['grupo' => 'Sexto', 'sede' => 'Los Farallones', 'n' => 1, 'libres' => null], $resumen['reparto'][0]);
+        $this->assertSame(0, DB::table('grupos')->where('anio_lectivo_id', $this->anioId(2027))->count(), 'no se crea ningún grupo');
+    }
+
+    public function test_noveno_pasa_a_decimo_sin_tecnica()
+    {
+        $m = DB::table('matriculas')->where('anio_lectivo_id', $this->anioId(2026))->where('grado_id', $this->grado(9))->where('estado', 'activo')->first();
+        // Aunque en noveno tuviera una técnica anotada, en décimo queda sin elegir.
+        DB::table('matriculas')->where('id', $m->id)->update(['modalidad_id' => DB::table('modalidades')->value('id')]);
+        $this->crearGruposDelSiguiente(2026, [10]);
+
+        $this->promover(['estudiante_id' => $m->estudiante_id]);
+
+        $nueva = DB::table('matriculas')->where('estudiante_id', $m->estudiante_id)->where('anio_lectivo_id', $this->anioId(2027))->first();
+        $this->assertSame($this->grado(10), (int) $nueva->grado_id);
+        $this->assertNull($nueva->modalidad_id);
+        $this->assertNotNull($nueva->grupo_id, 'sigue pasando a su grupo de décimo');
+        $this->assertNotNull($nueva->jornada);
     }
 
     public function test_solo_desde_el_anio_en_curso_y_no_los_docentes()
@@ -171,6 +219,8 @@ class PromocionTest extends TestCase
         $antes = DB::table('matriculas')->where('anio_lectivo_id', $this->anioId(2026))
             ->selectRaw('estado, count(*) as n')->groupBy('estado')->pluck('n', 'estado')->all();
         $total = DB::table('matriculas')->count();
+        $this->crearGruposDelSiguiente();
+        $grupos2027 = DB::table('grupos')->where('anio_lectivo_id', $this->anioId(2027))->count();
 
         $this->promover([]);
         $this->artisan('sieage:revertir-promocion', ['--force' => true])->assertSuccessful();
@@ -179,7 +229,8 @@ class PromocionTest extends TestCase
             ->selectRaw('estado, count(*) as n')->groupBy('estado')->pluck('n', 'estado')->all());
         $this->assertSame(0, DB::table('matriculas')->where('anio_lectivo_id', $this->anioId(2026))->where('resultado', 'promovido')->count());
         $this->assertSame($total, DB::table('matriculas')->count());
-        $this->assertNull($this->anioId(2027));
+        // Los grupos de 2027 los creó la secretaría en Sedes: se quedan, y con ellos el año.
+        $this->assertSame($grupos2027, DB::table('grupos')->where('anio_lectivo_id', $this->anioId(2027))->count());
 
         // Y se puede volver a promover.
         $this->assertGreaterThan(0, $this->promover([])['promovidos']);

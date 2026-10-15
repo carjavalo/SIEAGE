@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\Alcance;
+use App\Support\AniosLectivos;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +31,12 @@ class SedeController extends Controller
     public function index(Request $request): Response
     {
         $anios = DB::table('anios_lectivos')->orderByDesc('anio')->get(['id', 'anio', 'estado']);
+        // El año siguiente sale aunque todavía no exista: ahí se crean sus grupos según la
+        // proyección de matrícula, antes de promover (nace con el primer grupo).
+        $siguiente = AniosLectivos::siguiente();
+        if ($siguiente && ! $anios->contains('anio', $siguiente)) {
+            $anios->prepend((object) ['id' => null, 'anio' => $siguiente, 'estado' => 'planeado']);
+        }
         $anio = $anios->firstWhere('anio', (int) $request->query('anio'))
             ?? $anios->firstWhere('estado', 'activo')
             ?? $anios->first();

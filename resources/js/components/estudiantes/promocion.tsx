@@ -14,7 +14,10 @@ export type ResumenPromocion = {
     promovidos: number;
     graduados: number;
     sobreCupo: number;
-    reparto: { grupo: string; sede: string; n: number; libres: number }[];
+    /** Los que pasaron a sexto: sin grupo ni jornada hasta que se asignen. */
+    sinGrupo: number;
+    /** Sin grupo, `grupo` es el nombre del grado y `libres` es null. */
+    reparto: { grupo: string; sede: string; n: number; libres: number | null }[];
 };
 
 type Alcance = { estudiante_id?: number; grado_id?: number; sede?: string };
@@ -54,6 +57,13 @@ export function promover(anio: number, alcance: Alcance, { onFin }: { onFin?: ()
                     duration: 8000,
                 });
             }
+            if (r.sinGrupo > 0 && !alcance.estudiante_id) {
+                sileo.info({
+                    title: `${r.sinGrupo} ${r.sinGrupo === 1 ? 'pasó' : 'pasaron'} a sexto sin grupo ni jornada`,
+                    description: `Se asignan en Estudiantes (${r.anio}, Sexto) cuando estén los grupos según la proyección de cupos.`,
+                    duration: 8000,
+                });
+            }
         })
         .catch(() => {});
 }
@@ -64,12 +74,13 @@ function mensaje(r: ResumenPromocion, uno: boolean) {
     }
     if (uno) {
         const g = r.reparto[0];
-        return r.graduados
-            ? { title: 'Graduado', description: 'Terminó undécimo: quedó como graduado.' }
-            : {
-                  title: `Promovido a ${g.grupo}`,
-                  description: `${g.sede} · ${r.anio} · ${g.libres < 0 ? `el grupo queda ${-g.libres} sobre el cupo` : `${g.libres} cupos libres en el grupo`}`,
-              };
+        if (r.graduados) return { title: 'Graduado', description: 'Terminó undécimo: quedó como graduado.' };
+        if (g.libres === null)
+            return { title: `Promovido a ${g.grupo}`, description: `${g.sede} · ${r.anio} · sin grupo ni jornada: se asignan después` };
+        return {
+            title: `Promovido a ${g.grupo}`,
+            description: `${g.sede} · ${r.anio} · ${g.libres < 0 ? `el grupo queda ${-g.libres} sobre el cupo` : `${g.libres} cupos libres en el grupo`}`,
+        };
     }
     const partes = [
         r.promovidos && `${r.promovidos} promovido${r.promovidos === 1 ? '' : 's'} a ${r.anio}`,
@@ -162,8 +173,9 @@ export function BotonPromover({
                         <DialogTitle className="text-xl font-semibold">Promover al año {anio + 1}</DialogTitle>
                         <DialogDescription className="text-[#56627F]">
                             Todos los estudiantes activos pasan al mismo grupo del grado siguiente (9-1 → 10-1), aunque quede sobre el cupo; si ese
-                            grupo no existe, van al de menos estudiantes. Los de undécimo quedan graduados. Después revisa los grupos con alerta de
-                            cupo y deshabilita a quienes no continúan.
+                            grupo no existe, van al de menos estudiantes. Los de quinto pasan a sexto sin grupo ni jornada, los de noveno a décimo sin
+                            técnica (se asignan después) y los de undécimo quedan graduados. Los grupos de {anio + 1} se crean antes en Sedes, según
+                            la proyección de matrícula.
                         </DialogDescription>
                     </DialogHeader>
 

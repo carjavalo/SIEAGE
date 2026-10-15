@@ -69,7 +69,7 @@ class InscripcionTest extends TestCase
             'acudiente_misma_direccion' => true,
             'acudiente_telefono_1' => '318 718 4003',
             'acudiente_telefono_2' => '3950011',
-            'acudiente_correo' => '',
+            'acudiente_correo' => 'Martha.Renteria@Correo.com',
             'autorizacion_datos' => true,
         ], $cambios);
     }
@@ -120,7 +120,7 @@ class InscripcionTest extends TestCase
         $this->assertSame('familia.gomez@correo.com', $solicitud->correo);
         $this->assertNull($solicitud->discapacidad, 'un opcional vacío queda en NULL, no en ""');
         $this->assertSame((int) DB::table('parentescos')->where('nombre', 'Madre')->value('id'), $solicitud->acudiente_parentesco_id);
-        $this->assertNull($solicitud->acudiente_correo);
+        $this->assertSame('martha.renteria@correo.com', $solicitud->acudiente_correo);
         $this->assertNotNull($solicitud->autorizo_datos_en);
         $this->assertSame('127.0.0.1', $solicitud->ip);
 
@@ -128,6 +128,16 @@ class InscripcionTest extends TestCase
         $this->assertSame(0, DB::table('estudiantes')->count());
         $this->assertSame(0, DB::table('acudientes')->count());
         $this->assertSame(0, DB::table('matriculas')->count());
+    }
+
+    public function test_el_correo_del_acudiente_es_obligatorio()
+    {
+        $this->post('/inscripcion', $this->datos(['acudiente_correo' => '']))
+            ->assertSessionHasErrors(['acudiente_correo' => 'Este campo es obligatorio.']);
+        $this->post('/inscripcion', $this->datos(['acudiente_correo' => 'martha.correo.com']))
+            ->assertSessionHasErrors('acudiente_correo');
+
+        $this->assertSame(0, SolicitudInscripcion::count());
     }
 
     public function test_resuelve_las_opciones_otro_y_descarta_el_texto_que_sobro()

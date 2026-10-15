@@ -104,6 +104,7 @@ class AlcanceSedesTest extends TestCase
     public function test_promover_todo_solo_promueve_su_sede()
     {
         $activosLf = DB::table('matriculas')->where('anio_lectivo_id', 12)->where('sede_id', $this->sedeLf)->where('estado', 'activo')->count();
+        $this->crearGruposDelSiguiente();
 
         $this->actingAs($this->lf)->post('/promociones', ['anio' => 2026])->assertSessionHasNoErrors();
 
