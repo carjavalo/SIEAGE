@@ -7,13 +7,15 @@ import { type Permiso, puede } from '@/lib/permisos';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { Building2, ClipboardList, GraduationCap, UploadCloud, UserCog } from 'lucide-react';
-import { type ReactNode, useEffect, useLayoutEffect, useState } from 'react';
+import { Building2, ClipboardList, GraduationCap, NotebookPen, UploadCloud, UserCog } from 'lucide-react';
+import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 /** El menú: cada entrada se ve solo con su permiso (Usuarios → Roles y permisos). */
 const enlaces: { titulo: string; href: string; icono: typeof GraduationCap; permiso: Permiso }[] = [
     { titulo: 'Estudiantes', href: '/estudiantes', icono: GraduationCap, permiso: 'ver-estudiantes' },
     { titulo: 'Inscritos', href: '/inscritos', icono: ClipboardList, permiso: 'ver-inscritos' },
+    // Las notas de transición: abre el primer grupo de transición de sus sedes.
+    { titulo: 'Boletines', href: '/boletines', icono: NotebookPen, permiso: 'escribir-boletines' },
     { titulo: 'Importar datos', href: '/dashboard', icono: UploadCloud, permiso: 'importar-datos' },
     { titulo: 'Sedes', href: '/sedes', icono: Building2, permiso: 'ver-sedes' },
     { titulo: 'Usuarios', href: '/usuarios', icono: UserCog, permiso: 'gestionar-usuarios' },
@@ -55,6 +57,15 @@ export default function PanelLayout({
     useEffect(() => {
         paginaAnterior = pagina.component;
     }, [pagina.component]);
+
+    // Si el menú se desplaza de lado (celular angosto), la página en que se está queda a la vista.
+    const nav = useRef<HTMLElement>(null);
+    useLayoutEffect(() => {
+        const activo = nav.current?.querySelector<HTMLElement>('[aria-current="page"]');
+        if (nav.current && activo && nav.current.scrollWidth > nav.current.clientWidth) {
+            nav.current.scrollLeft = activo.offsetLeft - (nav.current.clientWidth - activo.offsetWidth) / 2;
+        }
+    }, [pagina.url]);
 
     const { auth } = pagina.props;
     const pendientes = pagina.props.inscritosPendientes;
@@ -102,14 +113,24 @@ export default function PanelLayout({
                                 azul ? 'focus-visible:ring-white/80' : 'focus-visible:ring-[#6E8BD6]',
                             )}
                         >
-                            <img src="/sieage-logo.webp" alt="SIEAGE" className="h-10 w-auto rounded-md object-contain" />
-                            <div className="hidden leading-tight sm:block">
+                            {/* Con su tamaño, el espacio queda reservado antes de que cargue: el menú no se corre. */}
+                            <img src="/sieage-logo.webp" alt="SIEAGE" width={150} height={188} className="h-10 w-auto rounded-md object-contain" />
+                            {/* Solo en pantallas anchas: antes, el espacio es para el menú. */}
+                            <div className="hidden leading-tight xl:block">
                                 <p className="text-[15px] font-semibold tracking-tight">SIEAGE</p>
                                 <p className={cn('text-xs', azul ? 'text-white/75' : 'text-[#56627F]')}>I.E. Alfonso López Pumarejo</p>
                             </div>
                         </Link>
 
-                        <nav aria-label="Principal" className={cn('flex items-center gap-1 rounded-full p-1', azul ? 'bg-white/10' : 'bg-[#EEF2FB]')}>
+                        {/* Si en un celular angosto no caben todos, el menú se desplaza de lado en vez de correr la página. */}
+                        <nav
+                            ref={nav}
+                            aria-label="Principal"
+                            className={cn(
+                                'relative flex min-w-0 items-center gap-1 overflow-x-auto rounded-full p-1 [scrollbar-width:none]',
+                                azul ? 'bg-white/10' : 'bg-[#EEF2FB]',
+                            )}
+                        >
                             {menu.map(({ titulo: t, href, icono: Icono }) => {
                                 const activo = pagina.url.startsWith(href.replace('/roles', ''));
                                 return (
@@ -117,8 +138,9 @@ export default function PanelLayout({
                                         key={href}
                                         href={href}
                                         aria-current={activo ? 'page' : undefined}
+                                        title={t}
                                         className={cn(
-                                            'flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition focus-visible:ring-2 focus-visible:outline-none md:px-3.5',
+                                            'relative flex shrink-0 items-center gap-2 rounded-full px-2.5 py-2 text-sm font-medium transition focus-visible:ring-2 focus-visible:outline-none sm:px-3 lg:px-3.5',
                                             azul ? 'focus-visible:ring-white/80' : 'focus-visible:ring-[#6E8BD6]',
                                             activo
                                                 ? 'bg-white text-[#1E3A7B] shadow-sm'
@@ -128,8 +150,8 @@ export default function PanelLayout({
                                         )}
                                     >
                                         <Icono aria-hidden className="size-4" />
-                                        {/* En celular solo se ve el ícono, pero el lector de pantalla sigue leyendo el nombre. */}
-                                        <span className="sr-only md:not-sr-only">{t}</span>
+                                        {/* Hasta lg solo se ve el ícono (con los nombres no cabe), pero el lector de pantalla sigue leyendo el nombre. */}
+                                        <span className="sr-only lg:not-sr-only">{t}</span>
                                         {href === '/inscritos' && pendientes > 0 && (
                                             <>
                                                 <span

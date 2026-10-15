@@ -27,8 +27,8 @@ final class Permisos
             'ver-inscritos' => ['Ver inscritos', 'Las inscripciones que llegan del formulario.'],
             'matricular' => ['Matricular', 'Revisar padres y documentos, elegir grupo y matricular.'],
         ],
-        'Boletines' => [
-            'escribir-boletines' => ['Escribir boletines', 'Escribir, copiar e imprimir los boletines de transición.'],
+        'Notas y boletines' => [
+            'escribir-boletines' => ['Poner notas de transición', 'Escribir la valoración de cada niño en su boletín, copiarla a otros e imprimir los boletines.'],
             'configurar-boletines' => ['Firmas y jornada', 'Quién firma el boletín y cómo sale la jornada.'],
         ],
         'Sedes y grupos' => [
