@@ -2,13 +2,19 @@ import { BOTON_AYUDA, VideoAyuda, type VideoDeAyuda } from '@/components/video-a
 import * as Dialogo from '@radix-ui/react-dialog';
 import { CircleHelp } from 'lucide-react';
 
+/**
+ * Versión de la clase: el video y la carátula quedan un día en la caché del navegador. Al
+ * cambiar el video se cambia esto, y así todos ven el nuevo de una vez.
+ */
+const VERSION = '2026-10-15';
+
 /** La clase de Boletines: también sale en el «?» del encabezado (ver AyudaOperador). */
 export const VIDEO_BOLETINES = (): VideoDeAyuda => ({
     titulo: 'Boletines de transición',
     corto: 'Boletines',
     duracion: '4 min',
-    src: route('ayuda.boletines'),
-    caratula: '/ayuda/boletines.webp',
+    src: `${route('ayuda.boletines')}?v=${VERSION}`,
+    caratula: `/ayuda/boletines.webp?v=${VERSION}`,
     descripcion:
         'Escribir el texto de cada niño, copiarlo a varios, poner las firmas e imprimir uno o todos en PDF. Puedes pausarlo o adelantarlo cuando quieras.',
 });
