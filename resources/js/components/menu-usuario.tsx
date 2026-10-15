@@ -51,16 +51,21 @@ export function MenuUsuario({ user, tono = 'claro' }: { user: User; tono?: 'clar
                 aria-expanded={abierto}
                 onClick={() => setAbierto((a) => !a)}
                 className={cn(
-                    'flex cursor-pointer items-center gap-2.5 rounded-full p-1 pr-3 text-sm transition-colors outline-none focus-visible:ring-2',
+                    'flex cursor-pointer items-center gap-2.5 rounded-full p-1 text-sm transition-colors outline-none focus-visible:ring-2 sm:pr-3',
                     azul ? 'text-white hover:bg-white/15 focus-visible:ring-white/70' : 'hover:bg-[#EEF2FB] focus-visible:ring-[#6E8BD6]',
                     abierto && (azul ? 'bg-white/20' : 'bg-[#EEF2FB]'),
                 )}
             >
                 <Avatar iniciales={iniciales} tono={tono} />
-                <span className="hidden max-w-[160px] truncate font-medium sm:inline">{user.name}</span>
+                {/* Hasta xl solo las iniciales (el espacio es para el menú del panel); el lector de pantalla siempre lee el nombre. */}
+                <span className="sr-only max-w-[160px] truncate font-medium xl:not-sr-only">{user.name}</span>
                 <ChevronDown
                     aria-hidden
-                    className={cn('size-4 transition-transform duration-200', azul ? 'text-white/85' : 'text-[#56627F]', abierto && 'rotate-180')}
+                    className={cn(
+                        'size-4 transition-transform duration-200 max-sm:hidden',
+                        azul ? 'text-white/85' : 'text-[#56627F]',
+                        abierto && 'rotate-180',
+                    )}
                 />
             </button>
 
