@@ -861,8 +861,8 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios,
                                                             etiqueta="Correo electrónico"
                                                             type="email"
                                                             autoComplete="email"
-                                                            opcional
                                                             placeholder="nombre@correo.com"
+                                                            ayuda="Por aquí le escribe el colegio. Puede ser el mismo correo del paso anterior."
                                                             ancho="completo"
                                                         />
                                                     </Seccion>
@@ -1134,7 +1134,7 @@ function Revision({
                         : [data.acudiente_direccion, data.acudiente_barrio].filter(Boolean).join(' · '),
                 ],
                 ['Teléfonos', `${telefono(data.acudiente_telefono_1)} · ${telefono(data.acudiente_telefono_2)}`],
-                ['Correo', data.acudiente_correo || 'No registrado'],
+                ['Correo', data.acudiente_correo],
             ],
         },
         { paso: 4, filas: [...resumenPadre('madre', data), ...resumenPadre('padre', data)] },
