@@ -235,9 +235,9 @@ export default function Ficha({ estudiante, actual, historia, acudientes, boleti
                                             {a.email && (
                                                 <a
                                                     href={`mailto:${a.email}`}
-                                                    className="flex items-center gap-1.5 rounded-lg bg-[#EEF2FB] px-3 py-1.5 text-sm font-medium text-[#1E3A7B] hover:bg-[#DCE5F8]"
+                                                    className="flex items-center gap-1.5 rounded-lg bg-[#EEF2FB] px-3 py-1.5 text-sm font-medium text-[#1E3A7B] hover:bg-[#DCE5F8] print:bg-transparent print:p-0 print:font-normal print:text-inherit"
                                                 >
-                                                    <Mail className="size-3.5" />
+                                                    <Mail className="size-3.5 print:hidden" />
                                                     {a.email}
                                                 </a>
                                             )}

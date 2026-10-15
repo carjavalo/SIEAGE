@@ -146,6 +146,33 @@ class SedesTest extends TestCase
                 ->where('grupos.0.sede_codigo', 'SP'));
     }
 
+    public function test_los_grupos_del_anio_siguiente_se_crean_aqui_antes_de_promover()
+    {
+        // 2027 todavía no existe, pero ya sale para prepararlo según la proyección de matrícula.
+        $this->actingAs($this->secretaria)->get('/sedes')
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('anio', 2026)
+                ->where('anios.0', ['id' => null, 'anio' => 2027, 'estado' => 'planeado']));
+        $this->actingAs($this->secretaria)->get('/sedes?anio=2027')
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('anio', 2027)
+                ->where('editable', true)
+                ->where('sedes', fn ($sedes) => collect($sedes)->every(fn ($s) => $s['grupos'] === [] && $s['estudiantes'] === 0)));
+        $this->assertNull(DB::table('anios_lectivos')->where('anio', 2027)->value('id'), 'verlo no lo crea');
+
+        // Con el primer grupo nace el año, como planeado.
+        $lf = DB::table('sedes')->where('codigo', 'LF')->value('id');
+        $grupo = ['anio' => 2027, 'grado_id' => DB::table('grados')->where('numero', 6)->value('id'), 'numero' => 1, 'jornada' => 'Mañana', 'cupos' => 34];
+        $this->actingAs($this->secretaria)->post("/sedes/{$lf}/grupos", $grupo)->assertSessionHasNoErrors();
+        $anio2027 = DB::table('anios_lectivos')->where('anio', 2027)->first();
+        $this->assertSame('planeado', $anio2027->estado);
+        $this->assertDatabaseHas('grupos', ['anio_lectivo_id' => $anio2027->id, 'sede_id' => $lf, 'codigo' => '6-1', 'cupos_proyectados' => 34]);
+
+        // Más allá del año siguiente no se puede.
+        $this->actingAs($this->secretaria)->post("/sedes/{$lf}/grupos", [...$grupo, 'anio' => 2028])->assertSessionHasErrors('anio');
+        $this->assertNull(DB::table('anios_lectivos')->where('anio', 2028)->value('id'));
+    }
+
     public function test_cambia_el_numero_la_jornada_y_el_cupo_de_un_grupo_con_estudiantes()
     {
         $grupo = DB::table('grupos as g')->join('matriculas as m', 'm.grupo_id', '=', 'g.id')

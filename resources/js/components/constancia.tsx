@@ -24,6 +24,7 @@ export type Constancia = {
         direccion: string | null;
         barrio: string | null;
         telefonos: string[];
+        correo: string | null;
     } | null;
     observaciones: string | null;
     historia: { anio: number; grupo: string; sede: string }[];
@@ -147,8 +148,11 @@ function Copia({ constancia: c, institucion, papel, para }: { constancia: Consta
                         <Celda etiqueta="Dirección" ultima>
                             {a?.direccion}
                         </Celda>
-                        <Celda etiqueta="Teléfonos" ultima className="col-span-3">
+                        <Celda etiqueta="Teléfonos" ultima>
                             {a?.telefonos.join(' · ')}
+                        </Celda>
+                        <Celda etiqueta="Correo" ultima className="col-span-2">
+                            {a?.correo}
                         </Celda>
                     </Tabla>
                 </Seccion>
