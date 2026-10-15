@@ -448,7 +448,7 @@ export function validarPaso(paso: number, d: DatosInscripcion): Errores {
         }
         poner('acudiente_telefono_1', digitos(d.acudiente_telefono_1, 7, 10));
         poner('acudiente_telefono_2', digitos(d.acudiente_telefono_2, 7, 10));
-        poner('acudiente_correo', correo(d.acudiente_correo, false));
+        poner('acudiente_correo', correo(d.acudiente_correo, true));
     }
 
     if (paso === 4) {

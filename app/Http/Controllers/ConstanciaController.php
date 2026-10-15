@@ -24,8 +24,11 @@ class ConstanciaController extends Controller
             ->where('m.estudiante_id', $estudiante)
             ->whereNull('e.deleted_at')
             ->tap(fn ($q) => Alcance::filtrar($q, $request->user(), 'm.sede_id', 'm.grado_id'))
-            ->where('al.estado', '<>', 'planeado')
-            ->when($request->filled('anio'), fn ($q) => $q->where('al.anio', (int) $request->query('anio')))
+            // Sin año pedido, la más reciente que ya cuenta; la del año planeado (la ficha de matrícula
+            // del año siguiente, después de promover) sale solo si se pide ese año.
+            ->when($request->filled('anio'),
+                fn ($q) => $q->where('al.anio', (int) $request->query('anio')),
+                fn ($q) => $q->where('al.estado', '<>', 'planeado'))
             ->orderByDesc('al.anio')
             ->first(['m.id', 'e.nombre_completo']);
         abort_unless($matricula, 404);

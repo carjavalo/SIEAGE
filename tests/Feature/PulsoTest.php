@@ -38,7 +38,7 @@ class PulsoTest extends TestCase
             'acudiente_primer_nombre' => 'Rosa', 'acudiente_segundo_nombre' => '', 'acudiente_primer_apellido' => 'Prueba', 'acudiente_segundo_apellido' => '',
             'acudiente_fecha_nacimiento' => '1986-07-02', 'acudiente_numero_documento' => '99000333', 'acudiente_ciudad_expedicion' => 'Cali',
             'acudiente_parentesco' => 'Madre', 'acudiente_parentesco_otro' => '', 'acudiente_misma_direccion' => true, 'acudiente_telefono_1' => '3005550101',
-            'acudiente_telefono_2' => '3005550102', 'acudiente_correo' => '', 'autorizacion_datos' => true,
+            'acudiente_telefono_2' => '3005550102', 'acudiente_correo' => 'acudiente@correo.com', 'autorizacion_datos' => true,
         ])->assertSessionHasNoErrors();
     }
 

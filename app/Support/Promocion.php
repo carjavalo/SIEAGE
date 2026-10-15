@@ -17,9 +17,21 @@ use Illuminate\Validation\ValidationException;
  * (10-6 y no hay 11-6), va al grupo con menos estudiantes de su sede y su
  * jornada. Los que quedan sobre el cupo se cuentan para avisar: la secretaría
  * revisa después y deshabilita a quienes no continúan.
+ *
+ * Como pidió el colegio: los de quinto pasan a sexto sin grupo ni jornada (los
+ * grupos de sexto se arman con la proyección de cupos) y los de noveno pasan a
+ * décimo sin técnica; las dos cosas se asignan después en Estudiantes. Los
+ * grupos del año siguiente no se copian solos: se crean en Sedes, según la
+ * proyección de matrícula entregada a la SED.
  */
 final class Promocion
 {
+    /** Al pasar a este grado (sexto) el estudiante queda sin grupo ni jornada. */
+    public const GRADO_SIN_GRUPO = 6;
+
+    /** Desde este grado (décimo) hay técnica; al llegar a él queda sin elegir. */
+    public const GRADO_TECNICA = 10;
+
     /** @var array<int, int> Estudiantes activos por grupo del año destino, al día durante la promoción. */
     private array $ocupados = [];
 
@@ -48,12 +60,7 @@ final class Promocion
     /** El año siguiente; si no existe se crea como "planeado". */
     private static function anioSiguiente(object $origen): object
     {
-        $siguiente = $origen->anio + 1;
-        if (! DB::table('anios_lectivos')->where('anio', $siguiente)->exists()) {
-            DB::table('anios_lectivos')->insert(['anio' => $siguiente, 'estado' => 'planeado', 'created_at' => now(), 'updated_at' => now()]);
-        }
-
-        return DB::table('anios_lectivos')->where('anio', $siguiente)->first();
+        return AniosLectivos::abrir((int) $origen->anio + 1);
     }
 
     /** Matrículas activas del alcance que todavía no tienen matrícula el año siguiente. */
@@ -99,7 +106,9 @@ final class Promocion
             }
 
             $gradoNuevo = $gradosPorNumero[$m->grado_numero + 1];
-            if ($grupo = $this->mismoGrupo($gradoNuevo, $m)) {
+            if ((int) $m->grado_numero + 1 === self::GRADO_SIN_GRUPO) {
+                $this->matricularSinGrupo($m, $gradoNuevo);
+            } elseif ($grupo = $this->mismoGrupo($gradoNuevo, $m)) {
                 $this->matricular($m, $gradoNuevo, $grupo);
             } else {
                 $sinSuGrupo[] = [$m, $gradoNuevo];
@@ -119,6 +128,7 @@ final class Promocion
             'promovidos' => $this->promovidos,
             'graduados' => $graduados,
             'sobreCupo' => $this->sobreCupo,
+            'sinGrupo' => $this->sinGrupo,
             'reparto' => $reparto,
         ];
     }
@@ -129,7 +139,9 @@ final class Promocion
 
     private int $sobreCupo = 0;
 
-    /** @var array<int, array{grupo: string, sede: string, n: int, libres: int}> */
+    private int $sinGrupo = 0;
+
+    /** @var array<int|string, array{grupo: string, sede: string, n: int, libres: int|null}> */
     private array $reparto = [];
 
     /** Crea la matrícula del año siguiente en el grupo elegido y deja la actual como promovida. */
@@ -137,14 +149,39 @@ final class Promocion
     {
         $lleno = $this->ocupados[$grupo->id] >= $grupo->cupos_proyectados;
 
+        $this->crearMatricula($m, $gradoNuevo, $grupo->sede_id, $grupo->id, $grupo->jornada);
+
+        $this->ocupados[$grupo->id]++;
+        $this->sobreCupo += $lleno ? 1 : 0;
+        $this->reparto[$grupo->id] ??= ['grupo' => $grupo->codigo, 'sede' => $grupo->sede, 'n' => 0, 'libres' => 0];
+        $this->reparto[$grupo->id]['n']++;
+        $this->reparto[$grupo->id]['libres'] = $grupo->cupos_proyectados - $this->ocupados[$grupo->id];
+    }
+
+    /** Pasa a sexto sin grupo ni jornada, en la sede donde se da ese grado. */
+    private function matricularSinGrupo(object $m, int $gradoNuevo): void
+    {
+        $sede = $this->sedeDelGrado($gradoNuevo, $m);
+        $this->crearMatricula($m, $gradoNuevo, $sede->id, null, null);
+
+        $this->sinGrupo++;
+        // En el resumen va con el nombre del grado y sin cupos: todavía no tiene grupo.
+        $clave = "sin-{$sede->id}";
+        $this->reparto[$clave] ??= ['grupo' => DB::table('grados')->where('id', $gradoNuevo)->value('nombre'), 'sede' => $sede->nombre, 'n' => 0, 'libres' => null];
+        $this->reparto[$clave]['n']++;
+    }
+
+    private function crearMatricula(object $m, int $gradoNuevo, int $sedeId, ?int $grupoId, ?string $jornada): void
+    {
         DB::table('matriculas')->insert([
             'estudiante_id' => $m->estudiante_id,
             'anio_lectivo_id' => $this->destino->id,
             'grado_id' => $gradoNuevo,
-            'grupo_id' => $grupo->id,
-            'sede_id' => $grupo->sede_id,
-            'modalidad_id' => $m->modalidad_id,
-            'jornada' => $grupo->jornada,
+            'grupo_id' => $grupoId,
+            'sede_id' => $sedeId,
+            // Al llegar a décimo la técnica queda sin elegir; después sigue con la suya.
+            'modalidad_id' => (int) $m->grado_numero + 1 === self::GRADO_TECNICA ? null : $m->modalidad_id,
+            'jornada' => $jornada,
             'fecha_matricula' => $this->ahora->toDateString(),
             'condicion' => 'antiguo',
             'estado' => 'activo',
@@ -153,13 +190,34 @@ final class Promocion
             'updated_at' => $this->ahora,
         ]);
         DB::table('matriculas')->where('id', $m->id)->update(['resultado' => 'promovido', 'updated_at' => $this->ahora]);
-
-        $this->ocupados[$grupo->id]++;
         $this->promovidos++;
-        $this->sobreCupo += $lleno ? 1 : 0;
-        $this->reparto[$grupo->id] ??= ['grupo' => $grupo->codigo, 'sede' => $grupo->sede, 'n' => 0, 'libres' => 0];
-        $this->reparto[$grupo->id]['n']++;
-        $this->reparto[$grupo->id]['libres'] = $grupo->cupos_proyectados - $this->ocupados[$grupo->id];
+    }
+
+    /** @var array<int, Collection> Sedes de cada grado sin grupo (de la que más grupos tiene a la que menos). */
+    private array $sedesDelGrado = [];
+
+    /**
+     * Dónde se da el grado: las sedes de sus grupos en el año siguiente o, si aún
+     * no los crearon, en el año en curso. Si su sede lo tiene, la suya; si no, la
+     * que más grupos tiene de ese grado. Sin grupos en ningún año, se queda en su sede.
+     */
+    private function sedeDelGrado(int $gradoId, object $m): object
+    {
+        $sedes = $this->sedesDelGrado[$gradoId] ??= (function () use ($gradoId) {
+            foreach ([$this->destino->id, $this->origen->id] as $anioId) {
+                $sedes = DB::table('grupos')->where('anio_lectivo_id', $anioId)->where('grado_id', $gradoId)
+                    ->groupBy('sede_id')->orderByRaw('count(*) desc')->orderBy('sede_id')->pluck('sede_id');
+                if ($sedes->isNotEmpty()) {
+                    return $sedes;
+                }
+            }
+
+            return collect();
+        })();
+
+        $sedeId = $sedes->isEmpty() || $sedes->contains($m->sede_id) ? $m->sede_id : $sedes->first();
+
+        return DB::table('sedes')->where('id', $sedeId)->first(['id', 'nombre']);
     }
 
     /** @var array<int, Collection> Grupos del año destino por grado, cargados una vez. */
@@ -200,36 +258,23 @@ final class Promocion
     }
 
     /**
-     * Grupos del grado en el año destino. Si aún no hay, se abren iguales a los
-     * de ese grado en el año en curso (mismo código, sede, jornada y cupos).
+     * Grupos del grado en el año destino. No se copian solos de los del año en
+     * curso: se crean antes en Sedes, según la proyección de matrícula. Si
+     * todavía no los hay, no se promueve (todo o nada) y se dice cuáles faltan.
      */
     private function gruposDestino(int $gradoId): Collection
     {
-        $existentes = fn () => DB::table('grupos as g')
+        $grupos = DB::table('grupos as g')
             ->join('sedes as s', 's.id', '=', 'g.sede_id')
             ->where('g.anio_lectivo_id', $this->destino->id)
             ->where('g.grado_id', $gradoId)
             ->get(['g.id', 'g.numero', 'g.codigo', 'g.sede_id', 'g.jornada', 'g.cupos_proyectados', 's.nombre as sede']);
 
-        $grupos = $existentes();
         if ($grupos->isEmpty()) {
-            $modelo = DB::table('grupos')->where('anio_lectivo_id', $this->origen->id)->where('grado_id', $gradoId)->get();
-            if ($modelo->isEmpty()) {
-                $nombre = DB::table('grados')->where('id', $gradoId)->value('nombre');
-                throw ValidationException::withMessages(['promocion' => "No hay grupos de {$nombre} para abrir en {$this->destino->anio}."]);
-            }
-            DB::table('grupos')->insert($modelo->map(fn ($g) => [
-                'anio_lectivo_id' => $this->destino->id,
-                'sede_id' => $g->sede_id,
-                'grado_id' => $g->grado_id,
-                'numero' => $g->numero,
-                'codigo' => $g->codigo,
-                'jornada' => $g->jornada,
-                'cupos_proyectados' => $g->cupos_proyectados,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ])->all());
-            $grupos = $existentes();
+            $nombre = DB::table('grados')->where('id', $gradoId)->value('nombre');
+            throw ValidationException::withMessages([
+                'promocion' => "Todavía no hay grupos de {$nombre} en {$this->destino->anio}: créalos en Sedes, según la proyección de matrícula, y vuelve a promover.",
+            ]);
         }
 
         $activos = DB::table('matriculas')

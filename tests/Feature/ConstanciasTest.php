@@ -89,6 +89,33 @@ class ConstanciasTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->where('constancias.0.anio', $anio->anio)
                 ->where('constancias.0.historia', fn ($h) => collect($h)->max('anio') === $anio->anio));
+
+        // Pedida por año, sale la ficha de matrícula del año planeado (sin grupo todavía).
+        $this->actingAs(User::first())
+            ->get("/estudiantes/{$matricula->estudiante_id}/constancia?anio=".($anio->anio + 1))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('constancias.0.anio', $anio->anio + 1)
+                ->where('constancias.0.estudiante.grupo', null));
+    }
+
+    public function test_lleva_el_correo_del_acudiente_o_si_no_tiene_el_de_la_familia()
+    {
+        $this->seed(DatosInicialesSeeder::class);
+        $anio = $this->anioActivo();
+        $matricula = DB::table('matriculas as m')->where('m.anio_lectivo_id', $anio->id)->where('m.estado', 'activo')
+            ->whereExists(fn ($q) => $q->from('estudiante_acudiente as ea')->whereColumn('ea.estudiante_id', 'm.estudiante_id'))
+            ->first(['m.id', 'm.estudiante_id']);
+        $acudientes = DB::table('estudiante_acudiente')->where('estudiante_id', $matricula->estudiante_id)->pluck('acudiente_id');
+        DB::table('acudientes')->whereIn('id', $acudientes)->update(['email' => 'acudiente@correo.com']);
+        DB::table('estudiantes')->where('id', $matricula->estudiante_id)->update(['correo' => 'familia@correo.com']);
+        $correo = fn () => $this->actingAs(User::first())->get("/estudiantes/{$matricula->estudiante_id}/constancia")
+            ->viewData('page')['props']['constancias'][0]['acudiente']['correo'];
+
+        $this->assertSame('acudiente@correo.com', $correo());
+
+        DB::table('acudientes')->whereIn('id', $acudientes)->update(['email' => null]);
+        $this->assertSame('familia@correo.com', $correo());
     }
 
     public function test_la_fecha_es_la_de_matricula_y_si_falta_la_de_hoy()

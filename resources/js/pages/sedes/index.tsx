@@ -12,7 +12,8 @@ import { Plus } from 'lucide-react';
 import { useState } from 'react';
 
 type Props = {
-    anios: { id: number; anio: number; estado: string }[];
+    /** El año siguiente al que está en curso sale aunque todavía no exista (id null): ahí se preparan sus grupos. */
+    anios: { id: number | null; anio: number; estado: string }[];
     anio: number;
     /** Falso en un año lectivo cerrado: solo se consulta. */
     editable: boolean;
@@ -66,6 +67,9 @@ export default function Sedes({ anios, anio, editable, sedes, grados, jornadas }
                         <b className="font-semibold text-[#16223F] tabular-nums">{grupos}</b> grupos ·{' '}
                         <b className="font-semibold text-[#16223F] tabular-nums">{numero(estudiantes)}</b> estudiantes
                         {!editable && ' · año cerrado, solo consulta'}
+                        {editable &&
+                            anios.find((a) => a.anio === anio)?.estado === 'planeado' &&
+                            ' · crea sus grupos según la proyección de matrícula'}
                     </p>
                 </div>
                 {puede && auth.todasLasSedes && (

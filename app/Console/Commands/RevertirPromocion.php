@@ -8,8 +8,9 @@ use Illuminate\Support\Facades\DB;
 /**
  * Deshace la promoción del año en curso (pensado para pruebas): borra las
  * matrículas que la promoción creó en el año siguiente, devuelve a "activo" a
- * los de undécimo que quedaron graduados y quita la marca "promovido". Si el
- * año siguiente queda vacío, también se borran sus grupos y el año.
+ * los de undécimo que quedaron graduados y quita la marca "promovido". Los
+ * grupos del año siguiente se quedan (se crean en Sedes, no al promover); el
+ * año solo se borra si queda sin matrículas ni grupos.
  *
  * No toca a los inscritos que se matricularon directamente en el año
  * siguiente (condición "nuevo"), ni a nadie deshabilitado a mano.
@@ -55,12 +56,14 @@ class RevertirPromocion extends Command
             DB::table('matriculas')->where('anio_lectivo_id', $origen->id)->where('estado', 'activo')->where('resultado', 'promovido')
                 ->update(['resultado' => null, 'updated_at' => now()]);
 
-            // Si el año siguiente quedó sin nadie y solo estaba planeado, se quita con sus grupos.
-            if ($destino->estado === 'planeado' && ! DB::table('matriculas')->where('anio_lectivo_id', $destino->id)->exists()) {
-                DB::table('grupos')->where('anio_lectivo_id', $destino->id)->delete();
+            // Los grupos del año siguiente se crearon en Sedes (según la proyección de matrícula), no al
+            // promover: se quedan. El año solo se quita si quedó planeado y sin nadie ni grupos.
+            if ($destino->estado === 'planeado'
+                && ! DB::table('matriculas')->where('anio_lectivo_id', $destino->id)->exists()
+                && ! DB::table('grupos')->where('anio_lectivo_id', $destino->id)->exists()) {
                 DB::table('periodos')->where('anio_lectivo_id', $destino->id)->delete();
                 DB::table('anios_lectivos')->where('id', $destino->id)->delete();
-                $this->line("  El año {$destino->anio} quedó vacío: se borró con sus grupos.");
+                $this->line("  El año {$destino->anio} quedó vacío: se borró.");
             }
         });
 

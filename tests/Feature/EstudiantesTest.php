@@ -111,6 +111,7 @@ class EstudiantesTest extends TestCase
         $primero = DB::table('grados')->where('numero', 1)->value('id');
         $rp = DB::table('sedes')->where('codigo', 'RP')->value('id');
         $activosRp = DB::table('matriculas')->where('anio_lectivo_id', 12)->where('grado_id', $primero)->where('sede_id', $rp)->where('estado', 'activo')->count();
+        $this->crearGruposDelSiguiente(2026, [2]);
 
         $this->actingAs(User::first())->post('/promociones', ['anio' => 2026, 'grado_id' => $primero, 'sede' => 'RP'])->assertSessionHasNoErrors();
 

@@ -205,7 +205,8 @@ class InscripcionRequest extends FormRequest
             'acudiente_barrio' => ['required', 'string', 'max:80'],
             'acudiente_telefono_1' => $telefono,
             'acudiente_telefono_2' => $telefono,
-            'acudiente_correo' => ['nullable', 'email', 'max:120'],
+            // Obligatorio: por ahí se le escribe al acudiente (lo pidió el colegio).
+            'acudiente_correo' => ['required', 'email', 'max:120'],
 
             // 5. Madre y padre
             ...$this->reglasPadres($nombre),
@@ -340,7 +341,7 @@ class InscripcionRequest extends FormRequest
             'acudiente_barrio' => $d['acudiente_barrio'],
             'acudiente_telefono_1' => $d['acudiente_telefono_1'],
             'acudiente_telefono_2' => $d['acudiente_telefono_2'],
-            'acudiente_correo' => $d['acudiente_correo'] ?? null,
+            'acudiente_correo' => $d['acudiente_correo'],
 
             'autorizo_datos_en' => now(),
             'ip' => $this->ip(),

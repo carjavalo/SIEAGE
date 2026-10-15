@@ -79,6 +79,7 @@ class DeshabilitacionTest extends TestCase
     public function test_perdio_el_anio_no_se_promueve_y_quita_la_promocion_hecha()
     {
         // Lo promueven primero y después se sabe que perdió el año.
+        $this->crearGruposDelSiguiente();
         $this->actingAs($this->secretaria)->post('/promociones', ['anio' => 2026, 'estudiante_id' => $this->matricula->estudiante_id]);
         $siguiente = DB::table('anios_lectivos')->where('anio', 2027)->value('id');
         $this->assertDatabaseHas('matriculas', ['estudiante_id' => $this->matricula->estudiante_id, 'anio_lectivo_id' => $siguiente]);
@@ -112,6 +113,7 @@ class DeshabilitacionTest extends TestCase
         $this->assertSame(['habilitada', 'deshabilitada'], DB::table('novedades_matricula')->where('matricula_id', $m->id)->orderByDesc('id')->pluck('tipo')->all());
 
         // Activo otra vez: se puede promover.
+        $this->crearGruposDelSiguiente();
         $this->actingAs($this->secretaria)->post('/promociones', ['anio' => 2026, 'estudiante_id' => $id]);
         $this->assertSame(1, session('promocion')['promovidos']);
     }

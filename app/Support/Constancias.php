@@ -37,7 +37,7 @@ class Constancias
             ->get([
                 'm.id', 'm.estudiante_id', 'al.anio', 'm.fecha_matricula', 'gr.nombre as grado', 'g.codigo as grupo', 's.nombre as sede',
                 'm.jornada', 'mo.nombre as modalidad', 'm.condicion', 'm.observaciones',
-                'e.nombre_completo as nombre', 'e.tipo_documento', 'e.numero_documento',
+                'e.nombre_completo as nombre', 'e.tipo_documento', 'e.numero_documento', 'e.correo',
             ])
             ->keyBy('id');
 
@@ -53,7 +53,7 @@ class Constancias
             ->orderBy('a.id')
             ->get([
                 'ea.estudiante_id', 'a.nombre_completo as nombre', 'a.tipo_documento', 'a.numero_documento', 'p.nombre as parentesco',
-                'ea.parentesco_otro', 'a.direccion', 'b.nombre as barrio', 'a.telefono_celular', 'a.telefono_fijo',
+                'ea.parentesco_otro', 'a.direccion', 'b.nombre as barrio', 'a.telefono_celular', 'a.telefono_fijo', 'a.email',
             ])
             ->unique('estudiante_id')
             ->keyBy('estudiante_id');
@@ -100,6 +100,8 @@ class Constancias
                         'direccion' => $a->direccion,
                         'barrio' => $a->barrio,
                         'telefonos' => collect([$a->telefono_celular, $a->telefono_fijo])->filter()->unique()->values(),
+                        // El del acudiente; si no tiene, el de contacto de la familia (el del formulario de inscripción).
+                        'correo' => $a->email ?: $m->correo,
                     ] : null,
                     'observaciones' => $m->observaciones ? trim($m->observaciones) : null,
                     'historia' => collect($historias->get($m->estudiante_id, []))

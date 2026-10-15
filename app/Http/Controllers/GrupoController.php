@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\Alcance;
+use App\Support\AniosLectivos;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,28 +31,37 @@ class GrupoController extends Controller
         Alcance::exigirSede($request->user(), $sede);
         $sede = DB::table('sedes')->find($sede) ?? abort(404);
         $datos = $request->validate([
-            'anio' => ['required', 'integer', 'exists:anios_lectivos,anio'],
+            // Un año que ya existe o el siguiente al que está en curso (sus grupos se crean según la proyección de matrícula).
+            'anio' => ['required', 'integer', Rule::when(
+                (int) $request->input('anio') !== AniosLectivos::siguiente(),
+                ['exists:anios_lectivos,anio'],
+            )],
             'grado_id' => ['required', 'integer', 'exists:grados,id'],
             ...$this->reglas(),
         ], self::MENSAJES);
         Alcance::exigir($request->user(), $sede->id, $datos['grado_id']);
 
-        $anio = DB::table('anios_lectivos')->where('anio', $datos['anio'])->first();
-        $this->abierto($anio->estado);
-        $grado = DB::table('grados')->find($datos['grado_id']);
-        $codigo = $this->libre($anio->id, $sede->id, $grado, (int) $datos['numero']);
+        // El año siguiente nace con su primer grupo; si el grupo no se puede crear, tampoco el año.
+        $codigo = DB::transaction(function () use ($datos, $sede) {
+            $anio = AniosLectivos::abrir((int) $datos['anio']);
+            $this->abierto($anio->estado);
+            $grado = DB::table('grados')->find($datos['grado_id']);
+            $codigo = $this->libre($anio->id, $sede->id, $grado, (int) $datos['numero']);
 
-        DB::table('grupos')->insert([
-            'anio_lectivo_id' => $anio->id,
-            'sede_id' => $sede->id,
-            'grado_id' => $grado->id,
-            'numero' => (int) $datos['numero'],
-            'codigo' => $codigo,
-            'jornada' => $datos['jornada'],
-            'cupos_proyectados' => (int) $datos['cupos'],
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+            DB::table('grupos')->insert([
+                'anio_lectivo_id' => $anio->id,
+                'sede_id' => $sede->id,
+                'grado_id' => $grado->id,
+                'numero' => (int) $datos['numero'],
+                'codigo' => $codigo,
+                'jornada' => $datos['jornada'],
+                'cupos_proyectados' => (int) $datos['cupos'],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            return $codigo;
+        });
 
         return back()->with('success', "Grupo {$codigo} creado en {$sede->nombre}.");
     }
