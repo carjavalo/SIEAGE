@@ -7,13 +7,15 @@ import { type Permiso, puede } from '@/lib/permisos';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { Building2, ClipboardList, GraduationCap, UploadCloud, UserCog } from 'lucide-react';
-import { type ReactNode, useEffect, useLayoutEffect, useState } from 'react';
+import { Building2, ClipboardList, GraduationCap, NotebookPen, UploadCloud, UserCog } from 'lucide-react';
+import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 /** El menú: cada entrada se ve solo con su permiso (Usuarios → Roles y permisos). */
 const enlaces: { titulo: string; href: string; icono: typeof GraduationCap; permiso: Permiso }[] = [
     { titulo: 'Estudiantes', href: '/estudiantes', icono: GraduationCap, permiso: 'ver-estudiantes' },
     { titulo: 'Inscritos', href: '/inscritos', icono: ClipboardList, permiso: 'ver-inscritos' },
+    // Las notas de transición: abre el primer grupo de transición de sus sedes.
+    { titulo: 'Boletines', href: '/boletines', icono: NotebookPen, permiso: 'escribir-boletines' },
     { titulo: 'Importar datos', href: '/dashboard', icono: UploadCloud, permiso: 'importar-datos' },
     { titulo: 'Sedes', href: '/sedes', icono: Building2, permiso: 'ver-sedes' },
     { titulo: 'Usuarios', href: '/usuarios', icono: UserCog, permiso: 'gestionar-usuarios' },
@@ -44,6 +46,15 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
         paginaAnterior = pagina.component;
     }, [pagina.component]);
 
+    // Si el menú se desplaza de lado (celular angosto), la página en que se está queda a la vista.
+    const nav = useRef<HTMLElement>(null);
+    useLayoutEffect(() => {
+        const activo = nav.current?.querySelector<HTMLElement>('[aria-current="page"]');
+        if (nav.current && activo && nav.current.scrollWidth > nav.current.clientWidth) {
+            nav.current.scrollLeft = activo.offsetLeft - (nav.current.clientWidth - activo.offsetWidth) / 2;
+        }
+    }, [pagina.url]);
+
     const { auth } = pagina.props;
     const pendientes = pagina.props.inscritosPendientes;
     // «Usuarios» también lo ve quien solo maneja roles: entra directo a Roles y permisos.
@@ -65,14 +76,21 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
                     {/* El mismo ancho que <main> en todas las páginas: el logo y el menú nunca se corren al cambiar de página. */}
                     <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-3 px-4 md:gap-6 md:px-8 2xl:max-w-[1760px]">
                         <Link href="/" className="flex shrink-0 items-center gap-3">
-                            <img src="/sieage-logo.webp" alt="SIEAGE" className="h-10 w-auto rounded-md object-contain" />
-                            <div className="hidden leading-tight sm:block">
+                            {/* Con su tamaño, el espacio queda reservado antes de que cargue: el menú no se corre. */}
+                            <img src="/sieage-logo.webp" alt="SIEAGE" width={150} height={188} className="h-10 w-auto rounded-md object-contain" />
+                            {/* Solo en pantallas anchas: antes, el espacio es para el menú. */}
+                            <div className="hidden leading-tight xl:block">
                                 <p className="text-[15px] font-semibold tracking-tight">SIEAGE</p>
                                 <p className="text-xs text-[#56627F]">I.E. Alfonso López Pumarejo</p>
                             </div>
                         </Link>
 
-                        <nav aria-label="Principal" className="flex items-center gap-1 rounded-full bg-[#EEF2FB] p-1">
+                        {/* Si en un celular angosto no caben todos, el menú se desplaza de lado en vez de correr la página. */}
+                        <nav
+                            ref={nav}
+                            aria-label="Principal"
+                            className="relative flex min-w-0 items-center gap-1 overflow-x-auto rounded-full bg-[#EEF2FB] p-1 [scrollbar-width:none]"
+                        >
                             {menu.map(({ titulo: t, href, icono: Icono }) => {
                                 const activo = pagina.url.startsWith(href.replace('/roles', ''));
                                 return (
@@ -80,14 +98,15 @@ export default function PanelLayout({ titulo, completa, children }: { titulo: st
                                         key={href}
                                         href={href}
                                         aria-current={activo ? 'page' : undefined}
+                                        title={t}
                                         className={cn(
-                                            'flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition md:px-3.5',
+                                            'relative flex shrink-0 items-center gap-2 rounded-full px-2.5 py-2 text-sm font-medium transition sm:px-3 lg:px-3.5',
                                             activo ? 'bg-white text-[#1E3A7B] shadow-sm' : 'text-[#56627F] hover:text-[#1E3A7B]',
                                         )}
                                     >
                                         <Icono aria-hidden className="size-4" />
-                                        {/* En celular solo se ve el ícono, pero el lector de pantalla sigue leyendo el nombre. */}
-                                        <span className="sr-only md:not-sr-only">{t}</span>
+                                        {/* Hasta lg solo se ve el ícono (con los nombres no cabe), pero el lector de pantalla sigue leyendo el nombre. */}
+                                        <span className="sr-only lg:not-sr-only">{t}</span>
                                         {href === '/inscritos' && pendientes > 0 && (
                                             <>
                                                 <span
