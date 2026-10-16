@@ -411,16 +411,19 @@ function Editor({
                                     type="button"
                                     role="radio"
                                     aria-checked={p.id === periodoActual.id}
+                                    // Corto («P1», «P2»…) para que quepan aunque haya muchos; el nombre completo, al pasar el mouse y para el lector.
+                                    title={tituloPeriodo(p)}
+                                    aria-label={tituloPeriodo(p)}
                                     onClick={() =>
                                         p.id !== periodoActual.id &&
                                         void conTodoGuardado(() => router.get('/boletines', { grupo: grupo.id, periodo: p.id }))
                                     }
                                     className={cn(
-                                        'h-8 flex-1 cursor-pointer rounded-full px-2 text-[13px] font-semibold whitespace-nowrap transition focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none',
+                                        'h-8 min-w-0 flex-1 cursor-pointer rounded-full px-1.5 text-[13px] font-semibold whitespace-nowrap tabular-nums transition focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none',
                                         p.id === periodoActual.id ? 'bg-[#1E3A7B] text-white' : 'text-[#56627F] hover:text-[#16223F]',
                                     )}
                                 >
-                                    {tituloPeriodo(p).replace(/ \d+%$/, '')}
+                                    P{p.numero}
                                 </button>
                             ))}
                         </div>
@@ -463,14 +466,23 @@ function Editor({
                                                 : 'text-[#3E4A68] hover:bg-white/60',
                                         )}
                                     >
+                                        {/* El chulo marca el que se está viendo; los ya escritos llevan un punto verde. */}
                                         <span
                                             aria-hidden
                                             className={cn(
                                                 'flex size-[18px] shrink-0 items-center justify-center rounded-full',
-                                                lleno ? 'bg-[#3BA67A] text-white' : 'ring-[1.5px] ring-[#B7C6EA] ring-inset',
+                                                activo
+                                                    ? 'bg-[#1E3A7B] text-white'
+                                                    : lleno
+                                                      ? 'ring-[1.5px] ring-[#3BA67A] ring-inset'
+                                                      : 'ring-[1.5px] ring-[#B7C6EA] ring-inset',
                                             )}
                                         >
-                                            {lleno && <Check className="size-3" strokeWidth={3} />}
+                                            {activo ? (
+                                                <Check className="size-3" strokeWidth={3} />
+                                            ) : (
+                                                lleno && <span className="size-2 rounded-full bg-[#3BA67A]" />
+                                            )}
                                         </span>
                                         <span className="min-w-0 flex-1 truncate">{e.nombre}</span>
                                         <span className="sr-only">{lleno ? ', escrito' : ', sin escribir'}</span>
