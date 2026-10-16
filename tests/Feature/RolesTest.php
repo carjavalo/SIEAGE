@@ -40,6 +40,7 @@ class RolesTest extends TestCase
         $this->assertSame($resto, $this->permisosDe('coordinacion'));
         $this->assertSame($resto, $this->permisosDe('secretaria'));
         $this->assertSame(Permisos::claves(), Permisos::de($this->usuario('administrador')));
+        $this->assertSame([...Permisos::claves(), 'gestionar-roles'], Permisos::de($this->usuario('superadministrador')));
         $this->assertSame('Coordinación', $this->rol('coordinacion')->etiqueta);
 
         // El docente entra a lo de siempre, pero no deshabilita, ni cambia cupos, ni ve usuarios.
@@ -57,17 +58,20 @@ class RolesTest extends TestCase
     public function test_la_pagina_trae_los_roles_con_sus_permisos()
     {
         $this->usuario('docente');
-        $this->actingAs($this->usuario('administrador'))
+        $this->actingAs($this->usuario('superadministrador'))
             ->get('/usuarios/roles')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('usuarios/roles')
-                ->has('roles', 4)
+                ->has('roles', 5)
                 ->where('roles.0.etiqueta', 'Administrador')
                 ->where('roles.0.sistema', true)
                 ->where('roles.0.permisos', Permisos::claves())
                 ->where('roles.3.etiqueta', 'Docente')
                 ->where('roles.3.usuarios', 1)
+                ->where('roles.4.etiqueta', 'Super administrador')
+                ->where('roles.4.sistema', true)
+                ->where('roles.4.usuarios', 1)
                 ->has('areas', 6)
                 ->where('areas.0.permisos.0.clave', 'ver-estudiantes')
                 ->where('requiere.matricular', 'ver-inscritos')
@@ -76,7 +80,7 @@ class RolesTest extends TestCase
 
     public function test_un_rol_nuevo_con_sus_permisos_cambia_lo_que_ve_quien_lo_tiene()
     {
-        $admin = $this->usuario('administrador');
+        $admin = $this->usuario('superadministrador');
 
         // Nuevo, empezando con los permisos del docente.
         $this->actingAs($admin)->post('/roles', ['etiqueta' => 'Orientación escolar', 'descripcion' => 'Acompaña a las familias', 'copiar_de' => $this->rol('docente')->id])
@@ -108,7 +112,7 @@ class RolesTest extends TestCase
 
     public function test_nombres_y_permisos_validos()
     {
-        $admin = $this->usuario('administrador');
+        $admin = $this->usuario('superadministrador');
         $this->actingAs($admin)->post('/roles', ['etiqueta' => 'Docente'])->assertSessionHasErrors(['etiqueta' => 'Ya hay otro rol con este nombre.']);
         $this->actingAs($admin)->post('/roles', ['etiqueta' => ''])->assertSessionHasErrors('etiqueta');
         $docente = $this->rol('docente');
@@ -121,14 +125,21 @@ class RolesTest extends TestCase
 
     public function test_el_administrador_no_se_toca_y_un_rol_con_usuarios_no_se_borra()
     {
-        $admin = $this->usuario('administrador');
+        $admin = $this->usuario('superadministrador');
         $rolAdmin = $this->rol('administrador');
+        $administradora = $this->usuario('administrador');
 
         // Sus permisos no cambian (tiene todo siempre); su nombre sí.
         $this->actingAs($admin)->put("/roles/{$rolAdmin->id}", ['etiqueta' => 'Rectoría', 'permisos' => []])->assertSessionHasNoErrors();
         $this->assertSame(0, DB::table('rol_permiso')->where('rol_id', $rolAdmin->id)->count());
-        $this->assertSame(Permisos::claves(), Permisos::de($admin->fresh()));
+        $this->assertSame(Permisos::claves(), Permisos::de($administradora->fresh()));
         $this->actingAs($admin)->delete("/roles/{$rolAdmin->id}")->assertSessionHasErrors('rol');
+        // Tampoco el del super administrador.
+        $rolSuper = $this->rol('superadministrador');
+        $this->actingAs($admin)->put("/roles/{$rolSuper->id}", ['etiqueta' => 'Equipo SIEAGE', 'permisos' => ['ver-estudiantes']])->assertSessionHasNoErrors();
+        $this->assertSame(0, DB::table('rol_permiso')->where('rol_id', $rolSuper->id)->count());
+        $this->assertSame([...Permisos::claves(), 'gestionar-roles'], Permisos::de($admin->fresh()));
+        $this->actingAs($admin)->delete("/roles/{$rolSuper->id}")->assertSessionHasErrors('rol');
 
         // Con usuarios (aunque estén desactivados), no se borra.
         $secretaria = $this->rol('secretaria');
@@ -176,7 +187,7 @@ class RolesTest extends TestCase
         $this->actingAs($profe)->get('/estudiantes')->assertInertia(fn (Assert $page) => $page->where('auth.todasLasSedes', false)->etc());
 
         // Con «Ver todas las sedes» en su rol: todas, sin tocar su usuario.
-        $admin = $this->usuario('administrador');
+        $admin = $this->usuario('superadministrador');
         $permisos = [...$this->permisosDe('docente'), 'todas-las-sedes'];
         $this->actingAs($admin)->put("/roles/{$docente->id}", ['etiqueta' => 'Docente', 'permisos' => $permisos])->assertSessionHasNoErrors();
         $this->actingAs($profe)->get('/estudiantes')->assertInertia(fn (Assert $page) => $page->where('auth.todasLasSedes', true)->etc());
@@ -192,6 +203,55 @@ class RolesTest extends TestCase
         $this->actingAs($admin)->post('/usuarios', ['name' => 'Otra Secretaria Prueba', 'usuario' => 'otra.secre', 'rol_id' => $this->rol('secretaria')->id, 'password' => 'clave-de-prueba-1', 'sedes' => []])
             ->assertSessionHasErrors('sedes');
         $this->assertNotNull($sedeB);
+    }
+
+    public function test_solo_el_super_administrador_maneja_roles_y_permisos()
+    {
+        $admin = $this->usuario('administrador');
+        $super = $this->usuario('superadministrador');
+
+        // El administrador ya no entra a Roles y permisos ni lo tiene entre sus permisos.
+        $this->actingAs($admin)->get('/usuarios/roles')->assertForbidden();
+        $this->actingAs($admin)->post('/roles', ['etiqueta' => 'Intento'])->assertForbidden();
+        $this->actingAs($admin)->put("/roles/{$this->rol('docente')->id}", ['etiqueta' => 'Docente', 'permisos' => []])->assertForbidden();
+        $this->actingAs($admin)->get('/usuarios')->assertInertia(fn (Assert $page) => $page
+            ->where('auth.permisos', fn ($p) => ! collect($p)->contains('gestionar-roles'))
+            // Ni ve a los super administradores ni puede dar ese rol.
+            ->where('usuarios', fn ($u) => ! collect($u)->contains('id', $super->id))
+            ->where('roles', fn ($r) => ! collect($r)->contains('nombre', 'superadministrador'))
+            ->etc());
+        $this->actingAs($super)->get('/usuarios/roles')->assertOk();
+        $this->actingAs($super)->get('/usuarios')->assertInertia(fn (Assert $page) => $page
+            ->where('usuarios', fn ($u) => collect($u)->contains('id', $super->id))
+            ->where('roles', fn ($r) => collect($r)->contains('nombre', 'superadministrador'))
+            ->etc());
+
+        // Un administrador no da el rol ni toca a un super administrador.
+        $datos = ['name' => 'Persona Prueba Super', 'usuario' => 'persona.super', 'todas_las_sedes' => true, 'password' => 'clave-de-prueba-1'];
+        $superId = $this->rol('superadministrador')->id;
+        $this->actingAs($admin)->post('/usuarios', [...$datos, 'rol_id' => $superId])
+            ->assertSessionHasErrors(['rol_id' => 'Solo un super administrador puede dar ese rol o cambiar a un super administrador.']);
+        $this->actingAs($admin)->put("/usuarios/{$super->id}", ['name' => 'Otro nombre', 'usuario' => $super->usuario, 'rol_id' => $this->rol('docente')->id, 'activo' => true, 'todas_las_sedes' => true])
+            ->assertSessionHasErrors('rol_id');
+        $this->actingAs($admin)->put("/usuarios/{$super->id}/clave", ['password' => 'otra-clave-123'])->assertSessionHasErrors('rol_id');
+        $this->assertSame($superId, $super->fresh()->rol_id);
+
+        // Otro super administrador sí; y no puede quitarse su propio acceso.
+        $this->actingAs($super)->post('/usuarios', [...$datos, 'rol_id' => $superId])->assertSessionHasNoErrors();
+        $this->assertSame($superId, User::where('usuario', 'persona.super')->value('rol_id'));
+        $this->actingAs($super)->put("/usuarios/{$super->id}", ['name' => $super->name, 'usuario' => $super->usuario, 'rol_id' => $this->rol('administrador')->id, 'activo' => true, 'todas_las_sedes' => true])
+            ->assertSessionHasErrors(['rol_id' => 'No puedes quitarte tu propio acceso de super administrador.']);
+    }
+
+    public function test_el_super_administrador_se_da_desde_la_consola()
+    {
+        $kevin = $this->usuario('administrador');
+        $this->artisan('sieage:superadmin', ['usuarios' => [strtoupper($kevin->usuario)]])->assertSuccessful();
+        $this->assertTrue($kevin->fresh()->esSuperAdministrador());
+
+        $this->artisan('sieage:superadmin', ['usuarios' => [$kevin->usuario, 'no.existe']])->assertFailed();
+        $this->artisan('sieage:superadmin', ['usuarios' => [$kevin->usuario], '--quitar' => true])->assertSuccessful();
+        $this->assertSame($this->rol('administrador')->id, $kevin->fresh()->rol_id);
     }
 
     public function test_completar_agrega_lo_que_cada_permiso_necesita()

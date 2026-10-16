@@ -260,7 +260,9 @@ function EditorRol({
                 {rol.sistema && (
                     <p className="mb-5 flex items-start gap-2.5 rounded-[16px] bg-[#EEF2FB] px-4 py-3 text-[14px] leading-snug text-[#1E3A7B]">
                         <ShieldCheck className="mt-0.5 size-[18px] shrink-0" />
-                        El administrador puede todo, siempre: así nunca se pierde el acceso a SIEAGE. Se le puede cambiar el nombre, no los permisos.
+                        {rol.nombre === 'superadministrador'
+                            ? 'El super administrador (el equipo de SIEAGE) puede todo, siempre, y es el único que entra a Roles y permisos. Se le puede cambiar el nombre, no los permisos.'
+                            : 'El administrador puede todo lo de esta lista, siempre: así nunca se pierde el acceso a SIEAGE. Roles y permisos queda solo para el super administrador. Se le puede cambiar el nombre, no los permisos.'}
                     </p>
                 )}
                 <div className="space-y-7">
@@ -289,7 +291,8 @@ function EditorRol({
                                 {a.area === 'Administración' && !rol.sistema && (
                                     <p className="mb-2.5 flex items-start gap-2 text-[13px] leading-snug text-[#8A5A0B]">
                                         <CircleAlert className="mt-0.5 size-4 shrink-0 text-[#B7862C]" />
-                                        Con estos permisos se cambian los de los demás (y los propios): dalos solo a quien administra.
+                                        Con este permiso se crean usuarios y se les cambian la clave, el rol y las sedes: dalo solo a quien
+                                        administra.
                                     </p>
                                 )}
                                 <div className="grid gap-2 xl:grid-cols-2">

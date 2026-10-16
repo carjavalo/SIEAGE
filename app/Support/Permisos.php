@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\DB;
  * Cada clave es también una regla (Gate) con el mismo nombre: las rutas y las
  * pantallas preguntan por la clave, nunca por el nombre del rol. Qué claves
  * tiene cada rol se guarda en rol_permiso; el administrador las tiene todas
- * siempre, para que nunca se pierda el acceso.
+ * siempre, para que nunca se pierda el acceso. Roles y permisos (SOLO_SUPER)
+ * no se reparte: es del super administrador.
  */
 final class Permisos
 {
@@ -43,8 +44,15 @@ final class Permisos
         ],
         'Administración' => [
             'gestionar-usuarios' => ['Usuarios', 'Crear y cambiar usuarios, sus claves y sus sedes.'],
-            'gestionar-roles' => ['Roles y permisos', 'Crear roles y decidir qué puede hacer cada uno.'],
         ],
+    ];
+
+    /**
+     * Lo que solo puede el super administrador (el equipo de SIEAGE): no se reparte
+     * en Roles y permisos, ni siquiera al administrador. También es una regla (Gate).
+     */
+    public const SOLO_SUPER = [
+        'gestionar-roles' => ['Roles y permisos', 'Crear roles y decidir qué puede hacer cada uno.'],
     ];
 
     /** Permisos que solo sirven junto con otro (para corregir datos hay que poder ver al estudiante). */
@@ -76,9 +84,16 @@ final class Permisos
         return array_merge(...array_map('array_keys', array_values(self::AREAS)));
     }
 
+    /** Todas las reglas: las que se reparten por rol y las del super administrador. @return list<string> */
+    public static function reglas(): array
+    {
+        return [...self::claves(), ...array_keys(self::SOLO_SUPER)];
+    }
+
     /**
-     * Lo que puede hacer el usuario: el administrador, todo; inactivo o sin rol,
-     * nada. Se lee una vez por petición.
+     * Lo que puede hacer el usuario: el super administrador, todo; el
+     * administrador, todo lo que se reparte por rol; inactivo o sin rol, nada.
+     * Se lee una vez por petición.
      *
      * @return list<string>
      */
@@ -86,6 +101,9 @@ final class Permisos
     {
         if (! $user || ! $user->activo || ! $user->rol_id) {
             return [];
+        }
+        if ($user->esSuperAdministrador()) {
+            return self::reglas();
         }
         if ($user->esAdministrador()) {
             return self::claves();

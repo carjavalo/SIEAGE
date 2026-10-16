@@ -24,7 +24,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Cada permiso es una regla con su mismo nombre. Qué puede cada rol se decide en
         // Usuarios → Roles y permisos (ver App\Support\Permisos), no aquí.
-        foreach (Permisos::claves() as $permiso) {
+        foreach (Permisos::reglas() as $permiso) {
             Gate::define($permiso, fn (User $user) => Permisos::tiene($user, $permiso));
         }
     }

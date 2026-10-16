@@ -30,4 +30,16 @@ class Rol extends Model
     {
         return $this->nombre === 'administrador';
     }
+
+    /** El del equipo de SIEAGE: todo lo del administrador y, además, Roles y permisos. Tampoco se toca. */
+    public function esSuperAdministrador(): bool
+    {
+        return $this->nombre === 'superadministrador';
+    }
+
+    /** Los que no se editan ni se borran: tienen todo siempre. */
+    public function esDelSistema(): bool
+    {
+        return $this->esAdministrador() || $this->esSuperAdministrador();
+    }
 }
