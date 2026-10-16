@@ -99,7 +99,8 @@ export function DeshabilitarEstudiante({ estudianteId, nombre }: { estudianteId:
                     <DialogHeader>
                         <DialogTitle className="text-xl font-semibold">Deshabilitar estudiante</DialogTitle>
                         <DialogDescription className="text-[#56627F]">
-                            {nombre} dejará de estar activo este año y no se promoverá. Puedes volver a habilitarlo si fue un error.
+                            {nombre} quedará como <b className="font-semibold text-[#16223F]">retirado</b> desde la fecha que indiques y no se
+                            promoverá. Puedes volver a habilitarlo si fue un error.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -142,7 +143,7 @@ export function DeshabilitarEstudiante({ estudianteId, nombre }: { estudianteId:
                         />
 
                         <label className="flex flex-col gap-1.5 sm:w-1/2">
-                            <span className="text-[13px] font-medium text-[#3E4A68]">Fecha</span>
+                            <span className="text-[13px] font-medium text-[#3E4A68]">Fecha del retiro</span>
                             <input
                                 type="date"
                                 value={form.data.fecha}

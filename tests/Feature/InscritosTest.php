@@ -403,4 +403,58 @@ class InscritosTest extends TestCase
         $matricular($grupos['7-2'])->assertSessionHasErrors(['grupo_id' => 'Esta inscripción ya fue revisada.']);
         $this->assertDatabaseCount('matriculas', 1);
     }
+
+    /** El estudiante de la inscripción ya estuvo en el colegio este año, con este estado. */
+    private function yaMatriculadoEsteAnio(string $estado, string $grupo): int
+    {
+        $grupos = $this->grupos();
+        $estudiante = DB::table('estudiantes')->insertGetId(['tipo_documento' => 'T.I.', 'numero_documento' => '1109555001', 'nombre_completo' => 'Gómez Sara',
+            'created_at' => now(), 'updated_at' => now()]);
+        $g = DB::table('grupos')->find($grupos[$grupo]);
+
+        return DB::table('matriculas')->insertGetId(['estudiante_id' => $estudiante, 'anio_lectivo_id' => $g->anio_lectivo_id, 'grado_id' => $g->grado_id,
+            'grupo_id' => $g->id, 'sede_id' => $g->sede_id, 'condicion' => 'antiguo', 'estado' => $estado,
+            'fecha_retiro' => $estado === 'activo' ? null : '2026-05-19', 'motivo_retiro' => $estado === 'activo' ? null : 'Se va del país',
+            'observaciones' => 'Del Excel.', 'created_at' => now(), 'updated_at' => now()]);
+    }
+
+    public function test_quien_se_retiro_este_anio_y_vuelve_reactiva_su_matricula()
+    {
+        $matricula = $this->yaMatriculadoEsteAnio('retirado', '7-1');
+        $usuario = User::factory()->create();
+        $this->actingAs($usuario)->put("/inscritos/{$this->solicitud->id}/padres", $this->padres());
+
+        // El paso del grupo lo avisa antes.
+        $this->actingAs($usuario)->get("/inscritos/{$this->solicitud->id}/grupo")
+            ->assertInertia(fn (Assert $page) => $page->where('matriculaExistente.estado', 'retirado')->where('matriculaExistente.grupo', '7-1'));
+
+        $this->actingAs($usuario)->post("/inscritos/{$this->solicitud->id}/matricular", ['grupo_id' => DB::table('grupos')->where('codigo', '7-2')->value('id')])
+            ->assertSessionHasNoErrors();
+
+        // La misma matrícula, activa otra vez en el grupo elegido y sin el retiro; no se crea otra.
+        $this->assertSame(1, DB::table('matriculas')->count());
+        $m = DB::table('matriculas')->find($matricula);
+        $this->assertSame('activo', $m->estado);
+        $this->assertSame('7-2', DB::table('grupos')->where('id', $m->grupo_id)->value('codigo'));
+        $this->assertNull($m->fecha_retiro);
+        $this->assertNull($m->motivo_retiro);
+        $this->assertStringContainsString("Volvió por el formulario de inscripción (solicitud {$this->solicitud->id})", $m->observaciones);
+        $this->assertDatabaseHas('novedades_matricula', ['matricula_id' => $matricula, 'tipo' => 'habilitada', 'estado_anterior' => 'retirado', 'estado_nuevo' => 'activo']);
+        $this->assertSame($matricula, (int) $this->solicitud->fresh()->matricula_id);
+        $this->assertSame(SolicitudInscripcion::APROBADA, $this->solicitud->fresh()->estado);
+    }
+
+    public function test_quien_ya_esta_activo_este_anio_no_se_matricula_otra_vez()
+    {
+        $this->yaMatriculadoEsteAnio('activo', '7-1');
+        $usuario = User::factory()->create();
+        $this->actingAs($usuario)->put("/inscritos/{$this->solicitud->id}/padres", $this->padres());
+
+        $this->actingAs($usuario)->get("/inscritos/{$this->solicitud->id}/grupo")
+            ->assertInertia(fn (Assert $page) => $page->where('matriculaExistente.estado', 'activo'));
+        $this->actingAs($usuario)->post("/inscritos/{$this->solicitud->id}/matricular", ['grupo_id' => DB::table('grupos')->where('codigo', '7-2')->value('id')])
+            ->assertSessionHasErrors(['grupo_id' => 'Ya está matriculado y activo este año en 7-1. Búscalo en Estudiantes.']);
+        $this->assertSame(1, DB::table('matriculas')->count());
+        $this->assertSame(SolicitudInscripcion::PENDIENTE, $this->solicitud->fresh()->estado);
+    }
 }

@@ -112,7 +112,6 @@ export default function Estudiantes({
     // Las columnas que no distinguen nada en el grado no se muestran.
     const columnas = useMemo(
         () => ({
-            sede: new Set(grupos.map((g) => g.sede_codigo)).size > 1,
             jornada: new Set(grupos.map((g) => g.jornada)).size > 1,
             modalidad: estudiantes.some((e) => e.modalidad),
             todosNuevos: estudiantes.length > 0 && estudiantes.every((e) => e.condicion === 'nuevo'),
