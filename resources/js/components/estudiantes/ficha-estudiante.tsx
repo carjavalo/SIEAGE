@@ -69,7 +69,7 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
                     </>
                 )
             }
-            accion={{ href: `/estudiantes/${e.id}`, texto: 'Ficha completa e impresión', icono: FileText }}
+            accion={{ href: `/estudiantes/${e.id}${m ? `?anio=${m.anio}` : ''}`, texto: 'Ficha completa e impresión', icono: FileText }}
             acciones={editable && <EditarEstudiante estudiante={e} />}
         >
             {retirado && (m.fecha_retiro || m.motivo_retiro) && (

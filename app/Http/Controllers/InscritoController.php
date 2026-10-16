@@ -172,7 +172,26 @@ class InscritoController extends Controller
             'gradoNumero' => DB::table('grados')->where('id', $solicitud->grado_id)->value('numero'),
             // Solo los grupos de las sedes del usuario.
             'grupos' => Grupos::conOcupacion($anioId, $solicitud->grado_id, Alcance::sedesDelGrado(request()->user(), (int) $solicitud->grado_id)),
+            // Si ya está en el colegio este año (por su documento): activo, no se matricula otra vez; retirado, se reactiva.
+            'matriculaExistente' => $solicitud->estado === SolicitudInscripcion::PENDIENTE
+                ? $this->matriculaDelAnio(DB::table('estudiantes')->where('numero_documento', $solicitud->numero_documento)->value('id'), $anioId)
+                : null,
         ]);
+    }
+
+    /** La matrícula que ya tiene el estudiante en ese año, con su grupo y estado; null si no tiene. */
+    private function matriculaDelAnio(?int $estudianteId, ?int $anioId): ?object
+    {
+        if (! $estudianteId || ! $anioId) {
+            return null;
+        }
+
+        return DB::table('matriculas as m')
+            ->leftJoin('grupos as g', 'g.id', '=', 'm.grupo_id')
+            ->join('grados as gr', 'gr.id', '=', 'm.grado_id')
+            ->where('m.estudiante_id', $estudianteId)
+            ->where('m.anio_lectivo_id', $anioId)
+            ->first(['m.id', 'm.estado', 'm.observaciones', 'g.codigo as grupo', 'gr.nombre as grado', 'm.fecha_retiro', 'm.motivo_retiro']);
     }
 
     /**
@@ -236,14 +255,12 @@ class InscritoController extends Controller
                 'correo' => $s->correo,
             ]);
 
-            $yaMatriculado = DB::table('matriculas as m')
-                ->leftJoin('grupos as g', 'g.id', '=', 'm.grupo_id')
-                ->where('m.estudiante_id', $estudianteId)
-                ->where('m.anio_lectivo_id', $anioId)
-                ->first(['g.codigo']);
-            if ($yaMatriculado) {
+            // Si ya tiene matrícula este año: activa, ya estudia aquí y no se matricula otra vez;
+            // retirada (o cancelada), vuelve al colegio y esa misma matrícula se reactiva más abajo.
+            $existente = $this->matriculaDelAnio($estudianteId, $anioId);
+            if ($existente?->estado === 'activo') {
                 throw ValidationException::withMessages([
-                    'grupo_id' => 'Ya está matriculado este año'.($yaMatriculado->codigo ? " en {$yaMatriculado->codigo}" : '').'.',
+                    'grupo_id' => 'Ya está matriculado y activo este año en '.($existente->grupo ?? $existente->grado).'. Búscalo en Estudiantes.',
                 ]);
             }
 
@@ -275,25 +292,54 @@ class InscritoController extends Controller
             $yaTiene = DB::table('padres')->where('estudiante_id', $estudianteId)->pluck('parentesco');
             DB::table('padres')->where('solicitud_inscripcion_id', $s->id)->whereNotIn('parentesco', $yaTiene)->update(['estudiante_id' => $estudianteId]);
 
-            $matriculaId = DB::table('matriculas')->insertGetId([
-                'estudiante_id' => $estudianteId,
-                'anio_lectivo_id' => $anioId,
+            $nueva = [
                 'grado_id' => $s->grado_id,
                 'grupo_id' => $grupo->id,
                 'sede_id' => $grupo->sede_id,
                 'jornada' => $grupo->jornada,
                 'fecha_matricula' => $ahora->toDateString(),
-                // Si ya tuvo matrículas en otros años, vuelve: no es nuevo.
-                'condicion' => DB::table('matriculas')->where('estudiante_id', $estudianteId)->exists() ? 'antiguo' : 'nuevo',
                 'estado' => 'activo',
-                'observaciones' => "Inscrito por el formulario (solicitud {$s->id}).",
-                // Los documentos recibidos pasan a la matrícula; los que falten se marcan en la ficha del estudiante.
-                'documentos' => $s->documentos !== null ? json_encode($s->documentos) : null,
-                'documentos_por' => $s->documentos_por,
-                'documentos_en' => $s->documentos_en,
-                'created_at' => $ahora,
                 'updated_at' => $ahora,
-            ]);
+                // Los documentos recibidos pasan a la matrícula; los que falten se marcan en la ficha del estudiante.
+                // Sin nada marcado en la inscripción, una matrícula que se reactiva conserva los que ya tenía.
+                ...($s->documentos !== null ? [
+                    'documentos' => json_encode($s->documentos),
+                    'documentos_por' => $s->documentos_por,
+                    'documentos_en' => $s->documentos_en,
+                ] : []),
+            ];
+            if ($existente) {
+                // Vuelve después de retirarse este mismo año: se reactiva su matrícula, sin el retiro.
+                DB::table('matriculas')->where('id', $existente->id)->update([
+                    ...$nueva,
+                    'resultado' => null,
+                    'fecha_retiro' => null,
+                    'motivo_retiro' => null,
+                    'deshabilitado_por' => null,
+                    'deshabilitado_en' => null,
+                    'observaciones' => trim(($existente->observaciones ? $existente->observaciones."\n" : '')."Volvió por el formulario de inscripción (solicitud {$s->id})."),
+                ]);
+                DB::table('novedades_matricula')->insert([
+                    'matricula_id' => $existente->id,
+                    'tipo' => 'habilitada',
+                    'estado_anterior' => $existente->estado,
+                    'estado_nuevo' => 'activo',
+                    'razon' => "Volvió al colegio: se matriculó otra vez por el formulario de inscripción (solicitud {$s->id}).",
+                    'fecha' => $ahora->toDateString(),
+                    'user_id' => $request->user()?->id,
+                    'created_at' => $ahora,
+                ]);
+                $matriculaId = $existente->id;
+            } else {
+                $matriculaId = DB::table('matriculas')->insertGetId([...$nueva,
+                    'estudiante_id' => $estudianteId,
+                    'anio_lectivo_id' => $anioId,
+                    // Si ya tuvo matrículas en otros años, vuelve: no es nuevo.
+                    'condicion' => DB::table('matriculas')->where('estudiante_id', $estudianteId)->exists() ? 'antiguo' : 'nuevo',
+                    'observaciones' => "Inscrito por el formulario (solicitud {$s->id}).",
+                    'created_at' => $ahora,
+                ]);
+            }
 
             // estado no es asignable en masa (el formulario es público): se asigna aquí a propósito.
             $s->forceFill([

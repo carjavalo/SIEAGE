@@ -7,7 +7,7 @@ import { type ReactNode, type RefObject, memo, useMemo } from 'react';
 
 const alto = '[@media(min-height:860px)]';
 
-type Columnas = { sede: boolean; jornada: boolean; modalidad: boolean; todosNuevos: boolean };
+type Columnas = { jornada: boolean; modalidad: boolean; todosNuevos: boolean };
 
 type Props = {
     /** Llegando otro grado o año: se ven las columnas con filas en esqueleto. */
@@ -280,7 +280,7 @@ type Columna = {
 
 const guion = <span className="text-[#6B7690]">—</span>;
 
-/** Las columnas que no distinguen nada en el grado (una sola sede, una jornada, sin modalidad) no aparecen. */
+/** Las columnas que no distinguen nada en el grado (una jornada, sin modalidad) no aparecen. La sede, siempre: dice de dónde es cada uno. */
 function armarColumnas(c: Columnas): Columna[] {
     const columnas: (Columna | false)[] = [
         {
@@ -332,10 +332,10 @@ function armarColumnas(c: Columnas): Columna[] {
             barra: 'w-9',
             celda: (e) => <span className="font-semibold text-[#16223F] tabular-nums">{e.grupo ?? '—'}</span>,
         },
-        c.sede && {
+        {
             titulo: 'Sede',
             ancho: 'w-[148px]',
-            visible: 'hidden lg:table-cell',
+            visible: 'hidden sm:table-cell',
             barra: 'w-20',
             celda: (e) => (
                 <span className="flex min-w-0 items-center gap-2 text-[#3E4A68]" title={e.sede}>

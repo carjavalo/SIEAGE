@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\Alcance;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,15 +14,20 @@ use Illuminate\Validation\ValidationException;
  * Deshabilitar a un estudiante en el año en curso (perdió el año, se retiró,
  * fue trasladado u otro motivo) y volver a habilitarlo si fue un error. Cada
  * cambio queda en novedades_matricula con su razón y quién lo hizo.
+ *
+ * Sea cual sea el motivo, la matrícula queda «retirado» con la fecha del retiro:
+ * así cuenta como retirado en todas partes (la lista, el informe y la «R» del
+ * libro Excel). El motivo queda escrito al comienzo de la razón y, si perdió el
+ * año, también en el resultado.
  */
 class DeshabilitacionController extends Controller
 {
-    /** Motivo elegido en el formulario → estado de la matrícula. */
+    /** Motivo elegido en el formulario → cómo se anota delante de la razón. */
     public const MOTIVOS = [
-        'perdio' => 'reprobado',
-        'retiro' => 'retirado',
-        'traslado' => 'trasladado',
-        'otro' => 'cancelado',
+        'perdio' => 'Perdió el año',
+        'retiro' => 'Se retiró del colegio',
+        'traslado' => 'Trasladado',
+        'otro' => 'Otro motivo',
     ];
 
     private const MENSAJES = [
@@ -48,13 +54,14 @@ class DeshabilitacionController extends Controller
             throw ValidationException::withMessages(['razon' => 'El estudiante ya no está activo este año.']);
         }
 
-        $estado = self::MOTIVOS[$datos['motivo']];
-        $razon = trim($datos['razon']);
+        $estado = 'retirado';
+        // «Se retiró» es lo que dice el estado; los demás motivos se anotan antes de la razón.
+        $razon = ($datos['motivo'] === 'retiro' ? '' : self::MOTIVOS[$datos['motivo']].': ').trim($datos['razon']);
 
         $quitadas = DB::transaction(function () use ($request, $matricula, $estado, $razon, $datos) {
             DB::table('matriculas')->where('id', $matricula->id)->update([
                 'estado' => $estado,
-                'resultado' => $estado === 'reprobado' ? 'reprobado' : null,
+                'resultado' => $datos['motivo'] === 'perdio' ? 'reprobado' : null,
                 'fecha_retiro' => $datos['fecha'],
                 'motivo_retiro' => $razon,
                 'deshabilitado_por' => $request->user()->id,
@@ -70,9 +77,14 @@ class DeshabilitacionController extends Controller
                 ->delete();
         });
 
-        $texto = ['reprobado' => 'perdió el año', 'retirado' => 'retirado', 'trasladado' => 'trasladado', 'cancelado' => 'deshabilitado'][$estado];
+        $fecha = CarbonImmutable::parse($datos['fecha'])->format('d/m/Y');
 
-        return back()->with('success', "Estudiante deshabilitado: {$texto}.".($quitadas ? ' Se quitó su matrícula del año siguiente.' : ''));
+        return back()->with('success', "Quedó como retirado desde el {$fecha} ({$this->minuscula(self::MOTIVOS[$datos['motivo']])}).".($quitadas ? ' Se quitó su matrícula del año siguiente.' : ''));
+    }
+
+    private function minuscula(string $texto): string
+    {
+        return mb_strtolower(mb_substr($texto, 0, 1)).mb_substr($texto, 1);
     }
 
     public function habilitar(Request $request, int $estudiante): RedirectResponse

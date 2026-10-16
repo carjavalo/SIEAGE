@@ -15,6 +15,14 @@ type Props = FichaInscrito & {
     anio: number | null;
     gradoNumero: number;
     grupos: Grupo[];
+    /** Si el estudiante (por su documento) ya tiene matrícula ese año. */
+    matriculaExistente: {
+        estado: string;
+        grupo: string | null;
+        grado: string;
+        fecha_retiro: string | null;
+        motivo_retiro: string | null;
+    } | null;
 };
 
 const tarjeta = 'rounded-[28px] bg-[#F2F5FA]';
@@ -30,7 +38,18 @@ function cupo(libres: number) {
  * Tercer paso para matricular a un inscrito: elegir el grupo, dentro del
  * grado que pidió la familia, viendo cuántos estudiantes tiene cada uno.
  */
-export default function ElegirGrupo({ solicitud: s, padres, documentos, matricula, anio, gradoNumero, grupos: gruposServidor }: Props) {
+export default function ElegirGrupo({
+    solicitud: s,
+    padres,
+    documentos,
+    matricula,
+    anio,
+    gradoNumero,
+    grupos: gruposServidor,
+    matriculaExistente: existente,
+}: Props) {
+    // Ya estudia aquí este año (activo): no se puede matricular otra vez.
+    const yaActivo = existente?.estado === 'activo';
     const form = useForm<{ grupo_id: number | null }>({ grupo_id: null });
     const listos = padresListos(padres);
     const nombre = nombreInscrito(s);
@@ -111,6 +130,28 @@ export default function ElegirGrupo({ solicitud: s, padres, documentos, matricul
                             La familia pidió {s.grado}. Estos son sus grupos{anio ? ` en ${anio}` : ''}: elige uno viendo cuántos estudiantes tiene
                             cada uno.
                         </p>
+
+                        {existente && yaActivo && (
+                            <p className="mt-4 flex items-start gap-3 rounded-[16px] bg-[#FDECEC] px-4 py-3 text-[14px] text-[#8E2323]">
+                                <CircleAlert className="mt-0.5 size-[18px] shrink-0" />
+                                <span>
+                                    <b className="font-semibold">Ya está matriculado y activo en {existente.grupo ?? existente.grado}</b> este año
+                                    {anio ? ` (${anio})` : ''}: no se puede matricular otra vez. Búscalo en Estudiantes.
+                                </span>
+                            </p>
+                        )}
+                        {existente && !yaActivo && (
+                            <p className="mt-4 flex items-start gap-3 rounded-[16px] bg-[#EEF2FB] px-4 py-3 text-[14px] text-[#1E3A7B]">
+                                <CircleAlert className="mt-0.5 size-[18px] shrink-0" />
+                                <span>
+                                    <b className="font-semibold">Estuvo matriculado este año en {existente.grupo ?? existente.grado}</b> y quedó{' '}
+                                    {existente.estado}
+                                    {existente.fecha_retiro && ` el ${existente.fecha_retiro.split('-').reverse().join('/')}`}
+                                    {existente.motivo_retiro && ` (${existente.motivo_retiro})`}. Al matricularlo, esa matrícula vuelve a quedar
+                                    activa en el grupo que elijas.
+                                </span>
+                            </p>
+                        )}
 
                         {!listos && (
                             <p className="mt-4 flex items-start gap-3 rounded-[16px] bg-[#FFF7E8] px-4 py-3 text-[14px] text-[#6B4A0E]">
@@ -271,7 +312,7 @@ export default function ElegirGrupo({ solicitud: s, padres, documentos, matricul
                                 <button
                                     type="button"
                                     onClick={matricular}
-                                    disabled={!elegido || !listos || form.processing}
+                                    disabled={!elegido || !listos || yaActivo || form.processing}
                                     className="flex h-11 cursor-pointer items-center gap-2 rounded-[13px] bg-[#1E3A7B] px-5 text-[15px] font-semibold text-white transition hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.99] disabled:cursor-default disabled:opacity-50"
                                 >
                                     {form.processing ? <LoaderCircle className="size-4 animate-spin" /> : <GraduationCap className="size-[18px]" />}

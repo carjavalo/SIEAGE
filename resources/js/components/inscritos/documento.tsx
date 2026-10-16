@@ -22,7 +22,9 @@ export function Documento({
                 entregado ? 'bg-white shadow-[0_1px_2px_rgba(22,34,63,0.05)]' : 'hover:bg-white/60',
             )}
         >
-            <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-4 py-3.5 pl-4">
+            {/* relative: la casilla oculta (sr-only) queda dentro de la fila. Si no, al recibir el foco el
+                navegador desplazaba el panel lateral entero para mostrarla y se perdía la cabecera de la ficha. */}
+            <label className="relative flex min-w-0 flex-1 cursor-pointer items-center gap-4 py-3.5 pl-4">
                 <input
                     type="checkbox"
                     checked={entregado}

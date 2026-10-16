@@ -88,8 +88,11 @@ class DeshabilitacionTest extends TestCase
             ->post("/estudiantes/{$this->matricula->estudiante_id}/deshabilitar", ['motivo' => 'perdio', 'razon' => 'Perdió cinco materias.', 'fecha' => '2026-09-20'])
             ->assertSessionHasNoErrors();
 
-        $this->assertSame('reprobado', $this->actual()->estado);
+        // Queda retirado, como todos; que perdió el año va en el resultado y en la razón.
+        $this->assertSame('retirado', $this->actual()->estado);
         $this->assertSame('reprobado', $this->actual()->resultado);
+        $this->assertSame('2026-09-20', $this->actual()->fecha_retiro);
+        $this->assertSame('Perdió el año: Perdió cinco materias.', $this->actual()->motivo_retiro);
         $this->assertDatabaseMissing('matriculas', ['estudiante_id' => $this->matricula->estudiante_id, 'anio_lectivo_id' => $siguiente]);
 
         $this->actingAs($this->secretaria)->post('/promociones', ['anio' => 2026, 'estudiante_id' => $this->matricula->estudiante_id]);
@@ -100,7 +103,9 @@ class DeshabilitacionTest extends TestCase
     {
         $id = $this->matricula->estudiante_id;
         $this->actingAs($this->secretaria)->post("/estudiantes/{$id}/deshabilitar", ['motivo' => 'traslado', 'razon' => 'Trasladado a otro colegio.', 'fecha' => '2026-09-01']);
-        $this->assertSame('trasladado', $this->actual()->estado);
+        $this->assertSame('retirado', $this->actual()->estado);
+        $this->assertSame('2026-09-01', $this->actual()->fecha_retiro);
+        $this->assertSame('Trasladado: Trasladado a otro colegio.', $this->actual()->motivo_retiro);
 
         $this->actingAs($this->secretaria)->post("/estudiantes/{$id}/habilitar", ['razon' => ''])->assertSessionHasErrors('razon');
         $this->actingAs($this->secretaria)->post("/estudiantes/{$id}/habilitar", ['razon' => 'Fue un error, sigue asistiendo.'])->assertSessionHasNoErrors();

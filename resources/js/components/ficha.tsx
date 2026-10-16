@@ -56,10 +56,12 @@ export function PanelFicha({
             aria-label={etiqueta}
             tabIndex={-1}
             data-abierta={abierta}
+            // overflow-clip y no -hidden: con hidden, el foco en un control oculto (sr-only) podía desplazar el
+            // panel entero y esconder la cabecera; con clip no se puede desplazar.
             // Cerrado queda inerte: fuera del foco y de los lectores de pantalla. Sin aria-hidden, que Chrome
             // bloquea si el foco todavía está adentro al cerrar.
             inert={!abierta}
-            className={`fixed top-[65px] right-0 bottom-0 z-40 flex w-full translate-x-[110%] flex-col overflow-hidden bg-white opacity-0 shadow-[0_32px_64px_-24px_rgba(22,34,63,0.45),0_0_0_1px_rgba(22,34,63,0.05)] transition-[translate,width,margin,opacity] duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] outline-none data-[abierta=false]:duration-200 data-[abierta=false]:ease-[cubic-bezier(0.4,0,1,1)] data-[abierta=true]:translate-x-0 data-[abierta=true]:opacity-100 sm:top-[125px] sm:right-3 sm:bottom-3 sm:w-[460px] sm:rounded-[24px] ${alto}:sm:top-[149px] ring-[#E3E9F6] 2xl:static 2xl:z-auto 2xl:w-0 2xl:translate-x-0 2xl:shadow-none 2xl:data-[abierta=true]:ml-3 2xl:data-[abierta=true]:w-[480px] 2xl:data-[abierta=true]:ring-1 print:hidden`}
+            className={`fixed top-[65px] right-0 bottom-0 z-40 flex w-full translate-x-[110%] flex-col overflow-clip bg-white opacity-0 shadow-[0_32px_64px_-24px_rgba(22,34,63,0.45),0_0_0_1px_rgba(22,34,63,0.05)] transition-[translate,width,margin,opacity] duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] outline-none data-[abierta=false]:duration-200 data-[abierta=false]:ease-[cubic-bezier(0.4,0,1,1)] data-[abierta=true]:translate-x-0 data-[abierta=true]:opacity-100 sm:top-[125px] sm:right-3 sm:bottom-3 sm:w-[460px] sm:rounded-[24px] ${alto}:sm:top-[149px] ring-[#E3E9F6] 2xl:static 2xl:z-auto 2xl:w-0 2xl:translate-x-0 2xl:shadow-none 2xl:data-[abierta=true]:ml-3 2xl:data-[abierta=true]:w-[480px] 2xl:data-[abierta=true]:ring-1 print:hidden`}
         >
             <div className="flex h-full w-full flex-col 2xl:w-[480px]">{children ?? <FichaEsqueleto />}</div>
         </aside>

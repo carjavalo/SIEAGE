@@ -128,18 +128,19 @@ class EstudianteController extends Controller
             // Ficha del estudiante seleccionado (?ver=ID), que se muestra al lado
             // de la lista sin salir de la página. Solo se consulta si hay uno.
             'detalle' => fn () => $request->filled('ver') && Alcance::puedeVerEstudiante($request->user(), (int) $request->query('ver'))
-                ? $this->ficha((int) $request->query('ver'))
+                ? $this->ficha((int) $request->query('ver'), $anio?->anio)
                 : null,
         ]);
     }
 
     /**
      * Ficha de matrícula del estudiante (equivale a la hoja CONSTANCIA DE MATRÍCULA del Excel).
+     * Con ?anio=2027, la matrícula de ese año.
      */
     public function show(Request $request, int $estudiante): Response
     {
         Alcance::exigirEstudiante($request->user(), $estudiante);
-        $ficha = $this->ficha($estudiante);
+        $ficha = $this->ficha($estudiante, $request->integer('anio') ?: null);
         abort_if(! $ficha, 404);
 
         return Inertia::render('estudiantes/ficha', [
@@ -153,9 +154,13 @@ class EstudianteController extends Controller
      * acudientes y los boletines de la matrícula actual. La usan la página de
      * ficha completa y el panel lateral del listado.
      *
+     * La matrícula «actual» es la del año que se está viendo (`$anio`): así, quien
+     * mira 2027 ve la de 2027 aunque ese año todavía esté planeado. Sin año, o si
+     * no tiene matrícula ese año, la del año más reciente que ya empezó.
+     *
      * @return array<string, mixed>|null
      */
-    private function ficha(int $estudiante): ?array
+    private function ficha(int $estudiante, ?int $anio = null): ?array
     {
         $alumno = DB::table('estudiantes')->whereNull('deleted_at')->where('id', $estudiante)->first();
         if (! $alumno) {
@@ -169,16 +174,20 @@ class EstudianteController extends Controller
             ->leftJoin('grupos as g', 'g.id', '=', 'm.grupo_id')
             ->leftJoin('modalidades as mo', 'mo.id', '=', 'm.modalidad_id')
             ->where('m.estudiante_id', $alumno->id)
-            ->where('al.estado', '<>', 'planeado')
             ->orderByDesc('al.anio')
             ->get([
-                'm.id', 'al.anio', 'gr.id as grado_id', 'gr.nombre as grado', 'gr.numero as grado_numero', 'g.codigo as grupo',
+                'm.id', 'al.anio', 'al.estado as estado_anio', 'gr.id as grado_id', 'gr.nombre as grado', 'gr.numero as grado_numero', 'g.codigo as grupo',
                 's.nombre as sede', 's.codigo as sede_codigo', 'm.sede_id', 'm.grupo_id', 'm.jornada', 'mo.nombre as modalidad',
                 'm.fecha_matricula', 'm.condicion', 'm.estado', 'm.es_historico', 'm.observaciones',
                 'm.fecha_retiro', 'm.motivo_retiro',
             ]);
 
-        $actual = $historia->first();
+        $actual = ($anio ? $historia->firstWhere('anio', $anio) : null)
+            ?? $historia->firstWhere('estado_anio', '<>', 'planeado')
+            ?? $historia->first();
+        // El año planeado (después de promover) entra en la historia solo cuando es el que se está viendo;
+        // si no, se muestra aparte, como «Año siguiente».
+        $historia = $historia->reject(fn ($h) => $h->estado_anio === 'planeado' && $h->id !== $actual?->id)->values();
 
         $acudientes = DB::table('estudiante_acudiente as ea')
             ->join('acudientes as a', 'a.id', '=', 'ea.acudiente_id')
@@ -213,6 +222,8 @@ class EstudianteController extends Controller
             ->leftJoin('grupos as g', 'g.id', '=', 'm.grupo_id')
             ->where('m.estudiante_id', $alumno->id)
             ->where('al.estado', 'planeado')
+            // Solo si es posterior al que se está viendo (viendo 2027, no hay «año siguiente» que mostrar).
+            ->where('al.anio', '>', $actual?->anio ?? 0)
             ->orderBy('al.anio')
             ->first(['al.anio', 'gr.id as grado_id', 'gr.nombre as grado', 'g.codigo as grupo', 's.nombre as sede', 's.codigo as sede_codigo', 'm.jornada']);
 
