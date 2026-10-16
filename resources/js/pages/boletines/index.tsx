@@ -819,22 +819,26 @@ function AvisoHoja({ nombre, texto, maximo }: { nombre: string; texto: string; m
     );
 }
 
-/** El fondo gris donde va la hoja; la achica si la pantalla es angosta. */
+/**
+ * Donde va la hoja: el área es transparente (se ve el fondo de SIEAGE) y solo un marco
+ * gris delgado rodea la hoja. La achica si la pantalla es angosta.
+ */
 function Mesa({ children }: { children: ReactNode }) {
     const caja = useRef<HTMLDivElement>(null);
     const [zoom, setZoom] = useState(1);
     useLayoutEffect(() => {
         const el = caja.current;
         if (!el) return;
-        const ajustar = () => setZoom(Math.min(1, (el.clientWidth - 32) / 816));
+        // 816 px de la hoja + 2 × 12 px del marco.
+        const ajustar = () => setZoom(Math.min(1, (el.clientWidth - 8) / 840));
         ajustar();
         const ro = new ResizeObserver(ajustar);
         ro.observe(el);
         return () => ro.disconnect();
     }, []);
     return (
-        <div ref={caja} className="flex-1 overflow-auto rounded-[28px] bg-[#DDE3EE] px-4 py-6 lg:min-h-0">
-            <div className="mx-auto w-fit" style={{ zoom }}>
+        <div ref={caja} className="flex-1 overflow-auto lg:min-h-0">
+            <div className="mx-auto w-fit rounded-[20px] bg-[#DDE3EE]/85 p-3 shadow-[0_10px_30px_-18px_rgba(22,34,63,0.45)]" style={{ zoom }}>
                 {children}
             </div>
         </div>
