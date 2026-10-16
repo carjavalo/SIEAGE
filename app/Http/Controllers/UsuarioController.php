@@ -17,7 +17,9 @@ use Inertia\Response;
 /**
  * Gestor básico de usuarios (permiso 'gestionar-usuarios'). No se borran
  * usuarios: se desactivan, para no perder quién registró qué. A los
- * administradores solo los toca otro administrador.
+ * administradores solo los toca otro administrador, y a los super
+ * administradores (el equipo de SIEAGE) solo otro super administrador: para
+ * los demás ni siquiera aparecen.
  */
 class UsuarioController extends Controller
 {
@@ -32,8 +34,10 @@ class UsuarioController extends Controller
         'confirmed' => 'Las claves no coinciden.',
     ];
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $veSupers = $request->user()->esSuperAdministrador();
+        $superId = $this->rolId('superadministrador');
         $asignadas = DB::table('sede_user')->get(['user_id', 'sede_id'])->groupBy('user_id');
         $gradosMarcados = DB::table('sede_user_grado')->get(['user_id', 'sede_id', 'grado_id'])->groupBy('user_id');
         // Los grados que tiene cada sede (los de sus grupos), para ofrecer solo esos.
@@ -42,6 +46,7 @@ class UsuarioController extends Controller
 
         return Inertia::render('usuarios/index', [
             'usuarios' => User::with('rol:id,nombre,etiqueta')
+                ->when(! $veSupers, fn ($q) => $q->where(fn ($q) => $q->whereNull('rol_id')->orWhere('rol_id', '!=', $superId)))
                 ->orderByDesc('activo')
                 ->orderBy('name')
                 ->get(['id', 'name', 'usuario', 'email', 'rol_id', 'activo', 'todas_las_sedes', 'ultimo_acceso', 'ultima_actividad', 'created_at'])
@@ -56,7 +61,8 @@ class UsuarioController extends Controller
                     'ultima_vez' => ($u->ultima_actividad ?? $u->ultimo_acceso)?->toIso8601String(),
                 ]),
             // ve_todas: el rol ve todas las sedes (administrador o permiso «Ver todas las sedes»); no hace falta marcarlas.
-            'roles' => Rol::orderBy('id')->get(['id', 'nombre', 'etiqueta', 'descripcion'])->map(fn (Rol $r) => [...$r->toArray(), 've_todas' => $this->rolVeTodas($r->id)]),
+            'roles' => Rol::orderBy('id')->when(! $veSupers, fn ($q) => $q->where('nombre', '!=', 'superadministrador'))
+                ->get(['id', 'nombre', 'etiqueta', 'descripcion'])->map(fn (Rol $r) => [...$r->toArray(), 've_todas' => $this->rolVeTodas($r->id)]),
             // Para asignar a cada usuario las sedes que puede ver.
             'sedes' => DB::table('sedes')->orderByDesc('es_principal')->orderBy('nombre')->get(['id', 'codigo', 'nombre'])
                 ->map(fn ($s) => [...(array) $s, 'grados' => $gradosDeSede->get($s->id, collect())->pluck('grado_id')->map(fn ($id) => (int) $id)->values()]),
@@ -149,11 +155,16 @@ class UsuarioController extends Controller
         Alcance::olvidar($usuario);
     }
 
-    /** Si con ese rol se ven todas las sedes: el administrador, o el permiso «Ver todas las sedes». */
+    /** Si con ese rol se ven todas las sedes: el administrador (o el super), o el permiso «Ver todas las sedes». */
     private function rolVeTodas(int $rolId): bool
     {
-        return Rol::where('id', $rolId)->value('nombre') === 'administrador'
+        return in_array(Rol::where('id', $rolId)->value('nombre'), ['administrador', 'superadministrador'], true)
             || DB::table('rol_permiso')->where('rol_id', $rolId)->where('permiso', 'todas-las-sedes')->exists();
+    }
+
+    private function rolId(string $nombre): int
+    {
+        return (int) Rol::where('nombre', $nombre)->value('id');
     }
 
     /** Saca al usuario de las sesiones que tenga abiertas en otros equipos. */
@@ -193,29 +204,39 @@ class UsuarioController extends Controller
     }
 
     /**
-     * Quien gestiona usuarios sin ser administrador (si un rol tiene ese permiso)
-     * no puede dar el rol de administrador ni tocar a un administrador: así nadie
-     * se sube a sí mismo por encima de su rol.
+     * Nadie se sube a sí mismo (ni a otro) por encima de su rol: el rol de
+     * administrador y a los administradores solo los da y los toca un
+     * administrador; el de super administrador y a los super administradores,
+     * solo un super administrador.
      */
     private function soloAdministradores(Request $request, ?User $usuario, ?int $rolId = null): void
     {
-        if ($request->user()->esAdministrador()) {
-            return;
+        $yo = $request->user();
+        $toca = fn (int $id) => ($usuario && (int) $usuario->rol_id === $id) || $rolId === $id;
+
+        if ($toca($this->rolId('superadministrador')) && ! $yo->esSuperAdministrador()) {
+            throw ValidationException::withMessages(['rol_id' => 'Solo un super administrador puede dar ese rol o cambiar a un super administrador.']);
         }
-        $adminId = (int) Rol::where('nombre', 'administrador')->value('id');
-        if (($usuario && (int) $usuario->rol_id === $adminId) || $rolId === $adminId) {
+        if ($toca($this->rolId('administrador')) && ! $yo->esAdministrador()) {
             throw ValidationException::withMessages(['rol_id' => 'Solo un administrador puede dar ese rol o cambiar a un administrador.']);
         }
     }
 
     /**
-     * Nadie puede quitarse a sí mismo el acceso de administrador, y siempre
-     * debe quedar al menos un administrador activo.
+     * Nadie puede quitarse a sí mismo el acceso de administrador (ni el de super
+     * administrador), y siempre debe quedar al menos un administrador activo
+     * (los super administradores también cuentan).
      */
     private function protegerAdministradores(Request $request, User $usuario, int $rolId, bool $activo): void
     {
-        $adminId = Rol::where('nombre', 'administrador')->value('id');
-        $sigueSiendoAdmin = $activo && $rolId === (int) $adminId;
+        $adminId = $this->rolId('administrador');
+        $superId = $this->rolId('superadministrador');
+        if ($usuario->esSuperAdministrador() && $usuario->is($request->user()) && (! $activo || $rolId !== $superId)) {
+            throw ValidationException::withMessages([
+                $activo ? 'rol_id' : 'activo' => 'No puedes quitarte tu propio acceso de super administrador.',
+            ]);
+        }
+        $sigueSiendoAdmin = $activo && in_array($rolId, [$adminId, $superId], true);
 
         if ($sigueSiendoAdmin || ! $usuario->esAdministrador()) {
             return;
@@ -227,7 +248,7 @@ class UsuarioController extends Controller
             ]);
         }
 
-        $otrosAdmins = User::where('activo', true)->where('rol_id', $adminId)->whereKeyNot($usuario->id)->count();
+        $otrosAdmins = User::where('activo', true)->whereIn('rol_id', [$adminId, $superId])->whereKeyNot($usuario->id)->count();
         if ($otrosAdmins === 0) {
             throw ValidationException::withMessages(['rol_id' => 'Debe quedar al menos un administrador activo.']);
         }

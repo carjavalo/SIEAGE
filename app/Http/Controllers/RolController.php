@@ -15,8 +15,9 @@ use Inertia\Response;
 
 /**
  * Roles y permisos (Usuarios → Roles y permisos): crear roles y decidir qué
- * puede hacer cada uno. El administrador no se toca: tiene todo siempre, para
- * que nunca se pierda el acceso. Un rol con usuarios no se puede borrar.
+ * puede hacer cada uno. Solo entra el super administrador (el equipo de SIEAGE).
+ * El administrador y el super administrador no se tocan: tienen todo siempre,
+ * para que nunca se pierda el acceso. Un rol con usuarios no se puede borrar.
  */
 class RolController extends Controller
 {
@@ -39,10 +40,10 @@ class RolController extends Controller
                 'nombre' => $r->nombre,
                 'etiqueta' => $r->etiqueta ?? $r->nombre,
                 'descripcion' => $r->descripcion,
-                'sistema' => $r->esAdministrador(),
+                'sistema' => $r->esDelSistema(),
                 'usuarios' => (int) ($usuarios->get($r->id)?->activos ?? 0),
                 'inactivos' => (int) ($usuarios->get($r->id)?->total ?? 0) - (int) ($usuarios->get($r->id)?->activos ?? 0),
-                'permisos' => $r->esAdministrador() ? Permisos::claves() : $permisos->get($r->id, collect())->pluck('permiso')->intersect(Permisos::claves())->values(),
+                'permisos' => $r->esDelSistema() ? Permisos::claves() : $permisos->get($r->id, collect())->pluck('permiso')->intersect(Permisos::claves())->values(),
             ]),
             'areas' => collect(Permisos::AREAS)->map(fn ($lista, $area) => [
                 'area' => $area,
@@ -71,7 +72,7 @@ class RolController extends Controller
             ]);
             // «Empezar con los permisos de…»: una copia; después cada uno va por su lado.
             if ($origen = isset($datos['copiar_de']) ? Rol::find($datos['copiar_de']) : null) {
-                $this->guardarPermisos($rol, $origen->esAdministrador()
+                $this->guardarPermisos($rol, $origen->esDelSistema()
                     ? Permisos::claves()
                     : DB::table('rol_permiso')->where('rol_id', $origen->id)->pluck('permiso')->all());
             }
@@ -93,8 +94,8 @@ class RolController extends Controller
 
         DB::transaction(function () use ($rol, $datos) {
             $rol->update(['etiqueta' => trim($datos['etiqueta']), 'descripcion' => trim((string) ($datos['descripcion'] ?? '')) ?: null]);
-            // Al administrador solo se le cambia el nombre y la descripción: tiene todo siempre.
-            if (! $rol->esAdministrador()) {
+            // Al administrador y al super administrador solo se les cambia el nombre y la descripción: tienen todo siempre.
+            if (! $rol->esDelSistema()) {
                 $this->guardarPermisos($rol, $datos['permisos']);
             }
         });
@@ -104,8 +105,8 @@ class RolController extends Controller
 
     public function destroy(Rol $rol): RedirectResponse
     {
-        if ($rol->esAdministrador()) {
-            throw ValidationException::withMessages(['rol' => 'El rol de administrador no se puede borrar.']);
+        if ($rol->esDelSistema()) {
+            throw ValidationException::withMessages(['rol' => "El rol «{$rol->etiqueta}» no se puede borrar."]);
         }
         $usuarios = $rol->usuarios()->count();
         if ($usuarios > 0) {

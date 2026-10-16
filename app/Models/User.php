@@ -61,8 +61,15 @@ class User extends Authenticatable
         return $this->belongsTo(Rol::class);
     }
 
+    /** Administrador o super administrador: los dos pueden todo lo de la administración. */
     public function esAdministrador(): bool
     {
-        return $this->activo && $this->rol?->nombre === 'administrador';
+        return $this->activo && in_array($this->rol?->nombre, ['administrador', 'superadministrador'], true);
+    }
+
+    /** El equipo de SIEAGE: además de todo, es el único que maneja Roles y permisos. */
+    public function esSuperAdministrador(): bool
+    {
+        return $this->activo && $this->rol?->nombre === 'superadministrador';
     }
 }

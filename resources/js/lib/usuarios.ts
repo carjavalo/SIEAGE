@@ -5,6 +5,7 @@ export type Rol = { id: number; nombre: string; etiqueta: string | null; descrip
 type ConNombre = { nombre: string; etiqueta?: string | null };
 
 const NOMBRES: Record<string, string> = {
+    superadministrador: 'Super administrador',
     administrador: 'Administrador',
     coordinacion: 'Coordinación',
     secretaria: 'Secretaría',
@@ -20,6 +21,7 @@ export const nombreRol = (rol?: ConNombre | string | null) => {
 
 /** Punto de color de cada rol, como las sedes: sin pastillas rellenas. */
 const PUNTOS: Record<string, string> = {
+    superadministrador: 'bg-[#0B1430]',
     administrador: 'bg-[#1E3A7B]',
     coordinacion: 'bg-[#5B7BD0]',
     secretaria: 'bg-[#3BA67A]',

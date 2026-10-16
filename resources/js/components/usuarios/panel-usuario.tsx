@@ -125,7 +125,7 @@ function FormularioUsuario({
     });
     const catalogo = usePage<{ grados?: GradoOpcion[] }>().props.grados ?? [];
     const rolElegido = roles.find((r) => r.id === form.data.rol_id);
-    const esAdministrador = rolElegido?.nombre === 'administrador';
+    const esAdministrador = rolElegido?.nombre === 'administrador' || rolElegido?.nombre === 'superadministrador';
     const marcarSede = (id: number, si: boolean) => {
         // Al quitar una sede se olvidan sus grados.
         const grados = sinSede(form.data.grados, id);
