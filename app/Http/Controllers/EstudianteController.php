@@ -6,7 +6,9 @@ use App\Models\User;
 use App\Support\Alcance;
 use App\Support\Boletines;
 use App\Support\CambiosFicha;
+use App\Support\Constancias;
 use App\Support\Documentos;
+use App\Support\Edades;
 use App\Support\Grupos;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -109,8 +111,14 @@ class EstudianteController extends Controller
                 'm.grupo_id', 'g.codigo as grupo', 's.nombre as sede', 's.codigo as sede_codigo', 'm.jornada', 'mo.nombre as modalidad',
                 'm.condicion', 'm.estado', 'a.nombre_completo as acudiente',
                 DB::raw('coalesce(a.telefono_celular, a.telefono_fijo) as telefono'),
-                'gsig.codigo as promovido_a',
+                'gsig.codigo as promovido_a', 'e.fecha_nacimiento',
             ]);
+        // La alerta de edad según la tabla del colegio (null si la edad es la adecuada).
+        $numeroGrado = $gradoId ? (int) DB::table('grados')->where('id', $gradoId)->value('numero') : null;
+        foreach ($estudiantes as $e) {
+            $e->edad = $numeroGrado !== null && $anio ? Edades::alerta($e->fecha_nacimiento, $numeroGrado, (int) $anio->anio) : null;
+            unset($e->fecha_nacimiento);
+        }
 
         return Inertia::render('estudiantes/index', [
             'anios' => $anios,
@@ -142,6 +150,26 @@ class EstudianteController extends Controller
         Alcance::exigirEstudiante($request->user(), $estudiante);
         $ficha = $this->ficha($estudiante, $request->integer('anio') ?: null);
         abort_if(! $ficha, 404);
+
+        // Como en la constancia (es la ficha de matrícula que se imprime): en el año planeado, lo que la
+        // proyección de cupos aún no decide sale «Por asignar» (6.º: grupo y jornada; 10.º: la técnica)…
+        if ($a = $ficha['actual']) {
+            $a = clone $a;
+            $planeado = $a->estado_anio === 'planeado';
+            if ($planeado && (int) $a->grado_numero === 6) {
+                $a->grupo = $a->jornada = Constancias::POR_ASIGNAR;
+            }
+            if ($planeado && (int) $a->grado_numero === 10) {
+                $a->modalidad = Constancias::POR_ASIGNAR;
+            }
+            $ficha['actual'] = $a;
+        }
+        // …y el correo: si no tiene, el que dio la familia al inscribirse.
+        if (! filled($ficha['estudiante']->correo)) {
+            $inscripcion = DB::table('solicitudes_inscripcion')->where('numero_documento', $ficha['estudiante']->numero_documento)
+                ->orderByDesc('id')->first(['correo', 'acudiente_correo']);
+            $ficha['estudiante']->correo = $inscripcion?->correo ?: $inscripcion?->acudiente_correo;
+        }
 
         return Inertia::render('estudiantes/ficha', [
             ...$ficha,
@@ -243,6 +271,8 @@ class EstudianteController extends Controller
                 && $actual->grupo_id !== null && Alcance::puedeVer(request()->user(), $actual->sede_id, $actual->grado_id)
                 && DB::table('anios_lectivos')->where('anio', $actual->anio)->value('estado') === 'activo',
             'documentos' => $actual ? self::documentos($actual->id, (int) $actual->grado_numero, $alumno) : null,
+            // Alerta de edad para el grado de la matrícula (tabla de edades del colegio).
+            'edad' => $actual ? Edades::alerta($alumno->fecha_nacimiento, (int) $actual->grado_numero, (int) $actual->anio) : null,
             'novedades' => $novedades,
             // Matrícula del año siguiente, si ya fue promovido.
             'promocion' => $promocion,

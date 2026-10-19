@@ -1,4 +1,5 @@
 import { Esqueleto, FilasEsqueleto } from '@/components/esqueleto';
+import { MarcaExtraedad } from '@/components/estudiantes/alerta-edad';
 import { Marca, PuntoSede, Resaltado, sedeInfo } from '@/components/estudiantes/etiquetas';
 import { type Estudiante, type FiltroEstado, type Grado, type Grupo, telefono } from '@/lib/estudiantes';
 import { cn } from '@/lib/utils';
@@ -306,6 +307,7 @@ function armarColumnas(c: Columnas): Columna[] {
                     >
                         <Resaltado texto={e.nombre} buscadas={b} />
                     </span>
+                    <MarcaExtraedad alerta={e.edad} />
                     {e.promovido_a && (
                         <span className="shrink-0 text-[12px] font-medium text-[#4863B8] tabular-nums" title={`Promovido a ${e.promovido_a}`}>
                             → {e.promovido_a}

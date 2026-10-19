@@ -1,3 +1,4 @@
+import { AlertaEdadGrado } from '@/components/estudiantes/alerta-edad';
 import { PuntoSede, sedeInfo } from '@/components/estudiantes/etiquetas';
 import { Barra } from '@/components/estudiantes/tablero-grupos';
 import { EncabezadoInscrito } from '@/components/inscritos/encabezado';
@@ -6,13 +7,15 @@ import PanelLayout from '@/layouts/panel-layout';
 import { type Grupo, gradoCorto } from '@/lib/estudiantes';
 import { type FichaInscrito, documentosListos, enlaceEstudiante, nombreInscrito, padresListos } from '@/lib/inscritos';
 import { cn } from '@/lib/utils';
-import { Link, useForm } from '@inertiajs/react';
+import { Link, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, Check, CircleAlert, GraduationCap, LoaderCircle } from 'lucide-react';
 import { useMemo } from 'react';
 import { sileo } from 'sileo';
 
 type Props = FichaInscrito & {
     anio: number | null;
+    /** En qué años se puede matricular: el en curso y los siguientes ya creados. */
+    anios: { anio: number; estado: 'activo' | 'planeado' }[];
     gradoNumero: number;
     grupos: Grupo[];
     /** Si el estudiante (por su documento) ya tiene matrícula ese año. */
@@ -44,9 +47,11 @@ export default function ElegirGrupo({
     documentos,
     matricula,
     anio,
+    anios,
     gradoNumero,
     grupos: gruposServidor,
     matriculaExistente: existente,
+    edad,
 }: Props) {
     // Ya estudia aquí este año (activo): no se puede matricular otra vez.
     const yaActivo = existente?.estado === 'activo';
@@ -123,14 +128,50 @@ export default function ElegirGrupo({
                     </div>
                 ) : (
                     <section aria-labelledby="titulo-grupos" className="mt-7">
-                        <h2 id="titulo-grupos" className="text-[20px] font-semibold tracking-[-0.015em]">
-                            ¿En qué grupo de {s.grado} queda?
-                        </h2>
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <h2 id="titulo-grupos" className="text-[20px] font-semibold tracking-[-0.015em]">
+                                ¿En qué grupo de {s.grado} queda?
+                            </h2>
+                            {/* El año de la matrícula: el en curso o uno siguiente; los grupos de abajo son los de ese año. */}
+                            {anios.length > 1 && (
+                                <div
+                                    role="radiogroup"
+                                    aria-label="Año de la matrícula"
+                                    className="flex items-center gap-2 text-[14px] text-[#56627F]"
+                                >
+                                    <span>Matricular en</span>
+                                    <div className="flex rounded-full bg-[#EEF2FB] p-1">
+                                        {anios.map((a) => (
+                                            <button
+                                                key={a.anio}
+                                                type="button"
+                                                role="radio"
+                                                aria-checked={a.anio === anio}
+                                                onClick={() =>
+                                                    a.anio !== anio &&
+                                                    router.get(`/inscritos/${s.id}/grupo`, { anio: a.anio }, { preserveScroll: true, replace: true })
+                                                }
+                                                className={cn(
+                                                    'flex h-8 cursor-pointer items-center gap-1.5 rounded-full px-3.5 text-[14px] font-semibold tabular-nums transition focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none',
+                                                    a.anio === anio ? 'bg-white text-[#1E3A7B] shadow-sm' : 'text-[#56627F] hover:text-[#1E3A7B]',
+                                                )}
+                                            >
+                                                {a.anio}
+                                                <span className="text-[12px] font-medium opacity-75">
+                                                    {a.estado === 'activo' ? 'actual' : 'próximo'}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                         <p className="mt-1 text-[14px] text-[#56627F]">
                             La familia pidió {s.grado}. Estos son sus grupos{anio ? ` en ${anio}` : ''}: elige uno viendo cuántos estudiantes tiene
                             cada uno.
                         </p>
 
+                        {edad && <AlertaEdadGrado alerta={edad} grado={s.grado} className="mt-4" />}
                         {existente && yaActivo && (
                             <p className="mt-4 flex items-start gap-3 rounded-[16px] bg-[#FDECEC] px-4 py-3 text-[14px] text-[#8E2323]">
                                 <CircleAlert className="mt-0.5 size-[18px] shrink-0" />

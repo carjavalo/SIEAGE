@@ -16,6 +16,9 @@ class Constancias
     /** Años de historia que caben en la hoja (el Excel traía doce: 2015 a 2026). */
     public const AÑOS = 12;
 
+    /** Lo que aún no se sabe en la proyección del año siguiente. */
+    public const POR_ASIGNAR = 'Por asignar';
+
     /**
      * @param  list<int>  $matriculas  en el orden en que deben salir
      * @return list<array<string, mixed>>
@@ -35,7 +38,8 @@ class Constancias
             ->leftJoin('modalidades as mo', 'mo.id', '=', 'm.modalidad_id')
             ->whereIn('m.id', $matriculas)
             ->get([
-                'm.id', 'm.estudiante_id', 'al.anio', 'm.fecha_matricula', 'gr.nombre as grado', 'g.codigo as grupo', 's.nombre as sede',
+                'm.id', 'm.estudiante_id', 'al.anio', 'al.estado as estado_anio', 'm.fecha_matricula', 'gr.numero as grado_numero',
+                'gr.nombre as grado', 'g.codigo as grupo', 's.nombre as sede',
                 'm.jornada', 'mo.nombre as modalidad', 'm.condicion', 'm.observaciones',
                 'e.nombre_completo as nombre', 'e.tipo_documento', 'e.numero_documento', 'e.correo',
             ])
@@ -70,13 +74,27 @@ class Constancias
             ->get(['m.estudiante_id', 'al.anio', 'g.codigo as grupo', 'gr.nombre as grado', 's.nombre as sede'])
             ->groupBy('estudiante_id');
 
+        // El correo que dio la familia al inscribirse (la última inscripción con ese documento), por si
+        // el estudiante y su acudiente no tienen uno guardado.
+        $deInscripcion = DB::table('solicitudes_inscripcion')
+            ->whereIn('numero_documento', $filas->pluck('numero_documento')->unique())
+            ->orderBy('id')
+            ->get(['numero_documento', 'acudiente_correo', 'correo'])
+            ->keyBy('numero_documento');
+
         $hoy = now()->toDateString();
 
         return collect($matriculas)
             ->filter(fn ($id) => $filas->has($id))
-            ->map(function ($id) use ($filas, $acudientes, $historias, $hoy) {
+            ->map(function ($id) use ($filas, $acudientes, $historias, $deInscripcion, $hoy) {
                 $m = $filas[$id];
                 $a = $acudientes->get($m->estudiante_id);
+                $inscripcion = $deInscripcion->get($m->numero_documento);
+                // En el año planeado (la proyección de cupos), lo que todavía no está decidido sale «Por
+                // asignar»: en 6.º (vienen de las sedes de primaria) el grupo y la jornada; en 10.º, la técnica.
+                $planeado = $m->estado_anio === 'planeado';
+                $sinGrupo = $planeado && (int) $m->grado_numero === 6;
+                $sinTecnica = $planeado && (int) $m->grado_numero === 10;
 
                 return [
                     'id' => $m->id,
@@ -87,10 +105,10 @@ class Constancias
                         'nombre' => $m->nombre,
                         'documento' => trim("{$m->tipo_documento} {$m->numero_documento}"),
                         'grado' => $m->grado,
-                        'grupo' => $m->grupo,
+                        'grupo' => $sinGrupo ? self::POR_ASIGNAR : $m->grupo,
                         'sede' => $m->sede,
-                        'jornada' => $m->jornada,
-                        'modalidad' => $m->modalidad,
+                        'jornada' => $sinGrupo ? self::POR_ASIGNAR : $m->jornada,
+                        'modalidad' => $sinTecnica ? self::POR_ASIGNAR : $m->modalidad,
                         'condicion' => $m->condicion,
                     ],
                     'acudiente' => $a ? [
@@ -100,8 +118,8 @@ class Constancias
                         'direccion' => $a->direccion,
                         'barrio' => $a->barrio,
                         'telefonos' => collect([$a->telefono_celular, $a->telefono_fijo])->filter()->unique()->values(),
-                        // El del acudiente; si no tiene, el de contacto de la familia (el del formulario de inscripción).
-                        'correo' => $a->email ?: $m->correo,
+                        // El del acudiente; si no tiene, el de contacto de la familia; si tampoco, el de su inscripción.
+                        'correo' => $a->email ?: $m->correo ?: $inscripcion?->acudiente_correo ?: $inscripcion?->correo,
                     ] : null,
                     'observaciones' => $m->observaciones ? trim($m->observaciones) : null,
                     'historia' => collect($historias->get($m->estudiante_id, []))

@@ -1,5 +1,5 @@
 import { Esqueleto, FilasEsqueleto } from '@/components/esqueleto';
-import { Marca, Resaltado } from '@/components/estudiantes/etiquetas';
+import { Marca, PuntoSede, Resaltado, sedeInfo } from '@/components/estudiantes/etiquetas';
 import { Tecla, Vacio, td, th } from '@/components/estudiantes/lista-estudiantes';
 import { gradoCorto, telefono } from '@/lib/estudiantes';
 import { type InscritoFila, hace, nombreInscrito } from '@/lib/inscritos';
@@ -240,9 +240,19 @@ const Fila = memo(function Fila({
                 </span>
             </td>
             <td className={celda}>
-                <span className="block truncate text-[#16223F]" title={i.grado}>
+                <span
+                    className="flex min-w-0 items-center truncate text-[#16223F]"
+                    title={i.sede_preferida && !i.grupo_asignado ? `${i.grado} · pidió la sede ${i.sede_preferida}` : i.grado}
+                >
                     <b className="mr-1.5 font-semibold tabular-nums">{i.grupo_asignado ?? gradoCorto({ numero: i.grado_numero })}</b>
-                    <span className="text-[13px] text-[#56627F]">{i.grado}</span>
+                    <span className="truncate text-[13px] text-[#56627F]">{i.grado}</span>
+                    {/* La sede que pidió la familia, mientras no tenga grupo. */}
+                    {i.sede_preferida_codigo && !i.grupo_asignado && (
+                        <span className="ml-2 flex shrink-0 items-center gap-1.5 text-[13px] text-[#3E4A68]">
+                            <PuntoSede codigo={i.sede_preferida_codigo} />
+                            {sedeInfo(i.sede_preferida_codigo).corto}
+                        </span>
+                    )}
                 </span>
             </td>
             <td className={cn(celda, 'hidden lg:table-cell')}>

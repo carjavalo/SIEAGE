@@ -77,6 +77,9 @@ export type InscritoFila = Nombres & {
     padres: Rol[];
     /** El grupo en que quedó, si ya se matriculó. */
     grupo_asignado: string | null;
+    /** La sede que pidió la familia (solo primaria); null si no eligió. */
+    sede_preferida_codigo: string | null;
+    sede_preferida: string | null;
 };
 
 /** Lo que llenó la familia en el formulario (InscritoController::ficha). */
@@ -136,6 +139,8 @@ export type ResumenDocumentos = { listos: number; total: number; faltan: string[
 
 export type FichaInscrito = {
     solicitud: Solicitud;
+    /** Alerta de edad para el grado que pidió la familia (null si es la adecuada). */
+    edad: import('@/lib/estudiantes').AlertaEdad | null;
     padres: Partial<Record<Rol, PadreGuardado>>;
     documentos: ResumenDocumentos;
     matricula: MatriculaInscrito | null;

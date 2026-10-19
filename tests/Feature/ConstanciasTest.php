@@ -116,6 +116,49 @@ class ConstanciasTest extends TestCase
 
         DB::table('acudientes')->whereIn('id', $acudientes)->update(['email' => null]);
         $this->assertSame('familia@correo.com', $correo());
+
+        // Sin ninguno de los dos: el que dio la familia al inscribirse.
+        DB::table('estudiantes')->where('id', $matricula->estudiante_id)->update(['correo' => null]);
+        $documento = DB::table('estudiantes')->where('id', $matricula->estudiante_id)->value('numero_documento');
+        DB::table('solicitudes_inscripcion')->insert(['numero_documento' => $documento, 'acudiente_correo' => 'inscripcion@correo.com', 'correo' => 'otro@correo.com',
+            'primer_nombre' => 'A', 'primer_apellido' => 'B', 'sexo' => 'F', 'pais_nacimiento' => 'Colombia', 'ciudad_nacimiento' => 'Cali', 'fecha_nacimiento' => '2014-01-01',
+            'tipo_documento' => 'T.I.', 'ciudad_expedicion' => 'Cali', 'grado_id' => DB::table('grados')->value('id'), 'tipo_sangre' => 'O+', 'sisben' => '1', 'eps' => 'X',
+            'grupo_etnico' => 'Mestizo', 'direccion' => 'C', 'barrio' => 'B', 'telefono_1' => '3000000000', 'telefono_2' => '3000000000',
+            'acudiente_primer_nombre' => 'C', 'acudiente_primer_apellido' => 'D', 'acudiente_numero_documento' => '99999', 'acudiente_ciudad_expedicion' => 'Cali', 'acudiente_fecha_nacimiento' => '1980-01-01', 'autorizo_datos_en' => now(),
+            'acudiente_parentesco_id' => DB::table('parentescos')->value('id'), 'acudiente_telefono_1' => '3000000000', 'acudiente_telefono_2' => '3000000000',
+            'estado' => 'aprobada', 'created_at' => now(), 'updated_at' => now()]);
+        $this->assertSame('inscripcion@correo.com', $correo());
+    }
+
+    public function test_en_el_anio_planeado_sexto_va_sin_grupo_ni_jornada_y_decimo_sin_tecnica()
+    {
+        $this->seed(DatosInicialesSeeder::class);
+        $anio = $this->anioActivo();
+        $planeado = DB::table('anios_lectivos')->insertGetId(['anio' => $anio->anio + 1, 'estado' => 'planeado']);
+        $ficha = function (int $numero) use ($anio, $planeado) {
+            $m = (array) DB::table('matriculas')->where('anio_lectivo_id', $anio->id)->where('estado', 'activo')
+                ->where('grado_id', DB::table('grados')->where('numero', $numero - 1)->value('id'))->first();
+            $estudiante = $m['estudiante_id'];
+            unset($m['id']);
+            // Promovido con grupo, jornada y técnica ya puestos: igual no deben salir.
+            DB::table('matriculas')->insert([...$m, 'anio_lectivo_id' => $planeado, 'grado_id' => DB::table('grados')->where('numero', $numero)->value('id'),
+                'jornada' => 'Mañana', 'modalidad_id' => DB::table('modalidades')->value('id')]);
+
+            return $this->actingAs(User::first())->get("/estudiantes/{$estudiante}/constancia?anio=".($anio->anio + 1))
+                ->viewData('page')['props']['constancias'][0]['estudiante'];
+        };
+
+        $sexto = $ficha(6);
+        $this->assertSame(['Por asignar', 'Por asignar'], [$sexto['grupo'], $sexto['jornada']]);
+        $decimo = $ficha(10);
+        $this->assertSame('Por asignar', $decimo['modalidad']);
+        $this->assertSame('Mañana', $decimo['jornada'], 'en 10.º la jornada sí va');
+
+        // En el año en curso, todo como está.
+        $m = DB::table('matriculas')->where('anio_lectivo_id', $anio->id)->where('estado', 'activo')
+            ->where('grado_id', DB::table('grados')->where('numero', 6)->value('id'))->whereNotNull('grupo_id')->first();
+        $actual = $this->actingAs(User::first())->get("/estudiantes/{$m->estudiante_id}/constancia")->viewData('page')['props']['constancias'][0]['estudiante'];
+        $this->assertNotSame('Por asignar', $actual['grupo']);
     }
 
     public function test_la_fecha_es_la_de_matricula_y_si_falta_la_de_hoy()
@@ -182,5 +225,24 @@ class ConstanciasTest extends TestCase
 
         $this->actingAs(User::first())->get('/constancias?grupo=999999')->assertNotFound();
         $this->actingAs(User::first())->get('/constancias?sede=NOEXISTE')->assertNotFound();
+    }
+
+    public function test_la_ficha_completa_del_anio_planeado_sigue_las_mismas_reglas_y_muestra_el_correo_de_la_inscripcion()
+    {
+        $this->seed(DatosInicialesSeeder::class);
+        $anio = $this->anioActivo();
+        $planeado = DB::table('anios_lectivos')->insertGetId(['anio' => $anio->anio + 1, 'estado' => 'planeado']);
+        $m = (array) DB::table('matriculas')->where('anio_lectivo_id', $anio->id)->where('estado', 'activo')
+            ->where('grado_id', DB::table('grados')->where('numero', 5)->value('id'))->first();
+        $estudiante = $m['estudiante_id'];
+        unset($m['id']);
+        DB::table('matriculas')->insert([...$m, 'anio_lectivo_id' => $planeado, 'grado_id' => DB::table('grados')->where('numero', 6)->value('id'), 'jornada' => 'Mañana']);
+        DB::table('estudiantes')->where('id', $estudiante)->update(['correo' => null]);
+
+        $this->actingAs(User::first())->get("/estudiantes/{$estudiante}?anio=".($anio->anio + 1))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('actual.anio', $anio->anio + 1)
+                ->where('actual.grupo', 'Por asignar')
+                ->where('actual.jornada', 'Por asignar'));
     }
 }

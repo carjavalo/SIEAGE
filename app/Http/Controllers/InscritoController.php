@@ -7,9 +7,11 @@ use App\Models\SolicitudInscripcion;
 use App\Support\Alcance;
 use App\Support\Barrios;
 use App\Support\Documentos;
+use App\Support\Edades;
 use App\Support\Grupos;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -36,6 +38,7 @@ class InscritoController extends Controller
             ->join('parentescos as p', 'p.id', '=', 's.acudiente_parentesco_id')
             ->leftJoin('matriculas as m', 'm.id', '=', 's.matricula_id')
             ->leftJoin('grupos as ga', 'ga.id', '=', 'm.grupo_id')
+            ->leftJoin('sedes as sp', 'sp.id', '=', 's.sede_preferida_id')
             ->tap(fn ($q) => Alcance::filtrarSolicitudes($q, $request->user()))
             ->when($estado !== 'todas', fn ($q) => $q->where('s.estado', $estado))
             ->orderByDesc('s.created_at')
@@ -45,6 +48,8 @@ class InscritoController extends Controller
                 's.tipo_documento', 's.numero_documento', 's.grado_id', 'g.numero as grado_numero', 'g.nombre as grado',
                 's.acudiente_primer_nombre', 's.acudiente_primer_apellido', 'p.nombre as parentesco', 's.acudiente_telefono_1',
                 'ga.codigo as grupo_asignado',
+                // La sede que pidió la familia (solo primaria).
+                'sp.codigo as sede_preferida_codigo', 'sp.nombre as sede_preferida',
             ]);
 
         $padres = DB::table('padres')
@@ -109,6 +114,12 @@ class InscritoController extends Controller
             ],
             'padres' => $solicitud->padres()->get()->keyBy('parentesco'),
             'documentos' => Documentos::resumen($solicitud),
+            // Alerta de edad para el grado que pidió la familia, en el año de la inscripción.
+            'edad' => Edades::alerta(
+                $solicitud->fecha_nacimiento?->format('Y-m-d'),
+                (int) DB::table('grados')->where('id', $solicitud->grado_id)->value('numero'),
+                (int) (DB::table('anios_lectivos')->where('id', $this->anioDeMatricula($solicitud))->value('anio') ?? now()->year),
+            ),
             // Si ya se aprobó: dónde quedó matriculado.
             'matricula' => $solicitud->matricula_id
                 ? DB::table('matriculas as m')
@@ -162,13 +173,17 @@ class InscritoController extends Controller
      * Tercer paso: elegir el grupo, dentro del grado que pidió la familia,
      * viendo cuántos estudiantes tiene cada uno.
      */
-    public function grupo(SolicitudInscripcion $solicitud): Response
+    public function grupo(Request $request, SolicitudInscripcion $solicitud): Response
     {
-        $anioId = $this->anioDeMatricula($solicitud);
+        // El año en que queda matriculado: el en curso o uno siguiente ya creado (?anio=2027).
+        $anios = $this->aniosParaMatricular();
+        $anioId = $anios->firstWhere('anio', $request->integer('anio'))?->id
+            ?? ($anios->contains('id', $this->anioDeMatricula($solicitud)) ? $this->anioDeMatricula($solicitud) : $anios->first()?->id);
 
         return Inertia::render('inscritos/grupo', [
             ...$this->ficha($solicitud),
             'anio' => DB::table('anios_lectivos')->where('id', $anioId)->value('anio'),
+            'anios' => $anios->map(fn ($a) => ['anio' => (int) $a->anio, 'estado' => $a->estado])->values(),
             'gradoNumero' => DB::table('grados')->where('id', $solicitud->grado_id)->value('numero'),
             // Solo los grupos de las sedes del usuario.
             'grupos' => Grupos::conOcupacion($anioId, $solicitud->grado_id, Alcance::sedesDelGrado(request()->user(), (int) $solicitud->grado_id)),
@@ -177,6 +192,12 @@ class InscritoController extends Controller
                 ? $this->matriculaDelAnio(DB::table('estudiantes')->where('numero_documento', $solicitud->numero_documento)->value('id'), $anioId)
                 : null,
         ]);
+    }
+
+    /** Los años en que se puede matricular: el que está en curso y los siguientes ya creados (planeados). */
+    private function aniosParaMatricular(): Collection
+    {
+        return DB::table('anios_lectivos')->whereIn('estado', ['activo', 'planeado'])->orderBy('anio')->get(['id', 'anio', 'estado']);
     }
 
     /** La matrícula que ya tiene el estudiante en ese año, con su grupo y estado; null si no tiene. */
@@ -202,18 +223,20 @@ class InscritoController extends Controller
     public function matricular(Request $request, SolicitudInscripcion $solicitud): RedirectResponse
     {
         Alcance::exigirSolicitud($request->user(), $solicitud->id);
-        $anioId = $this->anioDeMatricula($solicitud);
         $grupoId = $request->validate([
             'grupo_id' => [
                 'required',
                 'integer',
-                Rule::exists('grupos', 'id')->where('grado_id', $solicitud->grado_id)->where('anio_lectivo_id', $anioId)
+                // Del grado que pidió la familia, en el año en curso o en uno siguiente ya creado.
+                Rule::exists('grupos', 'id')->where('grado_id', $solicitud->grado_id)->whereIn('anio_lectivo_id', $this->aniosParaMatricular()->pluck('id')->all())
                     ->when(! Alcance::todas($request->user()), fn ($r) => $r->whereIn('sede_id', Alcance::sedesDelGrado($request->user(), (int) $solicitud->grado_id))),
             ],
         ], [
             'grupo_id.required' => 'Elige el grupo.',
             'grupo_id.exists' => 'Ese grupo no es del grado que pidió la familia.',
         ])['grupo_id'];
+        // El año es el del grupo elegido.
+        $anioId = (int) DB::table('grupos')->where('id', $grupoId)->value('anio_lectivo_id');
 
         if ($solicitud->estado !== SolicitudInscripcion::PENDIENTE) {
             throw ValidationException::withMessages(['grupo_id' => 'Esta inscripción ya fue revisada.']);
@@ -345,6 +368,8 @@ class InscritoController extends Controller
             $s->forceFill([
                 'estado' => SolicitudInscripcion::APROBADA,
                 'matricula_id' => $matriculaId,
+                // La inscripción queda en el año en que se matriculó (cuenta en el informe de ese año).
+                'anio_lectivo_id' => $anioId,
                 'revisada_por' => $request->user()?->id,
                 'revisada_en' => $ahora,
             ])->save();

@@ -14,16 +14,13 @@ use Illuminate\Support\Facades\DB;
  * Se trae el año en una sola consulta y se agrupa aquí, en PHP: son unos miles
  * de filas y así el cálculo es el mismo en MySQL y en las pruebas (SQLite).
  *
- * Edad y extraedad: la edad se toma al 31 de marzo del año lectivo. La edad
- * esperada es 5 años en Transición y uno más por grado (6 en Primero… 16 en
- * Undécimo); está en extraedad quien tiene 2 o más años por encima.
+ * Edad y extraedad: la edad se toma al 31 de marzo del año lectivo y se compara
+ * con la tabla de edades del colegio (ver App\Support\Edades): adecuada 5 años en
+ * Transición y uno más por grado; extraedad desde 3 años por encima (9 en Primero…
+ * 19 en Undécimo).
  */
 final class InformeMatricula
 {
-    private const EDAD_TRANSICION = 5;
-
-    private const AÑOS_DE_EXTRAEDAD = 2;
-
     private const NIVELES = ['preescolar' => 'Preescolar', 'primaria' => 'Primaria', 'secundaria' => 'Secundaria', 'media' => 'Media'];
 
     /** Datos del estudiante que el informe no muestra si faltan en más de la mitad de los activos. */
@@ -121,7 +118,7 @@ final class InformeMatricula
             ])
             ->each(function ($m) {
                 $m->edad = $this->edad($m->fecha_nacimiento);
-                $m->extraedad = $m->edad !== null && $m->edad - ($m->grado + self::EDAD_TRANSICION) >= self::AÑOS_DE_EXTRAEDAD;
+                $m->extraedad = Edades::estado($m->edad, (int) $m->grado) === 'extraedad';
             });
     }
 
@@ -246,7 +243,7 @@ final class InformeMatricula
                 'cancelados' => $del->where('estado', 'cancelado')->count(),
                 'ninas' => $activas->where('genero', 'F')->count(),
                 'ninos' => $activas->where('genero', 'M')->count(),
-                'edadEsperada' => (int) $numero + self::EDAD_TRANSICION,
+                'edadEsperada' => Edades::adecuada((int) $numero),
                 'edadPromedio' => $conEdad->count() ? round($conEdad->avg('edad'), 1) : null,
                 'extraedad' => $activas->where('extraedad', true)->count(),
             ];

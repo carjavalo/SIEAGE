@@ -457,4 +457,42 @@ class InscritosTest extends TestCase
         $this->assertSame(1, DB::table('matriculas')->count());
         $this->assertSame(SolicitudInscripcion::PENDIENTE, $this->solicitud->fresh()->estado);
     }
+
+    public function test_se_puede_matricular_en_el_anio_siguiente()
+    {
+        $grupos = $this->grupos();
+        $usuario = User::factory()->create();
+        $this->actingAs($usuario)->put("/inscritos/{$this->solicitud->id}/padres", $this->padres());
+        // El año siguiente ya creado (planeado), con un grupo de Séptimo.
+        $actual = DB::table('anios_lectivos')->where('id', SolicitudInscripcion::anioLectivoActivoId())->value('anio');
+        $siguiente = DB::table('anios_lectivos')->where('anio', $actual + 1)->value('id')
+            ?? DB::table('anios_lectivos')->insertGetId(['anio' => $actual + 1, 'estado' => 'planeado']);
+        $g = DB::table('grupos')->find($grupos['7-1']);
+        $grupoSiguiente = DB::table('grupos')->insertGetId(['anio_lectivo_id' => $siguiente, 'sede_id' => $g->sede_id, 'grado_id' => $g->grado_id,
+            'numero' => 3, 'codigo' => '7-3', 'jornada' => 'Mañana', 'cupos_proyectados' => 34]);
+
+        // La pantalla ofrece los dos años; pidiendo el siguiente, salen sus grupos.
+        $this->actingAs($usuario)->get("/inscritos/{$this->solicitud->id}/grupo")
+            ->assertInertia(fn (Assert $page) => $page->where('anio', $actual)->has('anios', 2));
+        $this->actingAs($usuario)->get("/inscritos/{$this->solicitud->id}/grupo?anio=".($actual + 1))
+            ->assertInertia(fn (Assert $page) => $page->where('anio', $actual + 1)->where('grupos', fn ($l) => collect($l)->pluck('codigo')->all() === ['7-3']));
+
+        $this->actingAs($usuario)->post("/inscritos/{$this->solicitud->id}/matricular", ['grupo_id' => $grupoSiguiente])->assertSessionHasNoErrors();
+
+        $matricula = DB::table('matriculas')->first();
+        $this->assertSame($siguiente, (int) $matricula->anio_lectivo_id);
+        $this->assertSame($grupoSiguiente, (int) $matricula->grupo_id);
+        $this->assertSame($siguiente, $this->solicitud->fresh()->anio_lectivo_id, 'la inscripción queda en el año en que se matriculó');
+
+        // Un año que ya pasó no se acepta.
+        $viejo = DB::table('anios_lectivos')->where('estado', 'cerrado')->value('id')
+            ?? DB::table('anios_lectivos')->insertGetId(['anio' => $actual - 5, 'estado' => 'cerrado']);
+        $grupoViejo = DB::table('grupos')->insertGetId(['anio_lectivo_id' => $viejo, 'sede_id' => $g->sede_id, 'grado_id' => $g->grado_id,
+            'numero' => 9, 'codigo' => '7-9', 'jornada' => 'Mañana', 'cupos_proyectados' => 34]);
+        $otra = SolicitudInscripcion::create([...collect($this->solicitud->getAttributes())->except(['id', 'estado', 'matricula_id', 'revisada_por', 'revisada_en'])->all(),
+            'numero_documento' => '1109555777']);
+        $this->actingAs($usuario)->put("/inscritos/{$otra->id}/padres", $this->padres());
+        $this->actingAs($usuario)->post("/inscritos/{$otra->id}/matricular", ['grupo_id' => $grupoViejo])
+            ->assertSessionHasErrors('grupo_id');
+    }
 }

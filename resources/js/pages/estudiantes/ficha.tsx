@@ -302,7 +302,8 @@ export default function Ficha({ estudiante, actual, historia, acudientes, boleti
                                 <Dato etiqueta="Dirección">{[estudiante.direccion, estudiante.barrio].filter(Boolean).join(' · ')}</Dato>
                             )}
                             {telefonos.length > 0 && <Dato etiqueta="Teléfono">{telefonos.map(telefono).join(' · ')}</Dato>}
-                            {estudiante.correo && <Dato etiqueta="Correo">{estudiante.correo}</Dato>}
+                            {/* Siempre a la vista: si falta, que se note para pedirlo. */}
+                            <Dato etiqueta="Correo">{estudiante.correo || <span className="text-[#8C97B3]">Sin registrar</span>}</Dato>
                         </dl>
                     </Tarjeta>
 
