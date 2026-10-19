@@ -31,8 +31,12 @@ export interface Pulso {
     ultima_inscripcion: number;
 }
 
-/** Lo que dejó la última importación del formulario de inscripción (App\Support\ImportarInscripciones). */
-export interface ResumenImportacion {
+/** Lo que dejó la última importación (Importar datos): del formulario de inscripción o de un libro. */
+export type ResumenImportacion = ResumenFormulario | ResumenLibro;
+
+/** El formulario de inscripción de Google (App\Support\ImportarInscripciones). */
+export interface ResumenFormulario {
+    tipo: 'formulario';
     archivo: string;
     anio: number;
     creadas: number;
@@ -40,6 +44,22 @@ export interface ResumenImportacion {
     repetidas: number;
     yaInscritas: number;
     errores: { fila: number; nombre: string; error: string }[];
+}
+
+/** El libro de matrícula o el de ciclos (App\Support\ImportarLibroMatricula). */
+export interface ResumenLibro {
+    tipo: 'matricula' | 'ciclos';
+    archivo: string;
+    anio: number | null;
+    hojas: number;
+    estudiantes: number;
+    estudiantesNuevos: number;
+    matriculas: number;
+    yaMatriculados: number;
+    acudientesNuevos: number;
+    historicas: number;
+    grupos: number;
+    errores: { hoja: string; fila: number; nombre: string; error: string }[];
 }
 
 export interface SharedData {
