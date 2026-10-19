@@ -1,3 +1,4 @@
+import { AlertaEdadGrado } from '@/components/estudiantes/alerta-edad';
 import { Marca } from '@/components/estudiantes/etiquetas';
 import { Bloque, ContenidoFicha, PanelFicha, TarjetaContacto } from '@/components/ficha';
 import { edad, fecha, telefono, textoSisben } from '@/lib/estudiantes';
@@ -68,6 +69,7 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
                     <span className="font-semibold text-[#1E3A7B]">
                         {matricula ? `${s.sexo === 'F' ? 'Matriculada' : 'Matriculado'} en ${matricula.grupo ?? s.grado}` : `Ingresa a ${s.grado}`}
                     </span>
+                    {!matricula && s.sede_preferida && <span className="font-medium text-[#3E4A68]">Pidió la sede {s.sede_preferida}</span>}
                     <Marca valor={s.estado} />
                     <span className="text-[#56627F]">Enviada {hace(s.enviada).toLowerCase()}</span>
                 </>
@@ -88,6 +90,7 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
                           : { href: `/inscritos/${s.id}/grupo`, texto: 'Elegir grupo y matricular', icono: GraduationCap }
             }
         >
+            {ficha.edad && !matricula && <AlertaEdadGrado alerta={ficha.edad} grado={s.grado} className="mx-5 mt-3.5" />}
             <BloquesSolicitud solicitud={s} padres={padres} documentos={documentos} />
         </ContenidoFicha>
     );

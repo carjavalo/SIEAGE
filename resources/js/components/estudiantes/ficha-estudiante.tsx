@@ -1,3 +1,4 @@
+import { AlertaEdadGrado } from '@/components/estudiantes/alerta-edad';
 import { EstadoMatricula, puedeDeshabilitar } from '@/components/estudiantes/deshabilitar';
 import { DocumentosEstudiante } from '@/components/estudiantes/documentos';
 import { AgregarAcudiente, EditarAcudiente, EditarEstudiante } from '@/components/estudiantes/editar-datos';
@@ -72,6 +73,8 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
             accion={{ href: `/estudiantes/${e.id}${m ? `?anio=${m.anio}` : ''}`, texto: 'Ficha completa e impresión', icono: FileText }}
             acciones={editable && <EditarEstudiante estudiante={e} />}
         >
+            {ficha.edad && m && <AlertaEdadGrado alerta={ficha.edad} grado={m.grado} className="mx-5 mt-3.5" />}
+
             {retirado && (m.fecha_retiro || m.motivo_retiro) && (
                 <div className="mx-5 mt-3.5 flex items-start gap-3 rounded-[16px] bg-[#FDECEC] px-4 py-3 text-[14px] text-[#8E2323]">
                     <CircleAlert className="mt-0.5 size-[18px] shrink-0" />

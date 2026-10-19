@@ -36,7 +36,12 @@ export type Estudiante = {
     telefono: string | null;
     /** Grupo del año siguiente, si ya fue promovido. */
     promovido_a: string | null;
+    /** Alerta de edad para el grado (null si la edad es la adecuada). */
+    edad: AlertaEdad | null;
 };
+
+/** Tabla de edades del colegio (App\Support\Edades): fuera de la edad adecuada, cómo está. */
+export type AlertaEdad = { estado: 'aceptable' | 'extraedad'; edad: number; adecuada: number; aceptableHasta: number; anio: number };
 
 export type Resultado = {
     id: number;
@@ -153,6 +158,8 @@ export type FichaDetalle = {
     acudientes: Acudiente[];
     boletines: { numero: number; valor: string }[];
     parentescos: Parentesco[];
+    /** Alerta de edad para el grado de su matrícula. */
+    edad: AlertaEdad | null;
     /** Los documentos de matrícula de la matrícula actual y cuáles se recibieron (null si no tiene matrícula). */
     documentos: DocumentosEstudiante | null;
 };

@@ -26,6 +26,7 @@ export function EncabezadoInscrito({ solicitud: s, matricula }: Pick<FichaInscri
                     ) : (
                         <span className="font-semibold text-[#1E3A7B]">Ingresa a {s.grado}</span>
                     )}
+                    {!matricula && s.sede_preferida && <span className="font-medium">Pidió la sede {s.sede_preferida}</span>}
                     <Marca valor={s.estado} />
                     <span className="text-[#56627F]">Enviada {hace(s.enviada).toLowerCase()}</span>
                 </p>
