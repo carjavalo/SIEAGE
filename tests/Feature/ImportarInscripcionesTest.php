@@ -76,6 +76,7 @@ class ImportarInscripcionesTest extends TestCase
     {
         return $this->actingAs(User::factory()->create())->post('/importaciones', [
             'archivo' => $archivo,
+            'tipo' => 'formulario',
         ]);
     }
 
@@ -130,10 +131,10 @@ class ImportarInscripcionesTest extends TestCase
         $this->assertSame(2, SolicitudInscripcion::count());
     }
 
-    public function test_otro_excel_solo_se_guarda()
+    public function test_otro_excel_en_la_pestana_del_formulario_no_carga_nada()
     {
         $this->subir($this->excel([['1', 'Gómez Ana']], ['A', 'NOMBRE']))
-            ->assertSessionHas('success')
+            ->assertSessionHasErrors('archivo')
             ->assertSessionMissing('importacion');
 
         $this->assertSame(0, SolicitudInscripcion::count());
