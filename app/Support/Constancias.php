@@ -28,6 +28,7 @@ class Constancias
         if (! $matriculas) {
             return [];
         }
+        self::numerar($matriculas);
 
         $filas = DB::table('matriculas as m')
             ->join('estudiantes as e', 'e.id', '=', 'm.estudiante_id')
@@ -38,7 +39,7 @@ class Constancias
             ->leftJoin('modalidades as mo', 'mo.id', '=', 'm.modalidad_id')
             ->whereIn('m.id', $matriculas)
             ->get([
-                'm.id', 'm.estudiante_id', 'al.anio', 'al.estado as estado_anio', 'm.fecha_matricula', 'gr.numero as grado_numero',
+                'm.id', 'm.consecutivo', 'm.estudiante_id', 'al.anio', 'al.estado as estado_anio', 'm.fecha_matricula', 'gr.numero as grado_numero',
                 'gr.nombre as grado', 'g.codigo as grupo', 's.nombre as sede',
                 'm.jornada', 'mo.nombre as modalidad', 'm.condicion', 'm.observaciones',
                 'e.nombre_completo as nombre', 'e.tipo_documento', 'e.numero_documento', 'e.correo',
@@ -98,6 +99,8 @@ class Constancias
 
                 return [
                     'id' => $m->id,
+                    // El n.º de la ficha en su año: el mismo cada vez que se imprima.
+                    'consecutivo' => (int) $m->consecutivo,
                     'anio' => $m->anio,
                     // Como en el Excel: la fecha de la constancia es la de la matrícula.
                     'fecha' => $m->fecha_matricula ?? $hoy,
@@ -131,5 +134,29 @@ class Constancias
             })
             ->values()
             ->all();
+    }
+
+    /**
+     * Les da su consecutivo a las matrículas de esos años que todavía no tienen
+     * (las creadas después de numerar): el siguiente de su año, en el orden en que
+     * se crearon. Así el número no depende de cuáles fichas se imprimen primero.
+     *
+     * @param  list<int>  $matriculas
+     */
+    private static function numerar(array $matriculas): void
+    {
+        $anios = DB::table('matriculas')->whereIn('id', $matriculas)->distinct()->pluck('anio_lectivo_id');
+        foreach ($anios as $anio) {
+            $sinNumero = DB::table('matriculas')->where('anio_lectivo_id', $anio)->whereNull('consecutivo')->orderBy('id')->pluck('id');
+            if ($sinNumero->isEmpty()) {
+                continue;
+            }
+            DB::transaction(function () use ($anio, $sinNumero) {
+                $ultimo = (int) DB::table('matriculas')->where('anio_lectivo_id', $anio)->lockForUpdate()->max('consecutivo');
+                foreach ($sinNumero as $id) {
+                    DB::table('matriculas')->where('id', $id)->whereNull('consecutivo')->update(['consecutivo' => ++$ultimo]);
+                }
+            });
+        }
     }
 }

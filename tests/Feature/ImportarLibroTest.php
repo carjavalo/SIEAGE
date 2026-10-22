@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Support\Ciclos;
 use App\Support\LibroMatriculaSede;
 use Database\Seeders\DatosInicialesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -155,5 +156,40 @@ class ImportarLibroTest extends TestCase
         $this->subir($this->archivo($otro, 'otro.xlsx'), 'ciclos')->assertSessionHasErrors('archivo');
         $this->subir($this->archivo($otro, 'otro.xlsx'), 'cualquiera')->assertSessionHasErrors('tipo');
         $this->assertSame(0, DB::table('grupos')->where('jornada', 'Sabatina')->count());
+    }
+
+    public function test_al_promover_un_estudiante_de_ciclo_pasa_al_ciclo_siguiente_en_jornada_sabatina()
+    {
+        $this->subir($this->archivo($this->libroDeCiclos(), 'SABATINOS-2026.xlsx'), 'ciclos')->assertSessionHasNoErrors();
+        $promover = function (string $documento) {
+            $id = DB::table('estudiantes')->where('numero_documento', $documento)->value('id');
+            $this->actingAs(User::first())->post('/promociones', ['anio' => 2026, 'estudiante_id' => $id])->assertSessionHasNoErrors();
+
+            return DB::table('matriculas as m')->join('anios_lectivos as al', 'al.id', '=', 'm.anio_lectivo_id')->join('grados as gr', 'gr.id', '=', 'm.grado_id')
+                ->leftJoin('grupos as g', 'g.id', '=', 'm.grupo_id')->where('m.estudiante_id', $id)->where('al.anio', 2027)
+                ->first(['gr.numero', 'g.codigo', 'm.jornada', 'g.jornada as jornada_grupo']);
+        };
+
+        // Ciclo III (6.º y 7.º, en Séptimo) → Ciclo IV (8.º y 9.º, en Noveno): no a Octavo.
+        $siguiente = $promover('9066842892');
+        $this->assertSame([9, 'Ciclo IV', 'Sabatina', 'Sabatina'], [(int) $siguiente->numero, $siguiente->codigo, $siguiente->jornada, $siguiente->jornada_grupo]);
+        // Ciclo V (Décimo) → Ciclo VI (Undécimo).
+        $siguiente = $promover('9000000001');
+        $this->assertSame([11, 'Ciclo VI'], [(int) $siguiente->numero, $siguiente->codigo]);
+        // El grupo del ciclo se creó una sola vez por ciclo.
+        $this->assertSame(1, DB::table('grupos')->where('codigo', 'Ciclo IV')->count());
+    }
+
+    public function test_la_tabla_de_ciclos_del_colegio()
+    {
+        // Ciclo => grados que abarca, como la dio el colegio; queda en el último.
+        foreach (['I' => [[1, 2, 3], 3], 'II' => [[4, 5], 5], 'III' => [[6, 7], 7], 'IV' => [[8, 9], 9], 'V' => [[10], 10], 'VI' => [[11], 11]] as $ciclo => [$grados, $queda]) {
+            $this->assertSame($queda, Ciclos::grado($ciclo));
+            foreach ($grados as $g) {
+                $this->assertSame($ciclo, Ciclos::deGrado($g));
+            }
+        }
+        $this->assertSame('IV', Ciclos::siguiente('III'));
+        $this->assertNull(Ciclos::siguiente('VI'));
     }
 }

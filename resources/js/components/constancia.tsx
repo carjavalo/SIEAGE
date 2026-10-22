@@ -5,6 +5,8 @@ import { type CSSProperties, type ReactNode } from 'react';
 /** Lo que manda App\Support\Constancias por cada matrícula. */
 export type Constancia = {
     id: number;
+    /** N.º de la ficha en su año (el mismo cada vez que se imprime). */
+    consecutivo: number;
     anio: number;
     fecha: string;
     estudiante: {
@@ -90,7 +92,7 @@ function Copia({ constancia: c, institucion, papel, para }: { constancia: Consta
                 {/* Segundo filete del marco. */}
                 <span aria-hidden className="pointer-events-none absolute inset-[0.8mm] rounded-[0.9mm] border-[0.2mm] border-[#1E3A7B]" />
 
-                <header className="grid grid-cols-[30mm_1fr_30mm] items-center">
+                <header className="grid grid-cols-[30mm_1fr_46mm] items-center">
                     <img src="/constancia/ealp.png" alt="Institución Educativa Alfonso López Pumarejo" className="h-[11.5mm] w-auto" />
                     <div className="text-center leading-[1.3]">
                         <p className="font-['Roboto_Serif',Georgia,serif] text-[10.5pt] font-bold tracking-[0.01em] [font-variation-settings:'opsz'_24]">
@@ -101,11 +103,20 @@ function Copia({ constancia: c, institucion, papel, para }: { constancia: Consta
                             NIT {institucion?.nit} · DANE {institucion?.codigo_dane}
                         </p>
                     </div>
-                    <img
-                        src="/constancia/alcaldia.png"
-                        alt="Alcaldía de Santiago de Cali, Secretaría de Educación"
-                        className="h-[11.5mm] w-auto justify-self-end"
-                    />
+                    <div className="flex items-center justify-end gap-[3mm]">
+                        {/* El consecutivo de la ficha: el mismo en las dos copias y cada vez que se imprima. */}
+                        <div className="rounded-[1mm] border-[0.3mm] border-[#1E3A7B] px-[2mm] py-[0.8mm] text-center leading-none">
+                            <p className="text-[5.6pt] font-bold tracking-[0.12em] text-[#56627F] uppercase">Ficha N.º</p>
+                            <p className="mt-[0.6mm] font-['Roboto_Serif',Georgia,serif] text-[12pt] font-bold text-[#B42318] tabular-nums">
+                                {String(c.consecutivo).padStart(4, '0')}
+                            </p>
+                        </div>
+                        <img
+                            src="/constancia/alcaldia.png"
+                            alt="Alcaldía de Santiago de Cali, Secretaría de Educación"
+                            className="h-[11.5mm] w-auto"
+                        />
+                    </div>
                 </header>
 
                 <h1 className="mt-[2.2mm] flex items-center gap-[3mm] font-['Roboto_Serif',Georgia,serif] text-[12pt] font-bold tracking-[0.12em] text-[#1E3A7B] uppercase [font-variation-settings:'opsz'_24] before:h-[0.25mm] before:flex-1 before:bg-[#1E3A7B] before:content-[''] after:h-[0.25mm] after:flex-1 after:bg-[#1E3A7B] after:content-['']">

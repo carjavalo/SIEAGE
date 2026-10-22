@@ -23,6 +23,10 @@ use Illuminate\Validation\ValidationException;
  * décimo sin técnica; las dos cosas se asignan después en Estudiantes. Los
  * grupos del año siguiente no se copian solos: se crean en Sedes, según la
  * proyección de matrícula entregada a la SED.
+ *
+ * Los de ciclos (jornada Sabatina) pasan al ciclo siguiente, no al grado siguiente
+ * (Ciclo III, en Séptimo → Ciclo IV, en Noveno), y a su grupo sabatino; si ese grupo
+ * del año siguiente todavía no existe, se crea (ver App\Support\Ciclos).
  */
 final class Promocion
 {
@@ -101,6 +105,14 @@ final class Promocion
             if ((int) $m->grado_numero === (int) $ultimo) {
                 DB::table('matriculas')->where('id', $m->id)->update(['estado' => 'graduado', 'resultado' => 'promovido', 'updated_at' => $this->ahora]);
                 $graduados++;
+
+                continue;
+            }
+
+            // Sabatina: al ciclo siguiente, en su grupo sabatino.
+            if ($m->jornada === Ciclos::JORNADA && ($ciclo = Ciclos::siguiente(Ciclos::deGrado((int) $m->grado_numero) ?? ''))) {
+                $gradoNuevo = $gradosPorNumero[Ciclos::grado($ciclo)];
+                $this->matricular($m, $gradoNuevo, $this->grupoDelCiclo($ciclo, $gradoNuevo, $m));
 
                 continue;
             }
@@ -218,6 +230,32 @@ final class Promocion
         $sedeId = $sedes->isEmpty() || $sedes->contains($m->sede_id) ? $m->sede_id : $sedes->first();
 
         return DB::table('sedes')->where('id', $sedeId)->first(['id', 'nombre']);
+    }
+
+    /**
+     * El grupo sabatino del ciclo en el año siguiente, en la sede del estudiante (o en
+     * la que lo tenga). Si no existe se crea, con el cupo del grupo que deja.
+     */
+    private function grupoDelCiclo(string $ciclo, int $gradoId, object $m): object
+    {
+        $buscar = fn () => DB::table('grupos as g')->join('sedes as s', 's.id', '=', 'g.sede_id')
+            ->where('g.anio_lectivo_id', $this->destino->id)->where('g.grado_id', $gradoId)->where('g.jornada', Ciclos::JORNADA)
+            ->orderByRaw('g.sede_id = ? desc', [$m->sede_id])->orderBy('g.id')
+            ->first(['g.id', 'g.numero', 'g.codigo', 'g.sede_id', 'g.jornada', 'g.cupos_proyectados', 's.nombre as sede']);
+
+        $grupo = $buscar();
+        if (! $grupo) {
+            DB::table('grupos')->insert([
+                'anio_lectivo_id' => $this->destino->id, 'sede_id' => $m->sede_id, 'grado_id' => $gradoId, 'numero' => 1,
+                'codigo' => Ciclos::codigo($ciclo), 'jornada' => Ciclos::JORNADA,
+                'cupos_proyectados' => (int) (DB::table('matriculas as x')->join('grupos as gx', 'gx.id', '=', 'x.grupo_id')->where('x.id', $m->id)->value('gx.cupos_proyectados') ?: 34),
+                'created_at' => $this->ahora, 'updated_at' => $this->ahora,
+            ]);
+            $grupo = $buscar();
+        }
+        $this->ocupados[$grupo->id] ??= (int) DB::table('matriculas')->where('grupo_id', $grupo->id)->where('estado', 'activo')->count();
+
+        return $grupo;
     }
 
     /** @var array<int, Collection> Grupos del año destino por grado, cargados una vez. */
