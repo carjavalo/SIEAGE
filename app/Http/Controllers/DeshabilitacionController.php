@@ -25,7 +25,7 @@ class DeshabilitacionController extends Controller
     /** Motivo elegido en el formulario → cómo se anota delante de la razón. */
     public const MOTIVOS = [
         'perdio' => 'Perdió el año',
-        'retiro' => 'Se retiró del colegio',
+        'retiro' => 'Se retiró de la institución',
         'traslado' => 'Trasladado',
         'otro' => 'Otro motivo',
     ];

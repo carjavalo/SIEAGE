@@ -9,7 +9,7 @@ import { sileo } from 'sileo';
 
 const MOTIVOS = [
     { valor: 'perdio', titulo: 'Perdió el año', texto: 'No aprobó el grado. No se promueve.' },
-    { valor: 'retiro', titulo: 'Se retiró del colegio', texto: 'Ya no estudiará aquí.' },
+    { valor: 'retiro', titulo: 'Se retiró de la institución', texto: 'Ya no estudiará aquí.' },
     { valor: 'traslado', titulo: 'Trasladado', texto: 'Se fue a otra institución.' },
     { valor: 'otro', titulo: 'Otro motivo', texto: 'Explícalo en la razón.' },
 ] as const;
@@ -139,7 +139,7 @@ export function DeshabilitarEstudiante({ estudianteId, nombre }: { estudianteId:
                             valor={form.data.razon}
                             onCambio={(v) => form.setData('razon', v)}
                             error={form.errors.razon}
-                            placeholder="Ej. La familia se muda a Jamundí y lo matriculó en otro colegio."
+                            placeholder="Ej. La familia se muda a Jamundí y lo matriculó en otra institución."
                         />
 
                         <label className="flex flex-col gap-1.5 sm:w-1/2">

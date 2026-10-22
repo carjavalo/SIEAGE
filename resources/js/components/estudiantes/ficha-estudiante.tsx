@@ -193,7 +193,7 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
                 )}
 
                 {historia.length > 0 && (
-                    <Bloque titulo="Historia en el colegio">
+                    <Bloque titulo="Historia en la institución">
                         {!variasSedes && (
                             <p className="-mt-1 mb-2.5 flex items-center gap-1.5 text-[13px] text-[#56627F]">
                                 <PuntoSede codigo={historia[0].sede_codigo} />
