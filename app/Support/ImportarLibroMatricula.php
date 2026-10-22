@@ -23,16 +23,11 @@ use Throwable;
  * Las columnas se buscan por su título (no por su letra): sirve también el libro
  * que exporta SIEAGE, que trae la madre y el padre antes de OBSERVACIONES.
  *
- * Ciclos (jornada sabatina): cada ciclo equivale al grado regular en que termina
- * (I = 1.º a 3.º → Tercero; II = 4.º y 5.º → Quinto; III = 6.º y 7.º → Séptimo;
- * IV = 8.º y 9.º → Noveno; V → Décimo; VI → Undécimo), así la promoción de un
- * ciclo lleva al siguiente.
+ * Ciclos (jornada sabatina): cada ciclo queda en el último grado que abarca, con
+ * su grupo «Ciclo III» en jornada Sabatina (ver App\Support\Ciclos).
  */
 final class ImportarLibroMatricula
 {
-    /** Ciclo → número del grado regular al que equivale. */
-    public const CICLOS = ['I' => 3, 'II' => 5, 'III' => 7, 'IV' => 9, 'V' => 10, 'VI' => 11];
-
     private const MESES = ['enero' => 1, 'febrero' => 2, 'marzo' => 3, 'abril' => 4, 'mayo' => 5, 'junio' => 6, 'julio' => 7,
         'agosto' => 8, 'septiembre' => 9, 'setiembre' => 9, 'octubre' => 10, 'noviembre' => 11, 'diciembre' => 12];
 
@@ -186,7 +181,7 @@ final class ImportarLibroMatricula
             throw new ErrorDeFila('No se reconoce el grupo «'.($codigo ?? $hoja->getTitle()).'».');
         }
         [$grado, $numero, $codigoGrupo] = $ubicacion;
-        $jornada = $this->ciclos ? 'Sabatina' : self::jornada(self::texto($v('jornada')));
+        $jornada = $this->ciclos ? Ciclos::JORNADA : self::jornada(self::texto($v('jornada')));
 
         $estudianteId = $this->estudiante($documento, $nombre, $v, $f, $cols);
         $this->acudiente($estudianteId, $v);
@@ -341,7 +336,7 @@ final class ImportarLibroMatricula
             if (preg_match('/(?:^|ciclo\s+)(VI|IV|V|III|II|I)\b/i', trim($texto), $m)) {
                 $romano = strtoupper($m[1]);
 
-                return [self::CICLOS[$romano], 1, "Ciclo {$romano}"];
+                return [Ciclos::grado($romano), 1, Ciclos::codigo($romano)];
             }
         }
 

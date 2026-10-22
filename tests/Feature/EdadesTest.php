@@ -57,4 +57,31 @@ class EdadesTest extends TestCase
                 ->where('detalle.edad.edad', 10)
                 ->where('detalle.edad.aceptableHasta', 8));
     }
+
+    public function test_el_informe_de_extraedad_lista_a_quienes_pasan_la_edad_de_su_grado()
+    {
+        $this->seed(DatosInicialesSeeder::class);
+        $anioId = DB::table('anios_lectivos')->where('anio', 2026)->value('id');
+        $primero = DB::table('grados')->where('numero', 1)->value('id');
+        $grupo = DB::table('grupos')->where('anio_lectivo_id', $anioId)->where('grado_id', $primero)->orderBy('id')->first();
+        $ids = DB::table('matriculas')->where('grupo_id', $grupo->id)->where('estado', 'activo')->orderBy('id')->pluck('estudiante_id');
+        // Todo el grupo en edad adecuada, menos dos: uno de 8 (aceptable) y uno de 10 (extraedad).
+        DB::table('estudiantes')->whereIn('id', $ids)->update(['fecha_nacimiento' => '2019-06-01']);
+        DB::table('estudiantes')->where('id', $ids[0])->update(['fecha_nacimiento' => '2017-06-01']);
+        DB::table('estudiantes')->where('id', $ids[1])->update(['fecha_nacimiento' => '2015-06-01']);
+
+        $this->actingAs(User::first())->get("/informes/extraedad?anio=2026&grupo={$grupo->id}")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('informes/extraedad')
+                ->where('totales.activos', $ids->count())
+                ->where('totales.aceptable', 1)
+                ->where('totales.extraedad', 1)
+                ->where('grados.0.adecuada', 6)
+                ->where('grados.0.aceptableHasta', 8)
+                ->has('grupos', 1)
+                ->where('grupos.0.grupo', $grupo->codigo)
+                ->where('grupos.0.estudiantes.0.edad', 10)
+                ->where('grupos.0.estudiantes.0.deMas', 4));
+    }
 }

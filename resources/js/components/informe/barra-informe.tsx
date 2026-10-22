@@ -13,6 +13,7 @@ const claseFiltro =
 const INFORMES = [
     { ruta: '/informes/matricula', titulo: 'Matrícula' },
     { ruta: '/informes/documentos', titulo: 'Documentos pendientes' },
+    { ruta: '/informes/extraedad', titulo: 'Extraedad' },
 ] as const;
 
 export type RutaInforme = (typeof INFORMES)[number]['ruta'];

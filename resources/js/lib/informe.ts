@@ -118,6 +118,29 @@ export type Informe = {
     }[];
 };
 
+/** Informe de extraedad (App\Support\InformeExtraedad): la tabla de edades y quiénes la pasan. */
+export type InformeExtraedad = Pick<Informe, 'institucion' | 'anio' | 'anios' | 'corte' | 'filtro' | 'opciones'> & {
+    totales: { activos: number; conEdad: number; adecuada: number; aceptable: number; extraedad: number; sinFecha: number };
+    grados: { numero: number; nombre: string; adecuada: number; aceptableHasta: number; activos: number; aceptable: number; extraedad: number }[];
+    grupos: {
+        grupo: string;
+        grado: string;
+        sede: string;
+        jornada: string | null;
+        adecuada: number;
+        aceptableHasta: number;
+        estudiantes: {
+            nombre: string;
+            documento: string;
+            nacimiento: string | null;
+            edad: number;
+            deMas: number;
+            acudiente: string | null;
+            telefono: string | null;
+        }[];
+    }[];
+};
+
 /** Estado de un documento en el informe de pendientes; si no le corresponde (vacunas en bachillerato), no viene. */
 export type EstadoDocumentoInforme = 'entregado' | 'no_aplica' | 'falta';
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Support\Alcance;
 use App\Support\InformeDocumentos;
+use App\Support\InformeExtraedad;
 use App\Support\InformeMatricula;
 use App\Support\LibroMatriculaSede;
 use Illuminate\Http\Request;
@@ -15,8 +16,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Informes del año, con vista previa hoja por hoja (A4) que se guarda como PDF
- * desde el cuadro de impresión del navegador: el de matrícula y el de documentos
- * pendientes, con los mismos filtros. Y el libro de matrícula de cada sede en
+ * desde el cuadro de impresión del navegador: el de matrícula, el de documentos
+ * pendientes y el de extraedad, con los mismos filtros. Y el libro de matrícula de cada sede en
  * Excel, con el formato que el colegio ya usa.
  */
 class InformeController extends Controller
@@ -37,6 +38,21 @@ class InformeController extends Controller
         $informe = InformeDocumentos::del($f['anio'], $f['sedes'], $f['grado']?->id, $f['grupo']?->id, $request->user()) ?? abort(404);
 
         return Inertia::render('informes/documentos', [
+            ...$informe,
+            ...$this->propiedades($f),
+            'institucion' => DB::table('instituciones')->first(['nombre', 'municipio', 'codigo_dane']),
+            'anios' => DB::table('anios_lectivos')->orderByDesc('anio')->pluck('anio'),
+            'corte' => now()->toIso8601String(),
+        ]);
+    }
+
+    /** Estudiantes en extraedad (tabla de edades del colegio), con los mismos filtros. */
+    public function extraedad(Request $request): Response
+    {
+        $f = $this->filtros($request);
+        $informe = InformeExtraedad::del($f['anio'], $f['sedes'], $f['grado']?->id, $f['grupo']?->id, $request->user()) ?? abort(404);
+
+        return Inertia::render('informes/extraedad', [
             ...$informe,
             ...$this->propiedades($f),
             'institucion' => DB::table('instituciones')->first(['nombre', 'municipio', 'codigo_dane']),

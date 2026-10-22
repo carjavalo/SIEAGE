@@ -245,4 +245,24 @@ class ConstanciasTest extends TestCase
                 ->where('actual.grupo', 'Por asignar')
                 ->where('actual.jornada', 'Por asignar'));
     }
+
+    public function test_cada_ficha_lleva_su_consecutivo_del_anio_y_no_cambia_al_reimprimir()
+    {
+        $this->seed(DatosInicialesSeeder::class);
+        $anio = $this->anioActivo();
+        $consecutivo = fn (int $estudiante) => $this->actingAs(User::first())->get("/estudiantes/{$estudiante}/constancia")
+            ->viewData('page')['props']['constancias'][0]['consecutivo'];
+        $m = DB::table('matriculas')->where('anio_lectivo_id', $anio->id)->where('estado', 'activo')->orderBy('id')->first();
+
+        $primero = $consecutivo($m->estudiante_id);
+        $this->assertGreaterThan(0, $primero);
+        $this->assertSame($primero, $consecutivo($m->estudiante_id), 'reimpresa, el mismo número');
+
+        // Una matrícula nueva del año recibe el siguiente número al imprimir su ficha.
+        $nuevo = DB::table('estudiantes')->insertGetId(['tipo_documento' => 'T.I.', 'numero_documento' => '99887766', 'nombre_completo' => 'Prueba Uno', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('matriculas')->insert([...collect((array) $m)->except(['id', 'consecutivo', 'estudiante_id'])->all(), 'estudiante_id' => $nuevo]);
+        $maximo = (int) DB::table('matriculas')->where('anio_lectivo_id', $anio->id)->max('consecutivo');
+        $this->assertSame($maximo + 1, $consecutivo($nuevo));
+        $this->assertSame($primero, $consecutivo($m->estudiante_id));
+    }
 }
