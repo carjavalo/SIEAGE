@@ -70,7 +70,7 @@ export function HojaConstancia({ constancia, institucion, papel }: { constancia:
             className="pliego relative grid w-[215.9mm] shrink-0 grid-rows-2 overflow-hidden bg-white font-sans text-[#16223F] shadow-[0_10px_30px_-12px_rgba(22,34,63,0.35)] [content-visibility:auto] [print-color-adjust:exact] print:shadow-none"
         >
             <Copia constancia={constancia} institucion={institucion} papel={papel} para="Copia para la familia" />
-            <Copia constancia={constancia} institucion={institucion} papel={papel} para="Copia para el colegio" />
+            <Copia constancia={constancia} institucion={institucion} papel={papel} para="Copia para la institución" />
             {/* El carácter de la tijera sale como emoji de color en Windows; el ícono se imprime igual en todas partes. */}
             <Scissors
                 aria-hidden
