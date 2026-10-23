@@ -2,6 +2,7 @@ import { AlertaEdadGrado } from '@/components/estudiantes/alerta-edad';
 import { EstadoMatricula, puedeDeshabilitar } from '@/components/estudiantes/deshabilitar';
 import { DocumentosEstudiante } from '@/components/estudiantes/documentos';
 import { AgregarAcudiente, EditarAcudiente, EditarEstudiante } from '@/components/estudiantes/editar-datos';
+import { EditarModalidad } from '@/components/estudiantes/editar-modalidad';
 import { Marca, PuntoSede, iniciales, sedeInfo, textoSituacion } from '@/components/estudiantes/etiquetas';
 import { PromocionEstudiante, puedePromover } from '@/components/estudiantes/promocion';
 import { CambiarGrupo } from '@/components/estudiantes/cambiar-grupo';
@@ -159,6 +160,11 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
                         <p className="mt-1 text-[14px] text-[#56627F]">
                             Matriculado el {fecha(m.fecha_matricula) ?? '—'} <Sep /> Nació el {fecha(e.fecha_nacimiento) ?? '—'}
                         </p>
+                        {editable && (
+                            <div className="mt-2">
+                                <EditarModalidad estudianteId={e.id} matriculaId={m.id} modalidad={m.modalidad} />
+                            </div>
+                        )}
                         {ficha.boletin && (
                             <Link
                                 href={`/boletines?ver=${e.id}`}

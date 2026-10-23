@@ -68,6 +68,8 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn () => $request->session()->get('success'),
                 // Resumen de la última promoción, para el aviso (toast) en pantalla.
                 'promocion' => fn () => $request->session()->get('promocion'),
+                // Resumen de la última reversión de promoción (deshacer), para el aviso en pantalla.
+                'reversion' => fn () => $request->session()->get('reversion'),
                 // Resumen de la última importación del formulario de inscripción (ver ImportarInscripciones).
                 'importacion' => fn () => $request->session()->get('importacion'),
             ],

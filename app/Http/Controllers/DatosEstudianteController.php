@@ -531,4 +531,43 @@ class DatosEstudianteController extends Controller
 
         return back()->with('success', "Cambió a {$destino}.");
     }
+
+    /**
+     * Digitar o corregir a mano la modalidad (media técnica) de una matrícula desde
+     * la ficha. Se escribe el nombre; si no existe esa modalidad, se crea. Vacío la
+     * quita. Queda en el historial de la ficha (cambios_ficha).
+     */
+    public function modalidad(Request $request, int $estudiante): RedirectResponse
+    {
+        $this->alumno($estudiante);
+
+        $datos = $request->validate([
+            'matricula_id' => ['required', 'integer'],
+            'modalidad' => ['nullable', 'string', 'max:40'],
+        ], ['modalidad.max' => 'Máximo :max caracteres.']);
+
+        $matricula = DB::table('matriculas as m')
+            ->leftJoin('modalidades as mo', 'mo.id', '=', 'm.modalidad_id')
+            ->where('m.id', $datos['matricula_id'])
+            ->where('m.estudiante_id', $estudiante)
+            ->tap(fn ($q) => Alcance::filtrar($q, $request->user(), 'm.sede_id', 'm.grado_id'))
+            ->first(['m.id', 'm.modalidad_id', 'mo.nombre as modalidad']) ?? abort(404);
+
+        $nombre = trim((string) ($datos['modalidad'] ?? ''));
+        $modalidadId = $nombre === ''
+            ? null
+            : (int) (DB::table('modalidades')->whereRaw('lower(nombre) = ?', [mb_strtolower($nombre)])->value('id')
+                ?: DB::table('modalidades')->insertGetId(['nombre' => $nombre, 'activa' => true]));
+
+        if ((int) $matricula->modalidad_id === (int) $modalidadId) {
+            return back()->with('success', 'No había nada que cambiar.');
+        }
+
+        DB::transaction(function () use ($request, $matricula, $modalidadId, $nombre, $estudiante) {
+            DB::table('matriculas')->where('id', $matricula->id)->update(['modalidad_id' => $modalidadId, 'updated_at' => now()]);
+            CambiosFicha::anotar($estudiante, null, 'modalidad_editada', ['modalidad' => [$matricula->modalidad, $nombre ?: null]], $request->user()?->id);
+        });
+
+        return back()->with('success', $nombre === '' ? 'Se quitó la modalidad.' : "Modalidad actualizada a {$nombre}.");
+    }
 }

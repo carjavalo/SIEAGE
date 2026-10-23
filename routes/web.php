@@ -119,6 +119,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('estudiantes/{estudiante}', [DatosEstudianteController::class, 'estudiante'])->whereNumber('estudiante')->name('estudiantes.actualizar');
         // Los documentos de matrícula que faltaban, marcados desde la ficha.
         Route::put('estudiantes/{estudiante}/documentos', [DatosEstudianteController::class, 'documentos'])->whereNumber('estudiante')->name('estudiantes.documentos');
+        Route::put('estudiantes/{estudiante}/modalidad', [DatosEstudianteController::class, 'modalidad'])->whereNumber('estudiante')->name('estudiantes.modalidad');
         Route::post('estudiantes/{estudiante}/cambiar-grupo', [DatosEstudianteController::class, 'cambiarGrupo'])->whereNumber('estudiante')->name('estudiantes.cambiar-grupo');
         // POST y no GET: el documento no debe quedar en la dirección ni en los registros del servidor.
         Route::post('acudientes/buscar', [DatosEstudianteController::class, 'buscarAcudiente'])->name('acudientes.buscar');
@@ -128,6 +129,7 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::post('promociones', [PromocionController::class, 'store'])->middleware('can:promover-estudiantes')->name('promociones.store');
+    Route::post('promociones/revertir', [PromocionController::class, 'revertir'])->middleware('can:promover-estudiantes')->name('promociones.revertir');
     // Reprobó el año: al promover repite el grado (y quitar esa marca).
     Route::middleware('can:promover-estudiantes')->group(function () {
         Route::post('estudiantes/{estudiante}/reprobar', [ReprobacionController::class, 'reprobar'])->whereNumber('estudiante')->name('estudiantes.reprobar');

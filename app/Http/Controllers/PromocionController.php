@@ -62,4 +62,48 @@ class PromocionController extends Controller
 
         return back()->with('promocion', $resumen);
     }
+
+    /** Deshacer la promoción: un estudiante, un grupo, un grado o todo el institución. */
+    public function revertir(Request $request): RedirectResponse
+    {
+        $datos = $request->validate([
+            'anio' => ['required', 'integer'],
+            'grado_id' => ['nullable', 'integer', 'exists:grados,id'],
+            'estudiante_id' => ['nullable', 'integer', 'exists:estudiantes,id'],
+            'sede' => ['nullable', 'string', 'exists:sedes,codigo'],
+            'grupo_id' => ['nullable', 'integer', 'exists:grupos,id'],
+        ]);
+
+        $user = $request->user();
+
+        // Deshacer la promoción de un grupo completo (p. ej. todo 5-2).
+        if (isset($datos['grupo_id'])) {
+            $grupo = DB::table('grupos')->where('id', $datos['grupo_id'])->first(['sede_id', 'grado_id']);
+            if (! $grupo) {
+                throw ValidationException::withMessages(['grupo_id' => 'Grupo no válido.']);
+            }
+            Alcance::exigir($user, $grupo->sede_id, $grupo->grado_id);
+            $resumen = Promocion::revertir((int) $datos['anio'], null, null, (int) $grupo->sede_id, (int) $datos['grupo_id']);
+
+            return back()->with('reversion', $resumen);
+        }
+
+        $gradoId = isset($datos['grado_id']) ? (int) $datos['grado_id'] : null;
+        $sedeId = isset($datos['sede']) ? DB::table('sedes')->where('codigo', $datos['sede'])->value('id') : null;
+        if ($sedeId) {
+            $gradoId ? Alcance::exigir($user, $sedeId, $gradoId) : Alcance::exigirSede($user, $sedeId);
+        }
+        if (isset($datos['estudiante_id'])) {
+            Alcance::exigirEstudiante($user, (int) $datos['estudiante_id']);
+        } elseif (! $gradoId && Alcance::grados($user) !== []) {
+            throw ValidationException::withMessages(['grado_id' => 'Elige el grado: solo puedes deshacer la promoción de los grados que tienes asignados.']);
+        }
+        if ($sedeId && ! $gradoId && isset(Alcance::grados($user)[(int) $sedeId])) {
+            throw ValidationException::withMessages(['grado_id' => 'Elige el grado: en esta sede solo tienes algunos grados.']);
+        }
+        $sedeId ??= $gradoId ? Alcance::sedesDelGrado($user, $gradoId) : Alcance::sedes($user);
+        $resumen = Promocion::revertir((int) $datos['anio'], $datos['grado_id'] ?? null, $datos['estudiante_id'] ?? null, $sedeId);
+
+        return back()->with('reversion', $resumen);
+    }
 }
