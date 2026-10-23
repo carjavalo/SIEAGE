@@ -4,6 +4,7 @@ import { DocumentosEstudiante } from '@/components/estudiantes/documentos';
 import { AgregarAcudiente, EditarAcudiente, EditarEstudiante } from '@/components/estudiantes/editar-datos';
 import { Marca, PuntoSede, iniciales, sedeInfo, textoSituacion } from '@/components/estudiantes/etiquetas';
 import { PromocionEstudiante, puedePromover } from '@/components/estudiantes/promocion';
+import { CambiarGrupo } from '@/components/estudiantes/cambiar-grupo';
 import { Bloque, ContenidoFicha, PanelFicha, Sep, TarjetaContacto } from '@/components/ficha';
 import { DevolverAInscritos } from '@/components/inscritos/devolver';
 import { type FichaDetalle, type Grado, edad, fecha, parentescoDe } from '@/lib/estudiantes';
@@ -180,6 +181,17 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
                     <Bloque titulo={`Estado en ${m.anio}`}>
                         <EstadoMatricula estudianteId={e.id} nombre={e.nombre_completo} estado={m.estado} novedades={ficha.novedades} />
                         {ficha.inscripcion && <DevolverAInscritos solicitudId={ficha.inscripcion} nombre={e.nombre_completo} className="mt-2" />}
+                        {m.estado === 'activo' && ficha.sedes && (
+                            <CambiarGrupo
+                                estudianteId={e.id}
+                                nombre={e.nombre_completo}
+                                grupoActual={m.grupo ?? m.grado}
+                                sedeActual={m.sede}
+                                grupos={ficha.sedes.flatMap((s) => s.grupos.map((g) => ({ ...g, sede: s.codigo, sede_id: s.id, grado_id: g.grado_id })))}
+                                gradoActual={m.grado_id}
+                                className="mt-2"
+                            />
+                        )}
                     </Bloque>
                 )}
 

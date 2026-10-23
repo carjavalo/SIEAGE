@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { CircleAlert, Info, TriangleAlert } from 'lucide-react';
 
 /**
- * La alerta de edad según la tabla del colegio: extraedad (pasa la edad máxima
+ * La alerta de edad según la tabla del institución: extraedad (pasa la edad máxima
  * aceptable del grado) o edad aceptable (por encima de la adecuada, todavía dentro).
  */
 export function AlertaEdadGrado({ alerta: a, grado, className }: { alerta: AlertaEdad; grado: string; className?: string }) {

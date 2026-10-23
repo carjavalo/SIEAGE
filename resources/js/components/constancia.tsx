@@ -60,7 +60,7 @@ const parentesco = (texto: string) => texto.replace(/^Tia\(o\)$/, 'Tía(o)');
 
 /**
  * Una hoja con la constancia dos veces: arriba la copia para la familia, abajo la del
- * colegio, con la línea para recortar. En pantalla, una hoja blanca con sombra; al
+ * institución, con la línea para recortar. En pantalla, una hoja blanca con sombra; al
  * imprimir, la página exacta (ver @page constancia-* en app.css). Todo va en mm y pt.
  */
 export function HojaConstancia({ constancia, institucion, papel }: { constancia: Constancia; institucion: Institucion; papel: Papel }) {

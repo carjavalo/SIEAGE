@@ -11,7 +11,7 @@ use Inertia\Response;
 
 /**
  * Constancias de matrícula: vista previa hoja por hoja (dos copias en cada hoja) para imprimir
- * desde el navegador, de un estudiante o de un grupo, un grado, una sede o todo el colegio.
+ * desde el navegador, de un estudiante o de un grupo, un grado, una sede o todo el institución.
  */
 class ConstanciaController extends Controller
 {
@@ -38,7 +38,7 @@ class ConstanciaController extends Controller
 
     /**
      * Varias a la vez, de los estudiantes activos del año: ?grupo=ID, ?grado=ID (con ?sede=
-     * opcional), ?sede=CODIGO o nada (todo el colegio). Salen ordenadas por sede, grado,
+     * opcional), ?sede=CODIGO o nada (todo el institución). Salen ordenadas por sede, grado,
      * grupo y nombre, como se archivan.
      */
     public function lote(Request $request): Response
@@ -85,7 +85,7 @@ class ConstanciaController extends Controller
             $grado && $sede => "{$grado->nombre} · {$sede->nombre}",
             (bool) $grado => "{$grado->nombre} · todas las sedes",
             (bool) $sede => "Sede {$sede->nombre}",
-            default => 'Todo el colegio',
+            default => 'Todo el institución',
         };
         $volver = '/estudiantes?'.http_build_query(array_filter(['anio' => $anio->anio, 'sede' => $sede?->codigo, 'grado' => $grado?->id]));
 

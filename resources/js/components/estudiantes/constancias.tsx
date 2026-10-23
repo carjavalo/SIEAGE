@@ -11,7 +11,7 @@ type Alcance = { clave: string; titulo: string; detalle: string; n: number; href
 
 /**
  * «Constancias» en la lista de estudiantes: imprimir de una vez las del grupo elegido, del
- * grado, de la sede o de todo el colegio (solo los activos del año que se está viendo).
+ * grado, de la sede o de todo el institución (solo los activos del año que se está viendo).
  */
 export function BotonConstancias({
     anio,
@@ -26,7 +26,7 @@ export function BotonConstancias({
     sede: string | null;
     sedes: SedeFiltro[];
 }) {
-    // Para un usuario de sede, "todo el colegio" son sus sedes (el servidor ya limita la lista).
+    // Para un usuario de sede, "todo el institución" son sus sedes (el servidor ya limita la lista).
     const todoElColegio = usePage<SharedData>().props.auth.todasLasSedes !== false;
     const laSede = sedes.find((s) => s.codigo === sede);
     const ruta = (filtros: Record<string, string | number | undefined>) => {
@@ -66,8 +66,8 @@ export function BotonConstancias({
               ]
             : []),
         {
-            clave: 'colegio',
-            titulo: todoElColegio ? 'Todo el colegio' : 'Todas mis sedes',
+            clave: 'institución',
+            titulo: todoElColegio ? 'Todo el institución' : 'Todas mis sedes',
             detalle: 'Todas las sedes y grados',
             n: sedes.reduce((t, s) => t + s.activos, 0),
             href: ruta({}),
@@ -97,7 +97,7 @@ export function BotonConstancias({
                     <DialogHeader className="px-6 pt-6 pr-14 pb-4">
                         <DialogTitle className="text-xl font-semibold">Imprimir constancias</DialogTitle>
                         <DialogDescription className="text-[14px] leading-snug text-[#56627F]">
-                            Una hoja por estudiante, con la copia para la familia y la del colegio. Solo los activos de {anio}.
+                            Una hoja por estudiante, con la copia para la familia y la del institución. Solo los activos de {anio}.
                         </DialogDescription>
                     </DialogHeader>
 

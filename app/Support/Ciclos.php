@@ -4,7 +4,7 @@ namespace App\Support;
 
 /**
  * Los ciclos de la jornada sabatina y los grados que abarca cada uno, según el
- * colegio:
+ * institución:
  *
  *   Ciclo I   → 1.º, 2.º y 3.º
  *   Ciclo II  → 4.º y 5.º

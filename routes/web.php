@@ -85,6 +85,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('can:ver-inscritos')->group(function () {
         Route::get('inscritos', [InscritoController::class, 'index'])->name('inscritos.index');
         Route::get('inscritos/{solicitud}', [InscritoController::class, 'show'])->whereNumber('solicitud')->name('inscritos.show');
+        Route::get('inscritos/excel/descargar', [InscritoController::class, 'excelInscritos'])->name('inscritos.excel');
     });
     Route::middleware('can:matricular')->group(function () {
         Route::put('inscritos/{solicitud}/padres', [InscritoController::class, 'guardarPadres'])->whereNumber('solicitud')->name('inscritos.padres');
@@ -118,6 +119,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('estudiantes/{estudiante}', [DatosEstudianteController::class, 'estudiante'])->whereNumber('estudiante')->name('estudiantes.actualizar');
         // Los documentos de matrícula que faltaban, marcados desde la ficha.
         Route::put('estudiantes/{estudiante}/documentos', [DatosEstudianteController::class, 'documentos'])->whereNumber('estudiante')->name('estudiantes.documentos');
+        Route::post('estudiantes/{estudiante}/cambiar-grupo', [DatosEstudianteController::class, 'cambiarGrupo'])->whereNumber('estudiante')->name('estudiantes.cambiar-grupo');
         // POST y no GET: el documento no debe quedar en la dirección ni en los registros del servidor.
         Route::post('acudientes/buscar', [DatosEstudianteController::class, 'buscarAcudiente'])->name('acudientes.buscar');
         Route::post('estudiantes/{estudiante}/acudientes', [DatosEstudianteController::class, 'agregarAcudiente'])->whereNumber('estudiante')->name('estudiantes.acudientes.agregar');

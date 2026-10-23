@@ -167,7 +167,7 @@ export default function Login({ status }: { status?: string }) {
                             </div>
                         </div>
 
-                        {/* ---------------------------------------- 2.º personal del colegio */}
+                        {/* ---------------------------------------- 2.º personal del institución */}
                         <div className={cn('border-t border-[#E3E9F6] pt-6', aparecer)} style={tras(220)}>
                             <button
                                 type="button"
@@ -180,7 +180,7 @@ export default function Login({ status }: { status?: string }) {
                                     <LogIn className="size-[18px]" />
                                 </span>
                                 <span className="flex-1 leading-snug">
-                                    <span className="block text-[15px] font-semibold">¿Eres usuario operativo del colegio?</span>
+                                    <span className="block text-[15px] font-semibold">¿Eres usuario operativo del institución?</span>
                                     <span className="block text-[13px] text-[#56627F]">Secretaría, coordinación o docentes</span>
                                 </span>
                                 <span className="flex items-center gap-1 text-[15px] font-semibold text-[#1E3A7B]">

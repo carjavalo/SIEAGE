@@ -113,7 +113,7 @@ class EstudianteController extends Controller
                 DB::raw('coalesce(a.telefono_celular, a.telefono_fijo) as telefono'),
                 'gsig.codigo as promovido_a', 'e.fecha_nacimiento',
             ]);
-        // La alerta de edad según la tabla del colegio (null si la edad es la adecuada).
+        // La alerta de edad según la tabla del institución (null si la edad es la adecuada).
         $numeroGrado = $gradoId ? (int) DB::table('grados')->where('id', $gradoId)->value('numero') : null;
         foreach ($estudiantes as $e) {
             $e->edad = $numeroGrado !== null && $anio ? Edades::alerta($e->fecha_nacimiento, $numeroGrado, (int) $anio->anio) : null;
@@ -271,7 +271,7 @@ class EstudianteController extends Controller
                 && $actual->grupo_id !== null && Alcance::puedeVer(request()->user(), $actual->sede_id, $actual->grado_id)
                 && DB::table('anios_lectivos')->where('anio', $actual->anio)->value('estado') === 'activo',
             'documentos' => $actual ? self::documentos($actual->id, (int) $actual->grado_numero, $alumno) : null,
-            // Alerta de edad para el grado de la matrícula (tabla de edades del colegio).
+            // Alerta de edad para el grado de la matrícula (tabla de edades del institución).
             'edad' => $actual ? Edades::alerta($alumno->fecha_nacimiento, (int) $actual->grado_numero, (int) $actual->anio) : null,
             'novedades' => $novedades,
             // Matrícula del año siguiente, si ya fue promovido.

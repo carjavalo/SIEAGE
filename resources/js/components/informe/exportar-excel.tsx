@@ -5,7 +5,7 @@ import { ChevronDown, Download, FileSpreadsheet } from 'lucide-react';
 import { type KeyboardEvent, useId, useRef, useState } from 'react';
 
 /**
- * «Excel»: el libro de matrícula de una sede, con el formato del colegio
+ * «Excel»: el libro de matrícula de una sede, con el formato del institución
  * (una hoja por grupo, CONSOLIDADO…). Cada sede es un enlace normal: el servidor
  * responde con el archivo como adjunto, y si la sesión venció se llega al ingreso.
  */
@@ -50,7 +50,7 @@ export function ExportarExcel({ anio, sedes }: { anio: number; sedes: SedeInform
                     className={cn(panelDesplegable, 'right-0 w-[300px] max-sm:fixed max-sm:inset-x-4 max-sm:top-[72px] max-sm:w-auto')}
                 >
                     <p className="px-3 pt-2 pb-1.5 text-[12.5px] leading-snug text-[#56627F]">
-                        Un libro por sede, con una hoja por grupo y el consolidado, como el del colegio.
+                        Un libro por sede, con una hoja por grupo y el consolidado, como el del institución.
                     </p>
                     <ul>
                         {conGrupos.map((s) => (

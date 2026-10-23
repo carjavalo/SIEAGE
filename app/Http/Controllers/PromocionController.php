@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
-/** Promover al grado siguiente: un estudiante, un grado o todo el colegio. */
+/** Promover al grado siguiente: un estudiante, un grado o todo el institución. */
 class PromocionController extends Controller
 {
     public function store(Request $request): RedirectResponse
@@ -36,7 +36,7 @@ class PromocionController extends Controller
         if ($sedeId && ! $gradoId && isset(Alcance::grados($user)[(int) $sedeId])) {
             throw ValidationException::withMessages(['grado_id' => 'Elige el grado: en esta sede solo tienes algunos grados.']);
         }
-        // Sin sede pedida, "todo el colegio" es todo lo que este usuario puede ver (de ese grado).
+        // Sin sede pedida, "todo el institución" es todo lo que este usuario puede ver (de ese grado).
         $sedeId ??= $gradoId ? Alcance::sedesDelGrado($user, $gradoId) : Alcance::sedes($user);
         $resumen = Promocion::ejecutar((int) $datos['anio'], $datos['grado_id'] ?? null, $datos['estudiante_id'] ?? null, $sedeId);
 

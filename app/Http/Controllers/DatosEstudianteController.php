@@ -454,4 +454,62 @@ class DatosEstudianteController extends Controller
 
         return back();
     }
+
+    public function cambiarGrupo(Request $request, int $estudiante): RedirectResponse
+    {
+        $alumno = $this->alumno($estudiante);
+        $matricula = DB::table('matriculas as m')
+            ->join('anios_lectivos as al', 'al.id', '=', 'm.anio_lectivo_id')
+            ->join('grupos as g', 'g.id', '=', 'm.grupo_id')
+            ->join('sedes as s', 's.id', '=', 'g.sede_id')
+            ->where('m.estudiante_id', $estudiante)
+            ->where('al.estado', 'activo')
+            ->tap(fn ($q) => Alcance::filtrar($q, $request->user(), 'm.sede_id', 'm.grado_id'))
+            ->first(['m.id', 'm.grupo_id', 'g.sede_id', 'm.grado_id', 'g.codigo as grupo_actual', 's.codigo as sede_actual']) ?? abort(404);
+
+        $datos = $request->validate([
+            'grupo_id' => ['required', 'integer', 'exists:grupos,id'],
+            'razon' => ['required', 'string', 'min:10', 'max:300'],
+        ], [
+            'grupo_id.required' => 'Elige el nuevo grupo.',
+            'grupo_id.exists' => 'Grupo no válido.',
+            'razon.required' => 'Escribe la razón del cambio.',
+            'razon.min' => 'Mínimo 10 caracteres.',
+        ]);
+
+        $nuevoGrupo = DB::table('grupos as g')
+            ->join('sedes as s', 's.id', '=', 'g.sede_id')
+            ->where('g.id', $datos['grupo_id'])
+            ->tap(fn ($q) => Alcance::filtrar($q, $request->user(), 'g.sede_id', 'g.grado_id'))
+            ->first(['g.id', 'g.codigo', 'g.sede_id', 's.codigo as sede', 'g.grado_id']) ?? abort(403);
+
+        if ($nuevoGrupo->grado_id != $matricula->grado_id) {
+            throw ValidationException::withMessages(['grupo_id' => 'El nuevo grupo debe ser del mismo grado.']);
+        }
+
+        if ($nuevoGrupo->id == $matricula->grupo_id) {
+            throw ValidationException::withMessages(['grupo_id' => 'Ya está en ese grupo.']);
+        }
+
+        $cupoDisponible = DB::table('grupos')->where('id', $nuevoGrupo->id)->value('cupo_disponible');
+        if ($cupoDisponible <= 0) {
+            throw ValidationException::withMessages(['grupo_id' => 'No hay cupos disponibles en ese grupo.']);
+        }
+
+        DB::transaction(function () use ($request, $matricula, $nuevoGrupo, $datos) {
+            DB::table('matriculas')->where('id', $matricula->id)->update(['grupo_id' => $nuevoGrupo->id, 'updated_at' => now()]);
+            DB::table('novedades_matricula')->insert([
+                'matricula_id' => $matricula->id,
+                'tipo' => 'cambio_grupo',
+                'estado_anterior' => null,
+                'estado_nuevo' => null,
+                'razon' => "Cambió de {$matricula->grupo_actual} ({$matricula->sede_actual}) a {$nuevoGrupo->codigo} ({$nuevoGrupo->sede}): {$datos['razon']}",
+                'fecha' => now()->toDateString(),
+                'user_id' => $request->user()->id,
+                'created_at' => now(),
+            ]);
+        });
+
+        return back()->with('success', "Cambió a {$nuevoGrupo->codigo}.");
+    }
 }

@@ -63,7 +63,7 @@ export function PanelLateral({ anio, actual, alcanzado, onIr }: ProgresoProps) {
             <div className="py-10 [@media(max-height:820px)]:py-6">
                 <p className="text-[13px] font-medium text-[#55706A]">Inscripción · Año lectivo {anio}</p>
                 <p className="mt-3 max-w-sm text-[38px] leading-[1.08] font-semibold tracking-[-0.03em] xl:text-[42px] [@media(max-height:680px)]:hidden [@media(max-height:820px)]:text-[30px]">
-                    Tu lugar en el colegio empieza aquí.
+                    Tu lugar en el institución empieza aquí.
                 </p>
 
                 <ol className="mt-10 [@media(max-height:820px)]:mt-7">

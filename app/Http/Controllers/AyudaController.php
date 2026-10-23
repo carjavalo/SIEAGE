@@ -7,7 +7,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Los videos de ayuda: «Cómo inscribir a un estudiante», que se abre desde el login, el
- * tutorial del panel para el personal del colegio, que se abre con el «?» del encabezado, y
+ * tutorial del panel para el personal del institución, que se abre con el «?» del encabezado, y
  * la clase de Boletines, que se abre con el «?» de esa pantalla.
  *
  * No se dejan en public/ porque el servidor de `artisan serve` no atiende peticiones por

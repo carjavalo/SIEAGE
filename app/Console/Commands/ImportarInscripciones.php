@@ -43,7 +43,7 @@ class ImportarInscripciones extends Command
         $r = Importador::importar($ruta, $anio->id, basename($ruta));
 
         $this->info("Inscripciones {$anio->anio}: {$r['creadas']} creadas.");
-        $this->line("  Ya estudian en el colegio (omitidas): {$r['yaEstudian']}");
+        $this->line("  Ya estudian en el institución (omitidas): {$r['yaEstudian']}");
         $this->line("  Respuestas repetidas (quedó la última): {$r['repetidas']}");
         $this->line("  Ya estaban inscritas en {$anio->anio}: {$r['yaInscritas']}");
         foreach ($r['errores'] as $e) {

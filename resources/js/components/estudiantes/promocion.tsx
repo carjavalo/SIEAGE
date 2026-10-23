@@ -102,7 +102,7 @@ function mensaje(r: ResumenPromocion, uno: boolean) {
 export const puedePromover = (auth: SharedData['auth']) => !!(auth as { puedePromover?: boolean }).puedePromover;
 
 /**
- * Botón de la lista: promueve el grado a la vista o todo el colegio, después
+ * Botón de la lista: promueve el grado a la vista o todo el institución, después
  * de confirmar. Solo en el año en curso y para quien tiene permiso.
  */
 export function BotonPromover({
@@ -194,7 +194,7 @@ export function BotonPromover({
                         )}
                         {opcion(
                             'todos',
-                            todoElColegio ? 'Todo el colegio' : 'Todas mis sedes',
+                            todoElColegio ? 'Todo el institución' : 'Todas mis sedes',
                             todoElColegio ? `Todos los grados de ${anio}, de transición a undécimo.` : `Todos los grados de ${anio} en ${misSedes}.`,
                         )}
                     </div>
@@ -212,7 +212,7 @@ export function BotonPromover({
                             {enviando && <LoaderCircle className="size-4 animate-spin" />}
                             {alcance === 'todos'
                                 ? todoElColegio
-                                    ? 'Promover todo el colegio'
+                                    ? 'Promover todo el institución'
                                     : 'Promover mis sedes'
                                 : gradua
                                   ? 'Graduar'

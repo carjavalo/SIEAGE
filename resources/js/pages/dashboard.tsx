@@ -318,7 +318,7 @@ function ResumenDelFormulario({ r }: { r: ResumenFormulario }) {
             archivo={r.archivo}
             filas={[
                 { n: r.creadas, texto: r.creadas === 1 ? 'inscripción creada' : 'inscripciones creadas', destacada: true },
-                { n: r.yaEstudian, texto: 'ya estudian en el colegio (el formulario les decía que no lo llenaran)' },
+                { n: r.yaEstudian, texto: 'ya estudian en el institución (el formulario les decía que no lo llenaran)' },
                 { n: r.repetidas, texto: 'respuestas repetidas del mismo estudiante (quedó la última)' },
                 { n: r.yaInscritas, texto: `ya estaban inscritas en ${r.anio} (no se repiten)` },
             ]}
