@@ -201,7 +201,7 @@ export function BloquesSolicitud({
                 </Datos>
             </Bloque>
 
-            {/* Lo que preguntó el formulario de Google del colegio y no tiene campo propio (ver ImportarInscripciones). */}
+            {/* Lo que preguntó el formulario de Google del institución y no tiene campo propio (ver ImportarInscripciones). */}
             {s.datos_adicionales && s.datos_adicionales.length > 0 && (
                 <Bloque titulo="Otras respuestas del formulario">
                     <dl className="space-y-2">

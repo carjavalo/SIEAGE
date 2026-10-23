@@ -205,7 +205,7 @@ class InscripcionRequest extends FormRequest
             'acudiente_barrio' => ['required', 'string', 'max:80'],
             'acudiente_telefono_1' => $telefono,
             'acudiente_telefono_2' => $telefono,
-            // Obligatorio: por ahí se le escribe al acudiente (lo pidió el colegio).
+            // Obligatorio: por ahí se le escribe al acudiente (lo pidió el institución).
             'acudiente_correo' => ['required', 'email', 'max:120'],
 
             // 5. Madre y padre

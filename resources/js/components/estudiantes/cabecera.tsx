@@ -25,7 +25,7 @@ type Props = {
 
 const alto = '[@media(min-height:860px)]';
 
-/** Primera franja: título con el año, grados en segmentos y búsqueda en todo el colegio. */
+/** Primera franja: título con el año, grados en segmentos y búsqueda en todo el institución. */
 export function Cabecera({ anios, anio, sedes, sede, todasLasSedes, grados, gradoId, totales, busqueda, entrada, onElegir }: Props) {
     // Con una sola sede asignada no hay nada que elegir: se muestra su nombre.
     const unaSola = !todasLasSedes && sedes.length === 1;
@@ -155,7 +155,7 @@ export function Cabecera({ anios, anio, sedes, sede, todasLasSedes, grados, grad
     );
 }
 
-/** Búsqueda por nombre o documento en todo el colegio (la consulta la hace el servidor). */
+/** Búsqueda por nombre o documento en todo el institución (la consulta la hace el servidor). */
 function BusquedaGlobal({
     grados,
     busqueda,
@@ -226,8 +226,8 @@ function BusquedaGlobal({
                         elegir(resultados[activo]);
                     }
                 }}
-                placeholder="Buscar en todo el colegio…"
-                aria-label="Buscar estudiante por nombre o documento en todo el colegio"
+                placeholder="Buscar en todo el institución…"
+                aria-label="Buscar estudiante por nombre o documento en todo el institución"
                 aria-expanded={abierta && hay}
                 role="combobox"
                 aria-controls="resultados-busqueda"

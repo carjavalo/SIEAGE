@@ -17,7 +17,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 /**
  * El libro de matrícula de una sede, con el mismo formato del Excel que el
- * colegio lleva a mano (p. ej. «PRINCIPAL-2026.xlsx»): una hoja por grupo con
+ * institución lleva a mano (p. ej. «PRINCIPAL-2026.xlsx»): una hoja por grupo con
  * sus columnas y el bloque de totales, CONSOLIDADO, TOTAL MODALIDADES (si la
  * sede tiene media técnica), DIRECTORES DE GRUPO y NO TOCAR. Las fórmulas son
  * las del libro original y funcionan (en el original, TOTAL MODALIDADES tenía #REF!).
@@ -81,7 +81,7 @@ final class LibroMatriculaSede
 
         $libro = (new self($a, $s))->armar();
 
-        // Como los archivos del colegio: «PRINCIPAL-2026.xlsx», «PURIFICACION TRUJILLO-2026.xlsx».
+        // Como los archivos del institución: «PRINCIPAL-2026.xlsx», «PURIFICACION TRUJILLO-2026.xlsx».
         return [$libro, Str::upper(Str::ascii($s->nombre)).'-'.$a->anio.'.xlsx'];
     }
 
@@ -219,7 +219,7 @@ final class LibroMatriculaSede
         $h->getStyle('I1:AF1')->getNumberFormat()->setFormatCode('@');
 
         // --- una fila por estudiante
-        // Como en el libro del colegio, unas filas en blanco al final para matricular a mano.
+        // Como en el libro del institución, unas filas en blanco al final para matricular a mano.
         $ultima = 2 + $filas->count() + self::FILAS_EN_BLANCO;
         $previo = $this->col(self::C_PRIMER_ANIO + 2 * (self::AÑOS_DE_HISTORIA - 2));   // grupo del año anterior (AC)
         $consecutivo = 0;
@@ -261,7 +261,7 @@ final class LibroMatriculaSede
                     $h->setCellValue("{$col}{$r}", $v);
                 }
             }
-            // Historia: grupo y sede de cada año; «No» si no estaba en el colegio.
+            // Historia: grupo y sede de cada año; «No» si no estaba en el institución.
             $suya = $historia->get($m->estudiante_id, collect());
             for ($i = 0; $i < self::AÑOS_DE_HISTORIA; $i++) {
                 $c = self::C_PRIMER_ANIO + 2 * $i;

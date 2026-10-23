@@ -18,11 +18,11 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  * Informes del año, con vista previa hoja por hoja (A4) que se guarda como PDF
  * desde el cuadro de impresión del navegador: el de matrícula, el de documentos
  * pendientes y el de extraedad, con los mismos filtros. Y el libro de matrícula de cada sede en
- * Excel, con el formato que el colegio ya usa.
+ * Excel, con el formato que el institución ya usa.
  */
 class InformeController extends Controller
 {
-    /** Todo el colegio, o solo una sede (?sede=P), un grado (?grado=ID) y un grupo (?grupo=ID). */
+    /** Todo el institución, o solo una sede (?sede=P), un grado (?grado=ID) y un grupo (?grupo=ID). */
     public function matricula(Request $request): Response
     {
         $f = $this->filtros($request);
@@ -46,7 +46,7 @@ class InformeController extends Controller
         ]);
     }
 
-    /** Estudiantes en extraedad (tabla de edades del colegio), con los mismos filtros. */
+    /** Estudiantes en extraedad (tabla de edades del institución), con los mismos filtros. */
     public function extraedad(Request $request): Response
     {
         $f = $this->filtros($request);

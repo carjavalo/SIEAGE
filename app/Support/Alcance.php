@@ -153,7 +153,7 @@ final class Alcance
 
     /**
      * Un estudiante es visible si alguna de sus matrículas está en una sede del
-     * usuario: así el colegio de un estudiante que pasó de sede no pierde su ficha.
+     * usuario: así el institución de un estudiante que pasó de sede no pierde su ficha.
      */
     public static function puedeVerEstudiante(?User $user, int $estudianteId): bool
     {

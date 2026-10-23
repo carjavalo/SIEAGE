@@ -428,7 +428,7 @@ export function Grados({ informe: i }: { informe: Informe }) {
                     </tbody>
                 </table>
                 <p className="mt-[10px] text-[10px] text-[#6B7690]">
-                    Edad: promedio al 31 de marzo. Extraedad: según la tabla de edades del colegio, 3 o más años por encima de la edad adecuada del
+                    Edad: promedio al 31 de marzo. Extraedad: según la tabla de edades del institución, 3 o más años por encima de la edad adecuada del
                     grado (5 años en Transición y uno más por grado).
                 </p>
             </Bloque>
@@ -747,7 +747,7 @@ export function Retiros({ informe: i }: { informe: Informe }) {
                 <Bloque titulo="Sobre los datos">
                     <ul className="space-y-[4px] text-[10.5px] leading-[1.45] text-[#56627F]">
                         <li>Las cifras son las del {fechaLarga(i.corte)} y cambian con cada matrícula, retiro o promoción.</li>
-                        <li>Activos: matrículas del año en estado activo. Nuevo: primer año en el colegio.</li>
+                        <li>Activos: matrículas del año en estado activo. Nuevo: primer año en el institución.</li>
                         {i.sinRegistrar.length > 0 && <li>No se muestran {i.sinRegistrar.join(', ')}: faltan para la mayoría de los estudiantes.</li>}
                     </ul>
                 </Bloque>
@@ -892,7 +892,7 @@ export function AnexoGrupo({
             </table>
             {primera && estudiantes.some((e) => e.extraedad) && (
                 <p className="mt-[8px] text-[9.5px] text-[#6B7690]">
-                    Edad en ámbar: extraedad según la tabla de edades del colegio (3 o más años por encima de la edad adecuada del grado).
+                    Edad en ámbar: extraedad según la tabla de edades del institución (3 o más años por encima de la edad adecuada del grado).
                 </p>
             )}
         </>

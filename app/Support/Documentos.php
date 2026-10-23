@@ -9,7 +9,7 @@ use Illuminate\Validation\Rule;
 
 /**
  * Documentos que el acudiente trae para matricular (paso N°1 del procedimiento
- * de matrícula del colegio). Hay una lista para primaria y otra para
+ * de matrícula del institución). Hay una lista para primaria y otra para
  * bachillerato; Transición usa la de primaria.
  *
  * En bachillerato, los certificados de notas que se piden dependen del grado
@@ -76,7 +76,7 @@ final class Documentos
             ['eps', 'Fotocopia del carné de la EPS', $eps ? "EPS registrada: {$eps}." : null, false],
             ...($primaria ? [['vacunas', 'Fotocopia del carné de vacunas', null, false]] : []),
             ['cedula_acudiente', 'Fotocopia de la cédula de la madre, el padre o el acudiente', null, false],
-            ['simat', 'Retiro del SIMAT de la institución anterior', 'No aplica si no estuvo matriculado en otro colegio.', true],
+            ['simat', 'Retiro del SIMAT de la institución anterior', 'No aplica si no estuvo matriculado en otro institución.', true],
             ['carpeta', 'Carpeta colgante tamaño oficio con gancho plástico', null, false],
         ];
 

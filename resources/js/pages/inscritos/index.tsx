@@ -1,5 +1,6 @@
 import { TarjetasEsqueleto } from '@/components/esqueleto';
 import { VeloFicha } from '@/components/ficha';
+import { ExportarInscritos } from '@/components/inscritos/exportar-excel';
 import { FichaInscrito } from '@/components/inscritos/ficha-inscrito';
 import { ListaInscritos } from '@/components/inscritos/lista-inscritos';
 import { TableroGrados } from '@/components/inscritos/tablero-grados';
@@ -94,6 +95,7 @@ export default function Inscritos({ estado, conteos, inscritos, detalle }: Props
                             Formulario
                             <ExternalLink className="size-3.5" />
                         </a>
+                        <ExportarInscritos />
                     </div>
                     <dl
                         className={`mt-0.5 flex items-baseline gap-1.5 text-[13px] leading-4 whitespace-nowrap text-[#56627F] ${alto}:mt-1 ${alto}:text-[14px] ${alto}:leading-5`}

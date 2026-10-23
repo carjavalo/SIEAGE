@@ -187,7 +187,7 @@ class InscritoController extends Controller
             'gradoNumero' => DB::table('grados')->where('id', $solicitud->grado_id)->value('numero'),
             // Solo los grupos de las sedes del usuario.
             'grupos' => Grupos::conOcupacion($anioId, $solicitud->grado_id, Alcance::sedesDelGrado(request()->user(), (int) $solicitud->grado_id)),
-            // Si ya está en el colegio este año (por su documento): activo, no se matricula otra vez; retirado, se reactiva.
+            // Si ya está en el institución este año (por su documento): activo, no se matricula otra vez; retirado, se reactiva.
             'matriculaExistente' => $solicitud->estado === SolicitudInscripcion::PENDIENTE
                 ? $this->matriculaDelAnio(DB::table('estudiantes')->where('numero_documento', $solicitud->numero_documento)->value('id'), $anioId)
                 : null,
@@ -216,7 +216,7 @@ class InscritoController extends Controller
     }
 
     /**
-     * Aprueba la inscripción: crea (o completa, si ya estuvo en el colegio) el
+     * Aprueba la inscripción: crea (o completa, si ya estuvo en el institución) el
      * estudiante y el acudiente, pasa a su nombre la madre y el padre, y lo
      * matricula en el grupo elegido. Todo o nada.
      */
@@ -279,7 +279,7 @@ class InscritoController extends Controller
             ]);
 
             // Si ya tiene matrícula este año: activa, ya estudia aquí y no se matricula otra vez;
-            // retirada (o cancelada), vuelve al colegio y esa misma matrícula se reactiva más abajo.
+            // retirada (o cancelada), vuelve al institución y esa misma matrícula se reactiva más abajo.
             $existente = $this->matriculaDelAnio($estudianteId, $anioId);
             if ($existente?->estado === 'activo') {
                 throw ValidationException::withMessages([
@@ -347,7 +347,7 @@ class InscritoController extends Controller
                     'tipo' => 'habilitada',
                     'estado_anterior' => $existente->estado,
                     'estado_nuevo' => 'activo',
-                    'razon' => "Volvió al colegio: se matriculó otra vez por el formulario de inscripción (solicitud {$s->id}).",
+                    'razon' => "Volvió al institución: se matriculó otra vez por el formulario de inscripción (solicitud {$s->id}).",
                     'fecha' => $ahora->toDateString(),
                     'user_id' => $request->user()?->id,
                     'created_at' => $ahora,
@@ -463,7 +463,7 @@ class InscritoController extends Controller
 
     /**
      * Crea el estudiante o acudiente; si ya existe con ese documento (volvió al
-     * colegio, o es acudiente de un hermano), solo completa lo que le falta, sin
+     * institución, o es acudiente de un hermano), solo completa lo que le falta, sin
      * cambiar lo que ya tenía.
      *
      * @param  array<string, mixed>  $datos
@@ -557,5 +557,87 @@ class InscritoController extends Controller
         return $solicitud->estado === SolicitudInscripcion::PENDIENTE
             ? to_route('inscritos.documentos', $solicitud)
             : back();
+    }
+
+    public function excelInscritos(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $inscritos = DB::table('solicitudes_inscripcion as s')
+            ->join('grados as g', 'g.id', '=', 's.grado_id')
+            ->join('parentescos as p', 'p.id', '=', 's.acudiente_parentesco_id')
+            ->leftJoin('sedes as sp', 'sp.id', '=', 's.sede_preferida_id')
+            ->tap(fn ($q) => Alcance::filtrarSolicitudes($q, $request->user()))
+            ->orderBy('g.numero')
+            ->orderBy('s.primer_apellido')
+            ->orderBy('s.primer_nombre')
+            ->get([
+                's.id', 's.estado', 's.created_at',
+                's.primer_nombre', 's.segundo_nombre', 's.primer_apellido', 's.segundo_apellido',
+                's.tipo_documento', 's.numero_documento', 's.fecha_nacimiento',
+                's.grado_id', 'g.numero as grado_numero', 'g.nombre as grado',
+                's.acudiente_primer_nombre', 's.acudiente_segundo_nombre', 's.acudiente_primer_apellido', 's.acudiente_segundo_apellido',
+                's.acudiente_numero_documento', 's.acudiente_telefono_1', 's.acudiente_correo',
+                'p.nombre as parentesco',
+                'sp.codigo as sede_preferida_codigo', 'sp.nombre as sede_preferida',
+            ]);
+
+        $libro = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $hoja = $libro->getActiveSheet();
+        $hoja->setTitle('Inscritos');
+
+        $encabezados = [
+            'Grado', 'Nombre Estudiante', 'Documento', 'Fecha Nacimiento', 'Estado',
+            'Acudiente', 'Parentesco', 'Documento Acudiente', 'Teléfono', 'Correo', 'Sede Preferida',
+        ];
+
+        $fila = 1;
+        foreach ($encabezados as $col => $titulo) {
+            $hoja->setCellValueByColumnAndRow($col + 1, $fila, $titulo);
+        }
+        $hoja->getStyle("A1:{$hoja->getHighestColumn()}1")->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '1E3A7B']],
+        ]);
+
+        $fila = 2;
+        foreach ($inscritos as $inscrito) {
+            $nombre = trim("{$inscrito->primer_nombre} {$inscrito->segundo_nombre}");
+            $apellido = trim("{$inscrito->primer_apellido} {$inscrito->segundo_apellido}");
+            $acudienteNombre = trim("{$inscrito->acudiente_primer_nombre} {$inscrito->acudiente_segundo_nombre}");
+            $acudienteApellido = trim("{$inscrito->acudiente_primer_apellido} {$inscrito->acudiente_segundo_apellido}");
+
+            $datos = [
+                $inscrito->grado,
+                "{$apellido}, {$nombre}",
+                $inscrito->numero_documento,
+                $inscrito->fecha_nacimiento,
+                ucfirst($inscrito->estado),
+                "{$acudienteApellido}, {$acudienteNombre}",
+                $inscrito->parentesco,
+                $inscrito->acudiente_numero_documento,
+                $inscrito->acudiente_telefono_1,
+                $inscrito->acudiente_correo,
+                $inscrito->sede_preferida ?? '—',
+            ];
+
+            foreach ($datos as $col => $valor) {
+                $hoja->setCellValueByColumnAndRow($col + 1, $fila, $valor);
+            }
+            $fila++;
+        }
+
+        foreach (range(1, count($encabezados)) as $col) {
+            $hoja->getColumnDimensionByColumn($col)->setAutoSize(true);
+        }
+
+        $archivo = 'INSCRITOS-' . now()->format('Y-m-d_His') . '.xlsx';
+        return response()->streamDownload(function () use ($libro) {
+            $escritor = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($libro);
+            $escritor->setPreCalculateFormulas(true);
+            $escritor->save('php://output');
+            $libro->disconnectWorksheets();
+        }, $archivo, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'no-store',
+        ]);
     }
 }
