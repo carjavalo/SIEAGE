@@ -1,7 +1,7 @@
 import { Razon, dialogo } from '@/components/estudiantes/deshabilitar';
 import { botonPrimario, botonSecundario } from '@/components/formulario';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { type Grado } from '@/lib/estudiantes';
+import { type Estudiante, type Grado, type Grupo, type GrupoDestino } from '@/lib/estudiantes';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { router, useForm, usePage } from '@inertiajs/react';
@@ -23,7 +23,7 @@ export type ResumenPromocion = {
     reparto: { grupo: string; sede: string; n: number; libres: number | null }[];
 };
 
-type Alcance = { estudiante_id?: number; grado_id?: number; sede?: string };
+type Alcance = { estudiante_id?: number; grado_id?: number; sede?: string; grupo_id?: number; grupo_destino_id?: number };
 
 /** Promueve y avisa con los toasts de Sileo: primero "Promoviendo…", luego el resultado. */
 export function promover(anio: number, alcance: Alcance, { onFin }: { onFin?: () => void } = {}) {
@@ -111,6 +111,9 @@ export function BotonPromover({
     siguiente,
     pendientes,
     sede,
+    grupos,
+    gruposDestino,
+    estudiantes,
 }: {
     anio: number;
     grado: Grado;
@@ -118,18 +121,35 @@ export function BotonPromover({
     pendientes: number;
     /** Con filtro de sede, "este grado" es solo el de esa sede. */
     sede?: { codigo: string; nombre: string };
+    /** Grupos del grado a la vista (para promover uno completo). */
+    grupos: Grupo[];
+    /** Grupos del grado siguiente (año siguiente) a los que se puede promover. */
+    gruposDestino: GrupoDestino[];
+    /** Estudiantes del grado a la vista (para contar los pendientes de cada grupo). */
+    estudiantes: Estudiante[];
 }) {
     const { auth } = usePage<SharedData>().props;
     const todoElColegio = auth.todasLasSedes !== false;
     const misSedes = (auth.sedes ?? []).map((s) => s.nombre).join(', ');
     const [abierto, setAbierto] = useState(false);
-    const [alcance, setAlcance] = useState<'grado' | 'todos'>('grado');
+    const [alcance, setAlcance] = useState<'grado' | 'grupo' | 'todos'>('grado');
+    const [grupoOrigen, setGrupoOrigen] = useState('');
+    const [grupoDestino, setGrupoDestino] = useState('');
     const [enviando, setEnviando] = useState(false);
     const gradua = !siguiente;
+    // Promover un grupo completo a uno elegido: solo si hay grupos a la vista y de destino.
+    const puedeGrupo = !gradua && grupos.length > 0 && gruposDestino.length > 0;
+    const pendientesDe = (gid: number) => estudiantes.filter((e) => e.grupo_id === gid && e.estado === 'activo' && !e.promovido_a).length;
+
+    const alcanceData = (): Alcance => {
+        if (alcance === 'grupo') return { grupo_id: Number(grupoOrigen), grupo_destino_id: Number(grupoDestino) };
+        if (alcance === 'grado') return { grado_id: grado.id, ...(sede ? { sede: sede.codigo } : {}) };
+        return {};
+    };
 
     const confirmar = () => {
         setEnviando(true);
-        promover(anio, alcance === 'grado' ? { grado_id: grado.id, ...(sede ? { sede: sede.codigo } : {}) } : {}, {
+        promover(anio, alcanceData(), {
             onFin: () => {
                 setEnviando(false);
                 setAbierto(false);
@@ -137,7 +157,7 @@ export function BotonPromover({
         });
     };
 
-    const opcion = (valor: 'grado' | 'todos', titulo: string, texto: string) => (
+    const opcion = (valor: 'grado' | 'grupo' | 'todos', titulo: string, texto: string) => (
         <label
             className={cn(
                 'flex cursor-pointer gap-3 rounded-[14px] border-[1.5px] p-3.5 transition',
@@ -164,6 +184,8 @@ export function BotonPromover({
                 type="button"
                 onClick={() => {
                     setAlcance('grado');
+                    setGrupoOrigen('');
+                    setGrupoDestino('');
                     setAbierto(true);
                 }}
                 className="flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-[12px] bg-[#1E3A7B] px-3.5 text-sm font-semibold text-white transition hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none"
@@ -192,12 +214,53 @@ export function BotonPromover({
                                 ? 'Ya están todos promovidos.'
                                 : `${pendientes} estudiante${pendientes === 1 ? '' : 's'} activo${pendientes === 1 ? '' : 's'} por promover.`,
                         )}
+                        {puedeGrupo &&
+                            opcion('grupo', 'Un grupo a otro grupo', 'Promueve todo un grupo (p. ej. 5-2) al grupo que elijas del grado siguiente (6-2).')}
                         {opcion(
                             'todos',
                             todoElColegio ? 'Todo el institución' : 'Todas mis sedes',
                             todoElColegio ? `Todos los grados de ${anio}, de transición a undécimo.` : `Todos los grados de ${anio} en ${misSedes}.`,
                         )}
                     </div>
+
+                    {alcance === 'grupo' && (
+                        <div className="flex flex-col gap-3 rounded-[14px] bg-[#F5F7FC] p-3.5">
+                            <div>
+                                <label className="mb-1.5 block text-[13px] font-semibold text-[#16223F]">Grupo a promover</label>
+                                <select
+                                    value={grupoOrigen}
+                                    onChange={(e) => setGrupoOrigen(e.target.value)}
+                                    disabled={enviando}
+                                    className="w-full rounded-lg border border-[#D3DDF3] px-3 py-2 text-[14px] focus:ring-2 focus:ring-[#1E3A7B] focus:outline-none"
+                                >
+                                    <option value="">Elige el grupo...</option>
+                                    {grupos.map((g) => (
+                                        <option key={g.id} value={g.id}>
+                                            {g.codigo} ({g.sede}) · {pendientesDe(g.id)} por promover
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="mb-1.5 block text-[13px] font-semibold text-[#16223F]">
+                                    A qué grupo de {siguiente?.nombre} ({anio + 1})
+                                </label>
+                                <select
+                                    value={grupoDestino}
+                                    onChange={(e) => setGrupoDestino(e.target.value)}
+                                    disabled={enviando}
+                                    className="w-full rounded-lg border border-[#D3DDF3] px-3 py-2 text-[14px] focus:ring-2 focus:ring-[#1E3A7B] focus:outline-none"
+                                >
+                                    <option value="">Elige el grupo de destino...</option>
+                                    {gruposDestino.map((g) => (
+                                        <option key={g.id} value={g.id}>
+                                            {g.codigo} ({g.sede})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="mt-1 flex justify-end gap-2">
                         <button type="button" onClick={() => setAbierto(false)} disabled={enviando} className={botonSecundario}>
@@ -206,7 +269,11 @@ export function BotonPromover({
                         <button
                             type="button"
                             onClick={confirmar}
-                            disabled={enviando || (alcance === 'grado' && pendientes === 0)}
+                            disabled={
+                                enviando ||
+                                (alcance === 'grado' && pendientes === 0) ||
+                                (alcance === 'grupo' && (!grupoOrigen || !grupoDestino))
+                            }
                             className={botonPrimario}
                         >
                             {enviando && <LoaderCircle className="size-4 animate-spin" />}

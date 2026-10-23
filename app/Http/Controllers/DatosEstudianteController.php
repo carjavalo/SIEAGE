@@ -462,10 +462,11 @@ class DatosEstudianteController extends Controller
             ->join('anios_lectivos as al', 'al.id', '=', 'm.anio_lectivo_id')
             ->join('grupos as g', 'g.id', '=', 'm.grupo_id')
             ->join('sedes as s', 's.id', '=', 'g.sede_id')
+            ->join('grados as gr', 'gr.id', '=', 'm.grado_id')
             ->where('m.estudiante_id', $estudiante)
             ->where('al.estado', 'activo')
             ->tap(fn ($q) => Alcance::filtrar($q, $request->user(), 'm.sede_id', 'm.grado_id'))
-            ->first(['m.id', 'm.grupo_id', 'g.sede_id', 'm.grado_id', 'm.estado', 'g.codigo as grupo_actual', 's.codigo as sede_actual']) ?? abort(404);
+            ->first(['m.id', 'm.grupo_id', 'g.sede_id', 'm.grado_id', 'm.estado', 'g.codigo as grupo_actual', 's.codigo as sede_actual', 'gr.nombre as grado_actual']) ?? abort(404);
 
         $datos = $request->validate([
             'grupo_id' => ['required', 'integer', 'exists:grupos,id'],
@@ -479,13 +480,10 @@ class DatosEstudianteController extends Controller
 
         $nuevoGrupo = DB::table('grupos as g')
             ->join('sedes as s', 's.id', '=', 'g.sede_id')
+            ->join('grados as gr', 'gr.id', '=', 'g.grado_id')
             ->where('g.id', $datos['grupo_id'])
             ->tap(fn ($q) => Alcance::filtrar($q, $request->user(), 'g.sede_id', 'g.grado_id'))
-            ->first(['g.id', 'g.codigo', 'g.sede_id', 's.codigo as sede', 'g.grado_id']) ?? abort(403);
-
-        if ($nuevoGrupo->grado_id != $matricula->grado_id) {
-            throw ValidationException::withMessages(['grupo_id' => 'El nuevo grupo debe ser del mismo grado.']);
-        }
+            ->first(['g.id', 'g.codigo', 'g.sede_id', 's.codigo as sede', 'g.grado_id', 'gr.nombre as grado']) ?? abort(403);
 
         if ($nuevoGrupo->id == $matricula->grupo_id) {
             throw ValidationException::withMessages(['grupo_id' => 'Ya está en ese grupo.']);
@@ -498,20 +496,39 @@ class DatosEstudianteController extends Controller
             throw ValidationException::withMessages(['grupo_id' => 'No hay cupos disponibles en ese grupo.']);
         }
 
-        DB::transaction(function () use ($request, $matricula, $nuevoGrupo, $datos) {
-            DB::table('matriculas')->where('id', $matricula->id)->update(['grupo_id' => $nuevoGrupo->id, 'updated_at' => now()]);
+        $cambiaGrado = $nuevoGrupo->grado_id != $matricula->grado_id;
+        $cambiaSede = $nuevoGrupo->sede_id != $matricula->sede_id;
+
+        DB::transaction(function () use ($request, $matricula, $nuevoGrupo, $datos, $cambiaGrado, $cambiaSede) {
+            $cambios = ['grupo_id' => $nuevoGrupo->id, 'updated_at' => now()];
+            if ($cambiaGrado) {
+                $cambios['grado_id'] = $nuevoGrupo->grado_id;
+            }
+            if ($cambiaSede) {
+                $cambios['sede_id'] = $nuevoGrupo->sede_id;
+            }
+            // Al cambiar de grado o sede, el consecutivo de la ficha (único por año/grado/sede)
+            // ya no corresponde: se limpia y se renumera al imprimir la constancia.
+            if ($cambiaGrado || $cambiaSede) {
+                $cambios['consecutivo'] = null;
+            }
+            DB::table('matriculas')->where('id', $matricula->id)->update($cambios);
+
+            $detalleGrado = $cambiaGrado ? " [de {$matricula->grado_actual} a {$nuevoGrupo->grado}]" : '';
             DB::table('novedades_matricula')->insert([
                 'matricula_id' => $matricula->id,
                 'tipo' => 'cambio_grupo',
                 'estado_anterior' => $matricula->estado,
                 'estado_nuevo' => $matricula->estado,
-                'razon' => "Cambió de {$matricula->grupo_actual} ({$matricula->sede_actual}) a {$nuevoGrupo->codigo} ({$nuevoGrupo->sede}): {$datos['razon']}",
+                'razon' => "Cambió de {$matricula->grupo_actual} ({$matricula->sede_actual}) a {$nuevoGrupo->codigo} ({$nuevoGrupo->sede}){$detalleGrado}: {$datos['razon']}",
                 'fecha' => now()->toDateString(),
                 'user_id' => $request->user()->id,
                 'created_at' => now(),
             ]);
         });
 
-        return back()->with('success', "Cambió a {$nuevoGrupo->codigo}.");
+        $destino = $cambiaGrado ? "{$nuevoGrupo->grado} – {$nuevoGrupo->codigo}" : $nuevoGrupo->codigo;
+
+        return back()->with('success', "Cambió a {$destino}.");
     }
 }

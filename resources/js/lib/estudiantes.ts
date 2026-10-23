@@ -18,6 +18,9 @@ export type Grupo = {
     nuevos: number;
 };
 
+/** Grupo del grado siguiente (año siguiente) al que se puede promover un grupo completo. */
+export type GrupoDestino = { id: number; codigo: string; sede_id: number; sede: string };
+
 export type Estudiante = {
     id: number;
     nombre: string;
@@ -164,13 +167,13 @@ export type FichaDetalle = {
     acudientes: Acudiente[];
     boletines: { numero: number; valor: string }[];
     parentescos: Parentesco[];
-    /** Grupos del grado actual por sede (dentro del alcance) para cambiar de grupo o sede; null si no aplica. */
+    /** Grupos del año por sede (de cualquier grado, dentro del alcance) para cambiar de grupo, grado o sede; null si no aplica. */
     sedes:
         | {
               id: number;
               codigo: string;
               nombre: string;
-              grupos: { id: number; codigo: string; grado_id: number }[];
+              grupos: { id: number; codigo: string; grado_id: number; grado: string; grado_numero: number }[];
           }[]
         | null;
     /** Alerta de edad para el grado de su matrícula. */

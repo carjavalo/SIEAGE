@@ -17,6 +17,7 @@ import {
     type FiltroEstado,
     type Grado,
     type Grupo,
+    type GrupoDestino,
     type Resultado,
     type SedeFiltro,
     cumpleEstado,
@@ -39,6 +40,7 @@ type Props = {
     gradoId: number | null;
     totales: { activos: number; nuevos: number; antiguos: number; retirados: number };
     grupos: Grupo[];
+    gruposDestino: GrupoDestino[];
     estudiantes: Estudiante[];
     busqueda?: Resultado[];
     detalle: FichaDetalle | null;
@@ -60,6 +62,7 @@ export default function Estudiantes({
     gradoId,
     totales,
     grupos: gruposServidor,
+    gruposDestino,
     estudiantes,
     busqueda,
     detalle,
@@ -242,6 +245,9 @@ export default function Estudiantes({
                                         siguiente={siguienteDe(grado)}
                                         pendientes={porPromover}
                                         sede={sedes.find((s) => s.codigo === sede)}
+                                        grupos={grupos}
+                                        gruposDestino={gruposDestino}
+                                        estudiantes={estudiantes}
                                     />
                                 )}
                             </>

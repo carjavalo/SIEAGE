@@ -120,6 +120,22 @@ class EstudianteController extends Controller
             unset($e->fecha_nacimiento);
         }
 
+        // Grupos de destino para promover un grupo completo: los del grado siguiente
+        // en el año siguiente, dentro del alcance del usuario. Vacío si aún no existen.
+        $gradoSiguienteId = $numeroGrado !== null ? DB::table('grados')->where('numero', $numeroGrado + 1)->value('id') : null;
+        $gruposDestino = ($siguienteId && $gradoSiguienteId)
+            ? DB::table('grupos as g')
+                ->join('sedes as s', 's.id', '=', 'g.sede_id')
+                ->where('g.anio_lectivo_id', $siguienteId)
+                ->where('g.grado_id', $gradoSiguienteId)
+                ->tap(fn ($q) => Alcance::filtrar($q, $request->user(), 'g.sede_id', 'g.grado_id'))
+                ->orderBy('s.codigo')
+                ->orderBy('g.numero')
+                ->get(['g.id', 'g.codigo', 'g.sede_id', 's.nombre as sede'])
+                ->map(fn ($g) => ['id' => $g->id, 'codigo' => $g->codigo, 'sede_id' => (int) $g->sede_id, 'sede' => $g->sede])
+                ->values()
+            : collect();
+
         return Inertia::render('estudiantes/index', [
             'anios' => $anios,
             'anio' => $anio?->anio,
@@ -129,6 +145,8 @@ class EstudianteController extends Controller
             'gradoId' => $gradoId,
             'totales' => array_map('intval', (array) $totales),
             'grupos' => $grupos,
+            // Grupos del grado siguiente (año siguiente) para promover un grupo completo a uno elegido.
+            'gruposDestino' => $gruposDestino,
             'estudiantes' => $estudiantes,
             // Con todas las sedes se ofrece "Todas las sedes"; con algunas, solo esas.
             'todasLasSedes' => $permitidas === null,
@@ -263,25 +281,32 @@ class EstudianteController extends Controller
                 ->get(['n.id', 'n.tipo', 'n.estado_nuevo', 'n.razon', 'n.fecha', 'n.created_at', 'u.name as usuario'])
             : collect();
 
-        // Para cambiar de grupo o sede (mismo grado) sin devolver a inscritos: los grupos
-        // del grado del estudiante en el año en curso, agrupados por sede, dentro del alcance
-        // del usuario. Solo cuando la matrícula actual es del año activo y está activa.
+        // Para cambiar de grupo, grado o sede sin devolver a inscritos: todos los
+        // grupos del año en curso dentro del alcance del usuario (de cualquier grado),
+        // agrupados por sede. Solo cuando la matrícula actual es del año activo y está activa.
         $sedes = null;
         if ($actual && $actual->estado === 'activo' && $actual->estado_anio === 'activo') {
             $sedes = DB::table('grupos as g')
                 ->join('sedes as s', 's.id', '=', 'g.sede_id')
+                ->join('grados as gr', 'gr.id', '=', 'g.grado_id')
                 ->where('g.anio_lectivo_id', $actual->anio_lectivo_id)
-                ->where('g.grado_id', $actual->grado_id)
                 ->tap(fn ($q) => Alcance::filtrar($q, request()->user(), 'g.sede_id', 'g.grado_id'))
                 ->orderBy('s.codigo')
+                ->orderBy('gr.numero')
                 ->orderBy('g.numero')
-                ->get(['g.id', 'g.codigo', 'g.grado_id', 's.id as sede_id', 's.codigo as sede_codigo', 's.nombre as sede_nombre'])
+                ->get(['g.id', 'g.codigo', 'g.grado_id', 'gr.nombre as grado_nombre', 'gr.numero as grado_numero', 's.id as sede_id', 's.codigo as sede_codigo', 's.nombre as sede_nombre'])
                 ->groupBy('sede_id')
                 ->map(fn ($grupos, $sedeId) => [
                     'id' => (int) $sedeId,
                     'codigo' => $grupos->first()->sede_codigo,
                     'nombre' => $grupos->first()->sede_nombre,
-                    'grupos' => $grupos->map(fn ($g) => ['id' => $g->id, 'codigo' => $g->codigo, 'grado_id' => $g->grado_id])->values(),
+                    'grupos' => $grupos->map(fn ($g) => [
+                        'id' => $g->id,
+                        'codigo' => $g->codigo,
+                        'grado_id' => $g->grado_id,
+                        'grado' => $g->grado_nombre,
+                        'grado_numero' => (int) $g->grado_numero,
+                    ])->values(),
                 ])
                 ->values();
         }
@@ -306,7 +331,7 @@ class EstudianteController extends Controller
             'historia' => $historia,
             'acudientes' => $acudientes,
             'boletines' => $boletines,
-            // Grupos del grado (por sede, dentro del alcance) para cambiar de grupo o sede.
+            // Grupos del año (de cualquier grado, por sede, dentro del alcance) para cambiar de grupo, grado o sede.
             'sedes' => $sedes,
             'parentescos' => DB::table('parentescos')->orderBy('id')->get(['id', 'nombre']),
         ];

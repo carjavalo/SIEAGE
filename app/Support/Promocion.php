@@ -51,17 +51,17 @@ final class Promocion
      *
      * @return array<string, mixed> resumen para mostrar al usuario
      */
-    public static function ejecutar(int $anio, ?int $gradoId = null, ?int $estudianteId = null, int|array|null $sedeId = null): array
+    public static function ejecutar(int $anio, ?int $gradoId = null, ?int $estudianteId = null, int|array|null $sedeId = null, ?int $grupoId = null, ?int $grupoDestinoId = null): array
     {
         $origen = DB::table('anios_lectivos')->where('anio', $anio)->first();
         if (! $origen || $origen->estado !== 'activo') {
             throw ValidationException::withMessages(['promocion' => 'Solo se promueve desde el año lectivo en curso.']);
         }
 
-        return DB::transaction(function () use ($origen, $gradoId, $estudianteId, $sedeId) {
+        return DB::transaction(function () use ($origen, $gradoId, $estudianteId, $sedeId, $grupoId, $grupoDestinoId) {
             $promocion = new self($origen, self::anioSiguiente($origen));
 
-            return $promocion->promover($promocion->pendientes($gradoId, $estudianteId, $sedeId));
+            return $promocion->promover($promocion->pendientes($gradoId, $estudianteId, $sedeId, $grupoId), $grupoDestinoId);
         });
     }
 
@@ -72,7 +72,7 @@ final class Promocion
     }
 
     /** Matrículas activas del alcance que todavía no tienen matrícula el año siguiente. */
-    private function pendientes(?int $gradoId, ?int $estudianteId, int|array|null $sedeId = null): Collection
+    private function pendientes(?int $gradoId, ?int $estudianteId, int|array|null $sedeId = null, ?int $grupoId = null): Collection
     {
         return DB::table('matriculas as m')
             ->join('grados as gr', 'gr.id', '=', 'm.grado_id')
@@ -83,6 +83,8 @@ final class Promocion
             ->whereNull('e.deleted_at')
             ->when($gradoId, fn ($q) => $q->where('m.grado_id', $gradoId))
             ->when($estudianteId, fn ($q) => $q->where('m.estudiante_id', $estudianteId))
+            // Un grupo específico (p. ej. todo 5-2), para promoverlo a un grupo elegido.
+            ->when($grupoId, fn ($q) => $q->where('m.grupo_id', $grupoId))
             // Una sede, o las del usuario que promueve (null = todas).
             ->when($sedeId !== null, fn ($q) => $q->whereIn('m.sede_id', (array) $sedeId))
             ->whereNotExists(fn ($q) => $q->from('matriculas as sig')
@@ -94,13 +96,17 @@ final class Promocion
     }
 
     /** @return array<string, mixed> */
-    private function promover(Collection $pendientes): array
+    private function promover(Collection $pendientes, ?int $grupoDestinoId = null): array
     {
         $gradosPorNumero = DB::table('grados')->pluck('id', 'numero');
         $ultimo = $gradosPorNumero->keys()->max();
         $this->ahora = now();
         $graduados = 0;
         $sinSuGrupo = [];
+
+        // Si se eligió un grupo de destino (promover 5-2 → 6-2), todos los que pasan
+        // van a ese grupo, sin importar su grupo ni la lógica automática.
+        $destinoForzado = $grupoDestinoId !== null ? $this->grupoForzado($grupoDestinoId) : null;
 
         // Primera pasada: los de undécimo se gradúan y cada uno de los demás
         // pasa a su mismo grupo. Los que no lo tienen esperan a la segunda,
@@ -125,6 +131,13 @@ final class Promocion
             if ((int) $m->grado_numero === (int) $ultimo) {
                 DB::table('matriculas')->where('id', $m->id)->update(['estado' => 'graduado', 'resultado' => 'promovido', 'updated_at' => $this->ahora]);
                 $graduados++;
+
+                continue;
+            }
+
+            // Destino elegido: todos al mismo grupo, en el grado de ese grupo.
+            if ($destinoForzado !== null) {
+                $this->matricular($m, (int) $destinoForzado->grado_id, $destinoForzado);
 
                 continue;
             }
@@ -295,6 +308,25 @@ final class Promocion
 
     /** @var array<int, Collection> Grupos del año destino por grado, cargados una vez. */
     private array $grupos = [];
+
+    /**
+     * El grupo de destino elegido para promover un grupo completo (p. ej. 6-2 para
+     * los de 5-2). Debe ser un grupo del año siguiente. Inicializa su ocupación.
+     */
+    private function grupoForzado(int $grupoDestinoId): object
+    {
+        $grupo = DB::table('grupos as g')
+            ->join('sedes as s', 's.id', '=', 'g.sede_id')
+            ->where('g.id', $grupoDestinoId)
+            ->where('g.anio_lectivo_id', $this->destino->id)
+            ->first(['g.id', 'g.numero', 'g.codigo', 'g.sede_id', 'g.grado_id', 'g.jornada', 'g.cupos_proyectados', 's.nombre as sede']);
+        if (! $grupo) {
+            throw ValidationException::withMessages(['promocion' => 'El grupo de destino no es válido o no es del año siguiente.']);
+        }
+        $this->ocupados[$grupo->id] ??= (int) DB::table('matriculas')->where('grupo_id', $grupo->id)->where('estado', 'activo')->count();
+
+        return $grupo;
+    }
 
     /** Grupos del grado nuevo en la sede del estudiante (o todos, si el grado no está en su sede). */
     private function enSuSede(int $gradoId, object $m): Collection
