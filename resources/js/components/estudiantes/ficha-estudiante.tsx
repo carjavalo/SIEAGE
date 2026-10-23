@@ -5,6 +5,7 @@ import { AgregarAcudiente, EditarAcudiente, EditarEstudiante } from '@/component
 import { Marca, PuntoSede, iniciales, sedeInfo, textoSituacion } from '@/components/estudiantes/etiquetas';
 import { PromocionEstudiante, puedePromover } from '@/components/estudiantes/promocion';
 import { Bloque, ContenidoFicha, PanelFicha, Sep, TarjetaContacto } from '@/components/ficha';
+import { DevolverAInscritos } from '@/components/inscritos/devolver';
 import { type FichaDetalle, type Grado, edad, fecha, parentescoDe } from '@/lib/estudiantes';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
@@ -175,9 +176,10 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
                     </Bloque>
                 )}
 
-                {m && enCurso && (puedeDeshabilitar(auth) || ficha.novedades.length > 0) && (
+                {m && enCurso && (puedeDeshabilitar(auth) || ficha.novedades.length > 0 || ficha.inscripcion) && (
                     <Bloque titulo={`Estado en ${m.anio}`}>
                         <EstadoMatricula estudianteId={e.id} nombre={e.nombre_completo} estado={m.estado} novedades={ficha.novedades} />
+                        {ficha.inscripcion && <DevolverAInscritos solicitudId={ficha.inscripcion} nombre={e.nombre_completo} className="mt-2" />}
                     </Bloque>
                 )}
 
@@ -186,6 +188,10 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
                         <PromocionEstudiante
                             anio={m.anio}
                             estudianteId={e.id}
+                            nombre={e.nombre_completo}
+                            grado={m.grado}
+                            reprobado={m.resultado === 'reprobado'}
+                            activo={enCurso && m.estado === 'activo'}
                             siguiente={grados.find((g) => g.numero === m.grado_numero + 1)}
                             promocion={ficha.promocion}
                         />

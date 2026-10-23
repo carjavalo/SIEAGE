@@ -235,4 +235,104 @@ class PromocionTest extends TestCase
         // Y se puede volver a promover.
         $this->assertGreaterThan(0, $this->promover([])['promovidos']);
     }
+
+    /** Un activo de 2026 en el grado, con grupo (y técnica si la tiene). */
+    private function activoDe(int $numero): object
+    {
+        return DB::table('matriculas as m')->join('grupos as g', 'g.id', '=', 'm.grupo_id')
+            ->where('m.anio_lectivo_id', $this->anioId(2026))->where('m.grado_id', $this->grado($numero))->where('m.estado', 'activo')
+            ->orderByRaw('m.modalidad_id is null')->orderBy('m.id')
+            ->first(['m.*', 'g.numero as grupo_numero']);
+    }
+
+    public function test_el_que_reprobo_repite_su_mismo_grado_como_repitente()
+    {
+        $this->crearGruposDelSiguiente();
+        $m = $this->activoDe(10);
+
+        $this->actingAs($this->secretaria)->post("/estudiantes/{$m->estudiante_id}/reprobar", ['razon' => 'Perdió en la comisión de evaluación.'])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('reprobado', DB::table('matriculas')->where('id', $m->id)->value('resultado'));
+        $this->assertSame('activo', DB::table('matriculas')->where('id', $m->id)->value('estado'), 'sigue activo este año');
+        $this->assertDatabaseHas('novedades_matricula', ['matricula_id' => $m->id, 'tipo' => 'reprobada', 'razon' => 'Perdió en la comisión de evaluación.']);
+
+        $resumen = $this->promover(['estudiante_id' => $m->estudiante_id]);
+        $this->assertSame([0, 1], [$resumen['promovidos'], $resumen['repiten']]);
+
+        // El mismo grado y el mismo grupo (10-x → 10-x), con su técnica; la de 2026 sigue reprobada.
+        $nueva = DB::table('matriculas as m')->join('grupos as g', 'g.id', '=', 'm.grupo_id')
+            ->where('m.estudiante_id', $m->estudiante_id)->where('m.anio_lectivo_id', $this->anioId(2027))->first(['m.*', 'g.numero as grupo_numero']);
+        $this->assertSame($this->grado(10), (int) $nueva->grado_id);
+        $this->assertSame((int) $m->grupo_numero, (int) $nueva->grupo_numero);
+        $this->assertSame('repitente', $nueva->condicion);
+        $this->assertSame($m->modalidad_id, $nueva->modalidad_id);
+        $this->assertSame('reprobado', DB::table('matriculas')->where('id', $m->id)->value('resultado'));
+
+        // La ficha lo dice.
+        $this->actingAs($this->secretaria)->get("/estudiantes?ver={$m->estudiante_id}")
+            ->assertInertia(fn ($page) => $page->where('detalle.promocion.condicion', 'repitente')->where('detalle.actual.resultado', 'reprobado'));
+    }
+
+    public function test_un_reprobado_de_undecimo_no_se_gradua()
+    {
+        $this->crearGruposDelSiguiente();
+        $m = $this->activoDe(11);
+        $this->actingAs($this->secretaria)->post("/estudiantes/{$m->estudiante_id}/reprobar", ['razon' => 'No aprobó undécimo.']);
+
+        $resumen = $this->promover(['estudiante_id' => $m->estudiante_id]);
+
+        $this->assertSame([0, 1], [$resumen['graduados'], $resumen['repiten']]);
+        $this->assertSame('activo', DB::table('matriculas')->where('id', $m->id)->value('estado'));
+        $this->assertSame($this->grado(11), (int) DB::table('matriculas')->where('estudiante_id', $m->estudiante_id)->where('anio_lectivo_id', $this->anioId(2027))->value('grado_id'));
+    }
+
+    public function test_reprobar_al_ya_promovido_quita_esa_matricula_y_quitar_la_marca_lo_deja_pasar()
+    {
+        $this->crearGruposDelSiguiente();
+        $m = $this->activoDe(4);
+        $this->promover(['estudiante_id' => $m->estudiante_id]);
+        $siguiente = fn () => DB::table('matriculas')->where('estudiante_id', $m->estudiante_id)->where('anio_lectivo_id', $this->anioId(2027))->first();
+        $this->assertSame($this->grado(5), (int) $siguiente()->grado_id);
+
+        // Ya estaba promovido a quinto: esa matrícula se quita y, al promover otra vez, repite cuarto.
+        $this->actingAs($this->secretaria)->post("/estudiantes/{$m->estudiante_id}/reprobar", ['razon' => 'Se marcó tarde en la comisión.'])
+            ->assertSessionHasNoErrors()->assertSessionHas('success', fn ($t) => str_contains($t, 'Se quitó la matrícula de 2027'));
+        $this->assertNull($siguiente());
+        $this->promover(['estudiante_id' => $m->estudiante_id]);
+        $this->assertSame([$this->grado(4), 'repitente'], [(int) $siguiente()->grado_id, $siguiente()->condicion]);
+
+        // Fue un error: se quita la marca (y la matrícula en que repetía) y pasa a quinto.
+        $this->actingAs($this->secretaria)->delete("/estudiantes/{$m->estudiante_id}/reprobar", ['razon' => 'Aprobó la recuperación.'])
+            ->assertSessionHasNoErrors();
+        $this->assertNull(DB::table('matriculas')->where('id', $m->id)->value('resultado'));
+        $this->assertDatabaseHas('novedades_matricula', ['matricula_id' => $m->id, 'tipo' => 'reprobacion_quitada']);
+        $this->assertNull($siguiente());
+        $this->promover(['estudiante_id' => $m->estudiante_id]);
+        $this->assertSame([$this->grado(5), 'antiguo'], [(int) $siguiente()->grado_id, $siguiente()->condicion]);
+    }
+
+    public function test_reprobar_pide_la_razon_y_el_permiso()
+    {
+        $m = $this->activoDe(4);
+        $this->actingAs($this->secretaria)->post("/estudiantes/{$m->estudiante_id}/reprobar", ['razon' => ''])->assertSessionHasErrors('razon');
+        $this->actingAs($this->secretaria)->delete("/estudiantes/{$m->estudiante_id}/reprobar", ['razon' => 'No estaba marcado.'])
+            ->assertSessionHasErrors(['razon' => 'No está marcado como reprobado.']);
+
+        $sinPermiso = User::factory()->create(['rol_id' => Rol::where('nombre', 'docente')->value('id')]);
+        $this->actingAs($sinPermiso)->post("/estudiantes/{$m->estudiante_id}/reprobar", ['razon' => 'Perdió el año.'])->assertForbidden();
+        $this->assertNull(DB::table('matriculas')->where('id', $m->id)->value('resultado'));
+    }
+
+    public function test_revertir_la_promocion_quita_al_que_repetia_pero_sigue_reprobado()
+    {
+        $this->crearGruposDelSiguiente();
+        $m = $this->activoDe(4);
+        $this->actingAs($this->secretaria)->post("/estudiantes/{$m->estudiante_id}/reprobar", ['razon' => 'Perdió el año.']);
+        $this->promover(['estudiante_id' => $m->estudiante_id]);
+
+        $this->artisan('sieage:revertir-promocion', ['--force' => true])->assertSuccessful();
+
+        $this->assertFalse(DB::table('matriculas')->where('estudiante_id', $m->estudiante_id)->where('anio_lectivo_id', $this->anioId(2027))->exists());
+        $this->assertSame('reprobado', DB::table('matriculas')->where('id', $m->id)->value('resultado'));
+    }
 }

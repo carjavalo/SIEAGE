@@ -27,6 +27,10 @@ use Illuminate\Validation\ValidationException;
  * Los de ciclos (jornada Sabatina) pasan al ciclo siguiente, no al grado siguiente
  * (Ciclo III, en Séptimo → Ciclo IV, en Noveno), y a su grupo sabatino; si ese grupo
  * del año siguiente todavía no existe, se crea (ver App\Support\Ciclos).
+ *
+ * Los marcados como reprobados (resultado "reprobado", ver ReprobacionController)
+ * no pasan: repiten su mismo grado (o ciclo) el año siguiente, como repitentes, y
+ * siguen con su técnica. Un reprobado de undécimo no se gradúa.
  */
 final class Promocion
 {
@@ -86,7 +90,7 @@ final class Promocion
                 ->where('sig.anio_lectivo_id', $this->destino->id))
             ->orderBy('gr.numero')
             ->orderBy('e.nombre_completo')
-            ->get(['m.id', 'm.estudiante_id', 'm.grado_id', 'gr.numero as grado_numero', 'g.numero as grupo_numero', 'm.sede_id', 'm.jornada', 'm.modalidad_id']);
+            ->get(['m.id', 'm.estudiante_id', 'm.grado_id', 'gr.numero as grado_numero', 'g.numero as grupo_numero', 'm.sede_id', 'm.jornada', 'm.modalidad_id', 'm.resultado']);
     }
 
     /** @return array<string, mixed> */
@@ -102,6 +106,22 @@ final class Promocion
         // pasa a su mismo grupo. Los que no lo tienen esperan a la segunda,
         // para repartirse viendo ya cuántos quedaron en cada grupo.
         foreach ($pendientes as $m) {
+            // Reprobó: repite su mismo grado (y ciclo, si es sabatino) el año siguiente.
+            if (self::repite($m)) {
+                $gradoNuevo = (int) $m->grado_id;
+                if ($m->jornada === Ciclos::JORNADA && ($ciclo = Ciclos::deGrado((int) $m->grado_numero))) {
+                    $this->matricular($m, $gradoNuevo, $this->grupoDelCiclo($ciclo, $gradoNuevo, $m));
+                } elseif ((int) $m->grado_numero === self::GRADO_SIN_GRUPO) {
+                    $this->matricularSinGrupo($m, $gradoNuevo);
+                } elseif ($grupo = $this->mismoGrupo($gradoNuevo, $m)) {
+                    $this->matricular($m, $gradoNuevo, $grupo);
+                } else {
+                    $sinSuGrupo[] = [$m, $gradoNuevo];
+                }
+
+                continue;
+            }
+
             if ((int) $m->grado_numero === (int) $ultimo) {
                 DB::table('matriculas')->where('id', $m->id)->update(['estado' => 'graduado', 'resultado' => 'promovido', 'updated_at' => $this->ahora]);
                 $graduados++;
@@ -138,6 +158,7 @@ final class Promocion
         return [
             'anio' => (int) $this->destino->anio,
             'promovidos' => $this->promovidos,
+            'repiten' => $this->repiten,
             'graduados' => $graduados,
             'sobreCupo' => $this->sobreCupo,
             'sinGrupo' => $this->sinGrupo,
@@ -148,6 +169,13 @@ final class Promocion
     private Carbon $ahora;
 
     private int $promovidos = 0;
+
+    private int $repiten = 0;
+
+    private static function repite(object $m): bool
+    {
+        return $m->resultado === 'reprobado';
+    }
 
     private int $sobreCupo = 0;
 
@@ -185,6 +213,7 @@ final class Promocion
 
     private function crearMatricula(object $m, int $gradoNuevo, int $sedeId, ?int $grupoId, ?string $jornada): void
     {
+        $repite = self::repite($m);
         DB::table('matriculas')->insert([
             'estudiante_id' => $m->estudiante_id,
             'anio_lectivo_id' => $this->destino->id,
@@ -192,15 +221,21 @@ final class Promocion
             'grupo_id' => $grupoId,
             'sede_id' => $sedeId,
             // Al llegar a décimo la técnica queda sin elegir; después sigue con la suya.
-            'modalidad_id' => (int) $m->grado_numero + 1 === self::GRADO_TECNICA ? null : $m->modalidad_id,
+            // El que repite sigue con la suya.
+            'modalidad_id' => ! $repite && (int) $m->grado_numero + 1 === self::GRADO_TECNICA ? null : $m->modalidad_id,
             'jornada' => $jornada,
             'fecha_matricula' => $this->ahora->toDateString(),
-            'condicion' => 'antiguo',
+            'condicion' => $repite ? 'repitente' : 'antiguo',
             'estado' => 'activo',
             'es_historico' => false,
             'created_at' => $this->ahora,
             'updated_at' => $this->ahora,
         ]);
+        if ($repite) {
+            $this->repiten++;
+
+            return;
+        }
         DB::table('matriculas')->where('id', $m->id)->update(['resultado' => 'promovido', 'updated_at' => $this->ahora]);
         $this->promovidos++;
     }

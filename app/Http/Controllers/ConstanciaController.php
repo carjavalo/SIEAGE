@@ -75,6 +75,8 @@ class ConstanciaController extends Controller
             ->orderBy('gr.numero')
             ->orderBy('g.codigo')
             ->orderBy('e.nombre_completo')
+            // El mismo orden en que se numeran dentro del grupo (ver Constancias).
+            ->orderBy('m.id')
             ->pluck('m.id')
             ->all();
 

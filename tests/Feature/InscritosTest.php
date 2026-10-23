@@ -495,4 +495,75 @@ class InscritosTest extends TestCase
         $this->actingAs($usuario)->post("/inscritos/{$otra->id}/matricular", ['grupo_id' => $grupoViejo])
             ->assertSessionHasErrors('grupo_id');
     }
+
+    public function test_devolver_a_inscritos_deshace_la_matricula()
+    {
+        $grupos = $this->grupos();
+        $usuario = User::factory()->create();
+        $this->actingAs($usuario)->put("/inscritos/{$this->solicitud->id}/padres", $this->padres());
+        $this->actingAs($usuario)->put("/inscritos/{$this->solicitud->id}/documentos", ['documentos' => ['registro_civil' => 'recibido']]);
+        $this->actingAs($usuario)->post("/inscritos/{$this->solicitud->id}/matricular", ['grupo_id' => $grupos['7-2']])->assertSessionHasNoErrors();
+        $estudiante = DB::table('estudiantes')->where('numero_documento', '1109555001')->value('id');
+
+        // Desde la ficha del estudiante se ve de qué inscripción vino.
+        $this->actingAs($usuario)->get("/estudiantes?ver={$estudiante}")
+            ->assertInertia(fn (Assert $page) => $page->where('detalle.inscripcion', $this->solicitud->id));
+
+        $this->actingAs($usuario)->post("/inscritos/{$this->solicitud->id}/devolver")
+            ->assertSessionHasNoErrors()
+            ->assertRedirect("/inscritos?ver={$this->solicitud->id}");
+
+        $this->assertSame(0, DB::table('matriculas')->count());
+        $solicitud = $this->solicitud->fresh();
+        $this->assertSame(SolicitudInscripcion::PENDIENTE, $solicitud->estado);
+        $this->assertNull($solicitud->matricula_id);
+        $this->assertNull($solicitud->revisada_por);
+        $this->assertSame(0, DB::table('padres')->whereNotNull('estudiante_id')->count(), 'la madre y el padre vuelven a la inscripción');
+        $this->assertSame(2, DB::table('padres')->where('solicitud_inscripcion_id', $solicitud->id)->count());
+
+        // Y se puede matricular otra vez, en el grupo correcto.
+        $this->actingAs($usuario)->post("/inscritos/{$this->solicitud->id}/matricular", ['grupo_id' => $grupos['7-1']])->assertSessionHasNoErrors();
+        $m = DB::table('matriculas')->first();
+        $this->assertSame([$grupos['7-1'], 'nuevo'], [(int) $m->grupo_id, $m->condicion]);
+        $this->assertSame(2, DB::table('padres')->where('estudiante_id', $estudiante)->count());
+
+        // Una pendiente no tiene nada que devolver.
+        $this->actingAs($usuario)->post("/inscritos/{$this->solicitud->id}/devolver")->assertSessionHasNoErrors();
+        $this->actingAs($usuario)->post("/inscritos/{$this->solicitud->id}/devolver")
+            ->assertSessionHasErrors(['devolver' => 'Esta inscripción no tiene una matrícula que deshacer.']);
+    }
+
+    public function test_devolver_al_que_volvia_deja_su_matricula_como_estaba()
+    {
+        $matricula = $this->yaMatriculadoEsteAnio('retirado', '7-1');
+        $usuario = User::factory()->create();
+        $this->actingAs($usuario)->put("/inscritos/{$this->solicitud->id}/padres", $this->padres());
+        $this->actingAs($usuario)->post("/inscritos/{$this->solicitud->id}/matricular", ['grupo_id' => DB::table('grupos')->where('codigo', '7-2')->value('id')]);
+
+        $this->actingAs($usuario)->post("/inscritos/{$this->solicitud->id}/devolver")->assertSessionHasNoErrors();
+
+        // La matrícula no se borra: vuelve a retirada, con la novedad.
+        $m = DB::table('matriculas')->find($matricula);
+        $this->assertSame('retirado', $m->estado);
+        $this->assertNotNull($m->fecha_retiro);
+        $this->assertDatabaseHas('novedades_matricula', ['matricula_id' => $matricula, 'tipo' => 'deshabilitada', 'estado_nuevo' => 'retirado']);
+        $this->assertSame(SolicitudInscripcion::PENDIENTE, $this->solicitud->fresh()->estado);
+    }
+
+    public function test_no_se_devuelve_si_ya_tiene_matricula_el_anio_siguiente()
+    {
+        $grupos = $this->grupos();
+        $usuario = User::factory()->create();
+        $this->actingAs($usuario)->put("/inscritos/{$this->solicitud->id}/padres", $this->padres());
+        $this->actingAs($usuario)->post("/inscritos/{$this->solicitud->id}/matricular", ['grupo_id' => $grupos['7-2']]);
+        $m = DB::table('matriculas')->first();
+        $actual = DB::table('anios_lectivos')->find($m->anio_lectivo_id);
+        $siguiente = DB::table('anios_lectivos')->insertGetId(['anio' => $actual->anio + 1, 'estado' => 'planeado', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('matriculas')->insert(['estudiante_id' => $m->estudiante_id, 'anio_lectivo_id' => $siguiente, 'grado_id' => DB::table('grados')->where('numero', 8)->value('id'),
+            'sede_id' => $m->sede_id, 'condicion' => 'antiguo', 'estado' => 'activo', 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->actingAs($usuario)->post("/inscritos/{$this->solicitud->id}/devolver")
+            ->assertSessionHasErrors(['devolver' => 'Ya tiene matrícula en '.($actual->anio + 1).' (lo promovieron): quita primero esa matrícula.']);
+        $this->assertSame(2, DB::table('matriculas')->count());
+    }
 }

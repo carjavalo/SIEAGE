@@ -378,6 +378,83 @@ class InscritoController extends Controller
         return to_route('inscritos.index');
     }
 
+    /**
+     * Deshacer la matrícula de un inscrito (se matriculó por error, o en el grupo o
+     * el año que no era): la inscripción vuelve a pendiente y la matrícula se borra.
+     * Si esa matrícula era la de un estudiante que volvía (se había retirado ese
+     * año y se reactivó), no se borra: vuelve a como estaba. La madre y el padre
+     * vuelven a la inscripción, y los documentos marcados después, también.
+     *
+     * No se deja si ya tiene matrícula en un año siguiente (promovido) o boletines
+     * escritos: eso se quita primero.
+     */
+    public function devolver(Request $request, SolicitudInscripcion $solicitud): RedirectResponse
+    {
+        Alcance::exigirSolicitud($request->user(), $solicitud->id);
+        $m = $solicitud->estado === SolicitudInscripcion::APROBADA && $solicitud->matricula_id
+            ? DB::table('matriculas as m')->join('anios_lectivos as al', 'al.id', '=', 'm.anio_lectivo_id')
+                ->where('m.id', $solicitud->matricula_id)->first(['m.id', 'm.estudiante_id', 'm.documentos', 'm.documentos_por', 'm.documentos_en', 'al.anio'])
+            : null;
+        if (! $m) {
+            throw ValidationException::withMessages(['devolver' => 'Esta inscripción no tiene una matrícula que deshacer.']);
+        }
+        $siguiente = DB::table('matriculas as m')->join('anios_lectivos as al', 'al.id', '=', 'm.anio_lectivo_id')
+            ->where('m.estudiante_id', $m->estudiante_id)->where('al.anio', '>', $m->anio)->min('al.anio');
+        if ($siguiente) {
+            throw ValidationException::withMessages(['devolver' => "Ya tiene matrícula en {$siguiente} (lo promovieron): quita primero esa matrícula."]);
+        }
+        if (DB::table('boletines')->where('matricula_id', $m->id)->exists()) {
+            throw ValidationException::withMessages(['devolver' => 'Ya tiene boletines escritos en esta matrícula: no se puede deshacer.']);
+        }
+
+        DB::transaction(function () use ($request, $solicitud, $m) {
+            $ahora = now();
+            // ¿Era un estudiante que volvía? Su matrícula del año se había reactivado con esta inscripción.
+            $reactivada = DB::table('novedades_matricula')->where('matricula_id', $m->id)->where('tipo', 'habilitada')
+                ->where('razon', 'like', "%(solicitud {$solicitud->id})%")->orderByDesc('id')->first();
+            if ($reactivada) {
+                DB::table('matriculas')->where('id', $m->id)->update([
+                    'estado' => $reactivada->estado_anterior,
+                    'fecha_retiro' => $reactivada->fecha,
+                    'motivo_retiro' => "Se deshizo la matrícula por la inscripción (solicitud {$solicitud->id}).",
+                    'deshabilitado_por' => $request->user()?->id,
+                    'deshabilitado_en' => $ahora,
+                    'updated_at' => $ahora,
+                ]);
+                DB::table('novedades_matricula')->insert([
+                    'matricula_id' => $m->id,
+                    'tipo' => 'deshabilitada',
+                    'estado_anterior' => 'activo',
+                    'estado_nuevo' => $reactivada->estado_anterior,
+                    'razon' => "Se devolvió a inscritos: se deshizo la matrícula por el formulario (solicitud {$solicitud->id}).",
+                    'fecha' => $ahora->toDateString(),
+                    'user_id' => $request->user()?->id,
+                    'created_at' => $ahora,
+                ]);
+            } else {
+                DB::table('matriculas')->where('id', $m->id)->delete();
+            }
+
+            DB::table('padres')->where('solicitud_inscripcion_id', $solicitud->id)->where('estudiante_id', $m->estudiante_id)->update(['estudiante_id' => null]);
+
+            $solicitud->forceFill([
+                'estado' => SolicitudInscripcion::PENDIENTE,
+                'matricula_id' => null,
+                'revisada_por' => null,
+                'revisada_en' => null,
+                // Los documentos que se marcaron en la ficha del estudiante vuelven a la inscripción.
+                ...($m->documentos !== null ? [
+                    'documentos' => json_decode($m->documentos, true),
+                    'documentos_por' => $m->documentos_por,
+                    'documentos_en' => $m->documentos_en,
+                ] : []),
+            ])->save();
+        });
+
+        return to_route('inscritos.index', ['ver' => $solicitud->id])
+            ->with('success', 'Volvió a inscritos: la matrícula se deshizo y la inscripción quedó pendiente.');
+    }
+
     /** El año lectivo que estaba activo cuando la familia envió el formulario. */
     private function anioDeMatricula(SolicitudInscripcion $solicitud): ?int
     {
