@@ -246,23 +246,32 @@ class ConstanciasTest extends TestCase
                 ->where('actual.jornada', 'Por asignar'));
     }
 
-    public function test_cada_ficha_lleva_su_consecutivo_del_anio_y_no_cambia_al_reimprimir()
+    public function test_las_fichas_de_un_grupo_van_del_001_al_total_de_activos_en_orden_alfabetico()
     {
         $this->seed(DatosInicialesSeeder::class);
         $anio = $this->anioActivo();
-        $consecutivo = fn (int $estudiante) => $this->actingAs(User::first())->get("/estudiantes/{$estudiante}/constancia")
-            ->viewData('page')['props']['constancias'][0]['consecutivo'];
-        $m = DB::table('matriculas')->where('anio_lectivo_id', $anio->id)->where('estado', 'activo')->orderBy('id')->first();
+        $grupo = DB::table('matriculas')->where('anio_lectivo_id', $anio->id)->where('estado', 'activo')->whereNotNull('grupo_id')->value('grupo_id');
+        $activos = DB::table('matriculas as m')->join('estudiantes as e', 'e.id', '=', 'm.estudiante_id')
+            ->where('m.grupo_id', $grupo)->where('m.estado', 'activo')->whereNull('e.deleted_at')
+            ->orderBy('e.nombre_completo')->orderBy('m.id')->pluck('m.estudiante_id');
+        $fichas = fn () => collect($this->actingAs(User::first())->get("/constancias?anio={$anio->anio}&grupo={$grupo}")
+            ->viewData('page')['props']['constancias']);
 
-        $primero = $consecutivo($m->estudiante_id);
-        $this->assertGreaterThan(0, $primero);
-        $this->assertSame($primero, $consecutivo($m->estudiante_id), 'reimpresa, el mismo número');
+        // Una por activo, numeradas 1, 2, … hasta el total, en el orden de la lista.
+        $lote = $fichas();
+        $this->assertSame(range(1, $activos->count()), $lote->pluck('consecutivo')->all());
+        $this->assertSame([$activos->count()], $lote->pluck('deTotal')->unique()->values()->all());
 
-        // Una matrícula nueva del año recibe el siguiente número al imprimir su ficha.
-        $nuevo = DB::table('estudiantes')->insertGetId(['tipo_documento' => 'T.I.', 'numero_documento' => '99887766', 'nombre_completo' => 'Prueba Uno', 'created_at' => now(), 'updated_at' => now()]);
-        DB::table('matriculas')->insert([...collect((array) $m)->except(['id', 'consecutivo', 'estudiante_id'])->all(), 'estudiante_id' => $nuevo]);
-        $maximo = (int) DB::table('matriculas')->where('anio_lectivo_id', $anio->id)->max('consecutivo');
-        $this->assertSame($maximo + 1, $consecutivo($nuevo));
-        $this->assertSame($primero, $consecutivo($m->estudiante_id));
+        // La ficha suelta de un estudiante lleva el mismo número que en el grupo.
+        $tercero = $activos[2];
+        $sola = $this->actingAs(User::first())->get("/estudiantes/{$tercero}/constancia")->viewData('page')['props']['constancias'][0];
+        $this->assertSame([3, $activos->count()], [$sola['consecutivo'], $sola['deTotal']]);
+
+        // Si uno se retira, los números se corren y el último sigue siendo el total real.
+        DB::table('matriculas')->where('grupo_id', $grupo)->where('estudiante_id', $activos[0])->update(['estado' => 'retirado']);
+        $lote = $fichas();
+        $this->assertSame(range(1, $activos->count() - 1), $lote->pluck('consecutivo')->all());
+        $retirado = $this->actingAs(User::first())->get("/estudiantes/{$activos[0]}/constancia")->viewData('page')['props']['constancias'][0];
+        $this->assertNull($retirado['consecutivo'], 'quien no está activo no lleva n.º');
     }
 }

@@ -207,7 +207,7 @@ class EstudianteController extends Controller
                 'm.id', 'al.anio', 'al.estado as estado_anio', 'gr.id as grado_id', 'gr.nombre as grado', 'gr.numero as grado_numero', 'g.codigo as grupo',
                 's.nombre as sede', 's.codigo as sede_codigo', 'm.sede_id', 'm.grupo_id', 'm.jornada', 'mo.nombre as modalidad',
                 'm.fecha_matricula', 'm.condicion', 'm.estado', 'm.es_historico', 'm.observaciones',
-                'm.fecha_retiro', 'm.motivo_retiro',
+                'm.fecha_retiro', 'm.motivo_retiro', 'm.resultado',
             ]);
 
         $actual = ($anio ? $historia->firstWhere('anio', $anio) : null)
@@ -253,7 +253,7 @@ class EstudianteController extends Controller
             // Solo si es posterior al que se está viendo (viendo 2027, no hay «año siguiente» que mostrar).
             ->where('al.anio', '>', $actual?->anio ?? 0)
             ->orderBy('al.anio')
-            ->first(['al.anio', 'gr.id as grado_id', 'gr.nombre as grado', 'g.codigo as grupo', 's.nombre as sede', 's.codigo as sede_codigo', 'm.jornada']);
+            ->first(['al.anio', 'gr.id as grado_id', 'gr.nombre as grado', 'g.codigo as grupo', 's.nombre as sede', 's.codigo as sede_codigo', 'm.jornada', 'm.condicion']);
 
         $novedades = $actual
             ? DB::table('novedades_matricula as n')
@@ -276,6 +276,10 @@ class EstudianteController extends Controller
             'novedades' => $novedades,
             // Matrícula del año siguiente, si ya fue promovido.
             'promocion' => $promocion,
+            // Si la matrícula vino de una inscripción: se puede devolver a inscritos.
+            'inscripcion' => $actual && request()->user()->can('matricular')
+                ? DB::table('solicitudes_inscripcion')->where('matricula_id', $actual->id)->where('estado', 'aprobada')->value('id')
+                : null,
             'historia' => $historia,
             'acudientes' => $acudientes,
             'boletines' => $boletines,

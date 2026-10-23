@@ -12,6 +12,7 @@ use App\Http\Controllers\InformeController;
 use App\Http\Controllers\InscripcionController;
 use App\Http\Controllers\InscritoController;
 use App\Http\Controllers\PromocionController;
+use App\Http\Controllers\ReprobacionController;
 use App\Http\Controllers\RolController;
 use App\Http\Controllers\SedeController;
 use App\Http\Controllers\UsuarioController;
@@ -91,6 +92,8 @@ Route::middleware(['auth'])->group(function () {
         Route::put('inscritos/{solicitud}/documentos', [InscritoController::class, 'guardarDocumentos'])->whereNumber('solicitud')->name('inscritos.documentos.guardar');
         Route::get('inscritos/{solicitud}/grupo', [InscritoController::class, 'grupo'])->whereNumber('solicitud')->name('inscritos.grupo');
         Route::post('inscritos/{solicitud}/matricular', [InscritoController::class, 'matricular'])->whereNumber('solicitud')->name('inscritos.matricular');
+        // Deshacer la matrícula: vuelve a inscritos, pendiente.
+        Route::post('inscritos/{solicitud}/devolver', [InscritoController::class, 'devolver'])->whereNumber('solicitud')->name('inscritos.devolver');
     });
 
     // Sedes y sus grupos: verlas, y crearlas y cambiarlas.
@@ -123,6 +126,11 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::post('promociones', [PromocionController::class, 'store'])->middleware('can:promover-estudiantes')->name('promociones.store');
+    // Reprobó el año: al promover repite el grado (y quitar esa marca).
+    Route::middleware('can:promover-estudiantes')->group(function () {
+        Route::post('estudiantes/{estudiante}/reprobar', [ReprobacionController::class, 'reprobar'])->whereNumber('estudiante')->name('estudiantes.reprobar');
+        Route::delete('estudiantes/{estudiante}/reprobar', [ReprobacionController::class, 'quitar'])->whereNumber('estudiante')->name('estudiantes.reprobar.quitar');
+    });
 
     Route::middleware('can:gestionar-usuarios')->group(function () {
         Route::get('usuarios', [UsuarioController::class, 'index'])->name('usuarios.index');

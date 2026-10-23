@@ -13,7 +13,9 @@ use Illuminate\Support\Facades\DB;
  * año solo se borra si queda sin matrículas ni grupos.
  *
  * No toca a los inscritos que se matricularon directamente en el año
- * siguiente (condición "nuevo"), ni a nadie deshabilitado a mano.
+ * siguiente (condición "nuevo"), ni a nadie deshabilitado a mano. A los que
+ * reprobaron se les borra la matrícula en que repetían, pero siguen marcados
+ * como reprobados (al promover otra vez, repiten).
  */
 class RevertirPromocion extends Command
 {
@@ -36,8 +38,8 @@ class RevertirPromocion extends Command
         $promovidas = DB::table('matriculas as sig')
             ->join('matriculas as m', fn ($j) => $j->on('m.estudiante_id', '=', 'sig.estudiante_id')->where('m.anio_lectivo_id', $origen->id))
             ->where('sig.anio_lectivo_id', $destino->id)
-            ->where('sig.condicion', 'antiguo')
-            ->where('m.resultado', 'promovido')
+            ->where(fn ($q) => $q->where(fn ($q) => $q->where('sig.condicion', 'antiguo')->where('m.resultado', 'promovido'))
+                ->orWhere(fn ($q) => $q->where('sig.condicion', 'repitente')->where('m.resultado', 'reprobado')))
             ->pluck('sig.id');
         $graduados = DB::table('matriculas')->where('anio_lectivo_id', $origen->id)->where('estado', 'graduado')->where('resultado', 'promovido')->count();
 

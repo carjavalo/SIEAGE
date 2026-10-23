@@ -28,7 +28,7 @@ class Constancias
         if (! $matriculas) {
             return [];
         }
-        self::numerar($matriculas);
+        $numeros = self::numerosEnElGrupo($matriculas);
 
         $filas = DB::table('matriculas as m')
             ->join('estudiantes as e', 'e.id', '=', 'm.estudiante_id')
@@ -87,7 +87,7 @@ class Constancias
 
         return collect($matriculas)
             ->filter(fn ($id) => $filas->has($id))
-            ->map(function ($id) use ($filas, $acudientes, $historias, $deInscripcion, $hoy) {
+            ->map(function ($id) use ($filas, $acudientes, $historias, $deInscripcion, $hoy, $numeros) {
                 $m = $filas[$id];
                 $a = $acudientes->get($m->estudiante_id);
                 $inscripcion = $deInscripcion->get($m->numero_documento);
@@ -99,8 +99,9 @@ class Constancias
 
                 return [
                     'id' => $m->id,
-                    // El n.º de la ficha en su año: el mismo cada vez que se imprima.
-                    'consecutivo' => (int) $m->consecutivo,
+                    // El n.º de la ficha dentro de su grupo (1 al total de activos), y ese total.
+                    'consecutivo' => $numeros[$id]['numero'] ?? null,
+                    'deTotal' => $numeros[$id]['total'] ?? null,
                     'anio' => $m->anio,
                     // Como en el Excel: la fecha de la constancia es la de la matrícula.
                     'fecha' => $m->fecha_matricula ?? $hoy,
@@ -137,26 +138,42 @@ class Constancias
     }
 
     /**
-     * Les da su consecutivo a las matrículas de esos años que todavía no tienen
-     * (las creadas después de numerar): el siguiente de su año, en el orden en que
-     * se crearon. Así el número no depende de cuáles fichas se imprimen primero.
+     * El n.º de cada ficha dentro de su grupo: los estudiantes activos del grupo en
+     * orden alfabético (el mismo de la lista y de las constancias del grupo), de 1
+     * al total. Así la última ficha de un grupo de 40 es la 40. Sin grupo (sexto
+     * recién promovido), cuenta el grado en su sede. Quien no está activo no lleva n.º.
      *
      * @param  list<int>  $matriculas
+     * @return array<int, array{numero: int, total: int}>
      */
-    private static function numerar(array $matriculas): void
+    private static function numerosEnElGrupo(array $matriculas): array
     {
-        $anios = DB::table('matriculas')->whereIn('id', $matriculas)->distinct()->pluck('anio_lectivo_id');
-        foreach ($anios as $anio) {
-            $sinNumero = DB::table('matriculas')->where('anio_lectivo_id', $anio)->whereNull('consecutivo')->orderBy('id')->pluck('id');
-            if ($sinNumero->isEmpty()) {
-                continue;
-            }
-            DB::transaction(function () use ($anio, $sinNumero) {
-                $ultimo = (int) DB::table('matriculas')->where('anio_lectivo_id', $anio)->lockForUpdate()->max('consecutivo');
-                foreach ($sinNumero as $id) {
-                    DB::table('matriculas')->where('id', $id)->whereNull('consecutivo')->update(['consecutivo' => ++$ultimo]);
+        $grupo = fn ($m) => $m->grupo_id ? "g{$m->grupo_id}" : "{$m->anio_lectivo_id}-{$m->sede_id}-{$m->grado_id}";
+        $pedidas = DB::table('matriculas')->whereIn('id', $matriculas)->where('estado', 'activo')->get(['id', 'anio_lectivo_id', 'sede_id', 'grado_id', 'grupo_id']);
+        if ($pedidas->isEmpty()) {
+            return [];
+        }
+        $claves = $pedidas->map($grupo)->flip();
+
+        $numeros = [];
+        DB::table('matriculas as m')
+            ->join('estudiantes as e', 'e.id', '=', 'm.estudiante_id')
+            ->whereIn('m.anio_lectivo_id', $pedidas->pluck('anio_lectivo_id')->unique())
+            ->where(fn ($q) => $q->whereIn('m.grupo_id', $pedidas->pluck('grupo_id')->filter()->unique())
+                ->orWhere(fn ($q) => $q->whereNull('m.grupo_id')->whereIn('m.grado_id', $pedidas->whereNull('grupo_id')->pluck('grado_id')->unique())))
+            ->where('m.estado', 'activo')
+            ->whereNull('e.deleted_at')
+            ->orderBy('e.nombre_completo')
+            ->orderBy('m.id')
+            ->get(['m.id', 'm.anio_lectivo_id', 'm.sede_id', 'm.grado_id', 'm.grupo_id'])
+            ->filter(fn ($m) => $claves->has($grupo($m)))
+            ->groupBy($grupo)
+            ->each(function ($delGrupo) use (&$numeros) {
+                foreach ($delGrupo->values() as $i => $m) {
+                    $numeros[$m->id] = ['numero' => $i + 1, 'total' => $delGrupo->count()];
                 }
             });
-        }
+
+        return $numeros;
     }
 }

@@ -1,6 +1,7 @@
 import { AlertaEdadGrado } from '@/components/estudiantes/alerta-edad';
 import { Marca } from '@/components/estudiantes/etiquetas';
 import { Bloque, ContenidoFicha, PanelFicha, TarjetaContacto } from '@/components/ficha';
+import { DevolverAInscritos } from '@/components/inscritos/devolver';
 import { edad, fecha, telefono, textoSisben } from '@/lib/estudiantes';
 import {
     type FichaInscrito as Ficha,
@@ -91,6 +92,9 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
             }
         >
             {ficha.edad && !matricula && <AlertaEdadGrado alerta={ficha.edad} grado={s.grado} className="mx-5 mt-3.5" />}
+            {matricula && s.estado === 'aprobada' && puede(auth, 'matricular') && (
+                <DevolverAInscritos solicitudId={s.id} nombre={nombreInscrito(s)} className="mx-5 mt-3.5 w-auto" />
+            )}
             <BloquesSolicitud solicitud={s} padres={padres} documentos={documentos} />
         </ContenidoFicha>
     );

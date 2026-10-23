@@ -6,7 +6,10 @@ import { type CSSProperties, type ReactNode } from 'react';
 export type Constancia = {
     id: number;
     /** N.º de la ficha en su año (el mismo cada vez que se imprime). */
-    consecutivo: number;
+    /** N.º de la ficha dentro de su grupo (activos en orden alfabético); null si no está activo. */
+    consecutivo: number | null;
+    /** Cuántos activos tiene su grupo: la última ficha lleva ese número. */
+    deTotal: number | null;
     anio: number;
     fecha: string;
     estudiante: {
@@ -104,12 +107,13 @@ function Copia({ constancia: c, institucion, papel, para }: { constancia: Consta
                         </p>
                     </div>
                     <div className="flex items-center justify-end gap-[3mm]">
-                        {/* El consecutivo de la ficha: el mismo en las dos copias y cada vez que se imprima. */}
+                        {/* El n.º de la ficha en su grupo (001 al total de activos), el mismo en las dos copias. */}
                         <div className="rounded-[1mm] border-[0.3mm] border-[#1E3A7B] px-[2mm] py-[0.8mm] text-center leading-none">
                             <p className="text-[5.6pt] font-bold tracking-[0.12em] text-[#56627F] uppercase">Ficha N.º</p>
                             <p className="mt-[0.6mm] font-['Roboto_Serif',Georgia,serif] text-[12pt] font-bold text-[#B42318] tabular-nums">
-                                {String(c.consecutivo).padStart(4, '0')}
+                                {c.consecutivo ? String(c.consecutivo).padStart(3, '0') : '—'}
                             </p>
+                            {c.deTotal && <p className="mt-[0.5mm] text-[5.6pt] text-[#56627F] tabular-nums">de {c.deTotal}</p>}
                         </div>
                         <img
                             src="/constancia/alcaldia.png"

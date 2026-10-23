@@ -8,7 +8,7 @@ import { type FormEventHandler, useState } from 'react';
 import { sileo } from 'sileo';
 
 const MOTIVOS = [
-    { valor: 'perdio', titulo: 'Perdió el año', texto: 'No aprobó el grado. No se promueve.' },
+    { valor: 'perdio', titulo: 'Perdió el año', texto: 'No aprobó y no sigue. (Si sigue y repite: «Reprobó el año».)' },
     { valor: 'retiro', titulo: 'Se retiró de la institución', texto: 'Ya no estudiará aquí.' },
     { valor: 'traslado', titulo: 'Trasladado', texto: 'Se fue a otra institución.' },
     { valor: 'otro', titulo: 'Otro motivo', texto: 'Explícalo en la razón.' },
@@ -16,7 +16,7 @@ const MOTIVOS = [
 
 export type Novedad = {
     id: number;
-    tipo: 'deshabilitada' | 'habilitada';
+    tipo: 'deshabilitada' | 'habilitada' | 'reprobada' | 'reprobacion_quitada';
     estado_nuevo: string;
     razon: string;
     fecha: string;
@@ -31,11 +31,21 @@ const hoy = () => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-const campo =
+export const campo =
     'w-full rounded-[12px] border-[1.5px] border-[#D3DDF3] bg-white px-3.5 text-[15px] text-[#16223F] outline-none transition placeholder:text-[#6B7690] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] aria-invalid:border-[#E0897D]';
-const dialogo = 'max-w-lg rounded-[22px] border-[#E3E9F6] p-6 font-sans text-[#16223F] sm:rounded-[22px]';
+export const dialogo = 'max-w-lg rounded-[22px] border-[#E3E9F6] p-6 font-sans text-[#16223F] sm:rounded-[22px]';
 
-function Razon({ valor, onCambio, error, placeholder }: { valor: string; onCambio: (v: string) => void; error?: string; placeholder: string }) {
+export function Razon({
+    valor,
+    onCambio,
+    error,
+    placeholder,
+}: {
+    valor: string;
+    onCambio: (v: string) => void;
+    error?: string;
+    placeholder: string;
+}) {
     return (
         <label className="flex flex-col gap-1.5">
             <span className="flex justify-between text-[13px] font-medium text-[#3E4A68]">
@@ -241,7 +251,14 @@ export function HabilitarEstudiante({ estudianteId, nombre }: { estudianteId: nu
     );
 }
 
-/** Historial de la matrícula: cada deshabilitación y habilitación, con quién y por qué. */
+const ETIQUETAS: Record<Novedad['tipo'], string> = {
+    deshabilitada: 'Deshabilitado',
+    habilitada: 'Habilitado de nuevo',
+    reprobada: 'Reprobó el año (repite el grado)',
+    reprobacion_quitada: 'Se quitó la reprobación',
+};
+
+/** Historial de la matrícula: deshabilitaciones, habilitaciones y reprobaciones, con quién y por qué. */
 export function Novedades({ novedades }: { novedades: Novedad[] }) {
     if (!novedades.length) return null;
     return (
@@ -249,7 +266,7 @@ export function Novedades({ novedades }: { novedades: Novedad[] }) {
             {novedades.map((n) => (
                 <li key={n.id} className="rounded-[12px] bg-[#F5F7FC] px-3.5 py-2.5 text-[13px]">
                     <p className="font-medium text-[#16223F]">
-                        {n.tipo === 'habilitada' ? 'Habilitado de nuevo' : 'Deshabilitado'}
+                        {ETIQUETAS[n.tipo]}
                         <span className="font-normal text-[#56627F]">
                             {' '}
                             ·{' '}

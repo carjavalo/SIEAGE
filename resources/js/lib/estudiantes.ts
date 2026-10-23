@@ -73,6 +73,8 @@ export type Matricula = {
     observaciones: string | null;
     fecha_retiro: string | null;
     motivo_retiro: string | null;
+    /** "reprobado": al promover repite el grado. */
+    resultado: string | null;
 };
 
 /** Quién corrigió por última vez esos datos desde la ficha. */
@@ -151,7 +153,11 @@ export type FichaDetalle = {
         sede: string;
         sede_codigo: string;
         jornada: string | null;
+        /** "repitente" si reprobó y repite el grado. */
+        condicion: string;
     } | null;
+    /** La inscripción de la que vino la matrícula actual (para devolverlo a inscritos), si la hay. */
+    inscripcion: number | null;
     historia: Matricula[];
     /** Deshabilitaciones y habilitaciones de la matrícula actual, la más reciente primero. */
     novedades: import('@/components/estudiantes/deshabilitar').Novedad[];
