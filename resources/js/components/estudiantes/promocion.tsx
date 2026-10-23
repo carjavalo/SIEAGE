@@ -101,6 +101,50 @@ function mensaje(r: ResumenPromocion, uno: boolean) {
 
 export const puedePromover = (auth: SharedData['auth']) => !!(auth as { puedePromover?: boolean }).puedePromover;
 
+/** Lo que devuelve el servidor al deshacer una promoción (PromocionController → flash.reversion). */
+export type ResumenReversion = { anio: number; revertidos: number; reactivados: number };
+
+type AlcanceReversion = { estudiante_id?: number; grado_id?: number; sede?: string; grupo_id?: number };
+
+/** Deshace la promoción del alcance y avisa con los toasts de Sileo. */
+export function revertir(anio: number, alcance: AlcanceReversion, { onFin }: { onFin?: () => void } = {}) {
+    const envio = new Promise<ResumenReversion>((resolver, rechazar) => {
+        router.post(
+            '/promociones/revertir',
+            { anio, ...alcance },
+            {
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: (pagina) => {
+                    const resumen = (pagina.props as unknown as { flash: { reversion?: ResumenReversion } }).flash.reversion;
+                    if (resumen) resolver(resumen);
+                    else rechazar(new Error('Sin respuesta'));
+                },
+                onError: (errores) => rechazar(new Error(Object.values(errores)[0] ?? 'No se pudo deshacer.')),
+                onFinish: onFin,
+            },
+        );
+    });
+
+    sileo.promise(envio, {
+        loading: { title: 'Deshaciendo promoción…' },
+        success: (r) =>
+            r.revertidos === 0 && r.reactivados === 0
+                ? { type: 'info' as const, title: 'No había promoción que deshacer' }
+                : {
+                      title: 'Promoción deshecha',
+                      description: [
+                          r.revertidos && `${r.revertidos} ${r.revertidos === 1 ? 'matrícula borrada' : 'matrículas borradas'} de ${r.anio}`,
+                          r.reactivados && `${r.reactivados} ${r.reactivados === 1 ? 'graduado' : 'graduados'} volvió a activo`,
+                      ]
+                          .filter(Boolean)
+                          .join(' · '),
+                      duration: 7000,
+                  },
+        error: (e) => ({ title: 'No se pudo deshacer', description: e instanceof Error ? e.message : undefined }),
+    });
+}
+
 /**
  * Botón de la lista: promueve el grado a la vista o todo el institución, después
  * de confirmar. Solo en el año en curso y para quien tiene permiso.
@@ -293,6 +337,129 @@ export function BotonPromover({
 }
 
 /**
+ * Botón de la lista para deshacer la promoción: de un grupo, del grado a la vista
+ * o de todo. Borra las matrículas que la promoción creó en el año siguiente.
+ */
+export function BotonDeshacer({
+    anio,
+    grado,
+    sede,
+    grupos,
+}: {
+    anio: number;
+    grado: Grado;
+    sede?: { codigo: string; nombre: string };
+    grupos: Grupo[];
+}) {
+    const { auth } = usePage<SharedData>().props;
+    const todoElColegio = auth.todasLasSedes !== false;
+    const [abierto, setAbierto] = useState(false);
+    const [alcance, setAlcance] = useState<'grado' | 'grupo' | 'todos'>('grado');
+    const [grupoId, setGrupoId] = useState('');
+    const [enviando, setEnviando] = useState(false);
+
+    const confirmar = () => {
+        const datos: AlcanceReversion =
+            alcance === 'grupo'
+                ? { grupo_id: Number(grupoId) }
+                : alcance === 'grado'
+                  ? { grado_id: grado.id, ...(sede ? { sede: sede.codigo } : {}) }
+                  : {};
+        setEnviando(true);
+        revertir(anio, datos, {
+            onFin: () => {
+                setEnviando(false);
+                setAbierto(false);
+            },
+        });
+    };
+
+    const opcion = (valor: 'grado' | 'grupo' | 'todos', titulo: string, texto: string) => (
+        <label
+            className={cn(
+                'flex cursor-pointer gap-3 rounded-[14px] border-[1.5px] p-3.5 transition',
+                alcance === valor ? 'border-[#1E3A7B] bg-[#EEF2FB]' : 'border-[#E3E9F6] hover:border-[#B9C8EC]',
+            )}
+        >
+            <input type="radio" name="deshacer" checked={alcance === valor} onChange={() => setAlcance(valor)} className="mt-0.5 size-4 accent-[#1E3A7B]" />
+            <span>
+                <span className="block text-[15px] font-medium">{titulo}</span>
+                <span className="block text-[13px] leading-snug text-[#56627F]">{texto}</span>
+            </span>
+        </label>
+    );
+
+    return (
+        <>
+            <button
+                type="button"
+                onClick={() => {
+                    setAlcance('grado');
+                    setGrupoId('');
+                    setAbierto(true);
+                }}
+                className="flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-[12px] border-[1.5px] border-[#D3DDF3] bg-white px-3.5 text-sm font-semibold text-[#3E4A68] transition hover:bg-[#F5F7FC] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none"
+            >
+                <Undo2 className="size-4" />
+                Deshacer promoción
+            </button>
+
+            <Dialog open={abierto} onOpenChange={(v) => !enviando && setAbierto(v)}>
+                <DialogContent className="max-w-md rounded-[22px] border-[#E3E9F6] p-6 font-sans text-[#16223F] sm:rounded-[22px]">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-semibold">Deshacer la promoción al año {anio + 1}</DialogTitle>
+                        <DialogDescription className="text-[#56627F]">
+                            Borra las matrículas que la promoción creó en {anio + 1} y vuelve a dejar activos a los estudiantes en {anio}. No toca a los
+                            inscritos nuevos de {anio + 1} ni a quien se deshabilitó a mano. A los reprobados se les borra la matrícula en que repetían.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="flex flex-col gap-2">
+                        {opcion('grado', `${grado.nombre}${sede ? ` · solo ${sede.nombre}` : ''}`, `Deshace la promoción de ${grado.nombre} de ${anio}.`)}
+                        {grupos.length > 0 && opcion('grupo', 'Un grupo', 'Deshace la promoción de todo un grupo (p. ej. 5-2).')}
+                        {opcion('todos', todoElColegio ? 'Todo el institución' : 'Todas mis sedes', `Deshace la promoción de todos los grados de ${anio}.`)}
+                    </div>
+
+                    {alcance === 'grupo' && (
+                        <div className="rounded-[14px] bg-[#F5F7FC] p-3.5">
+                            <label className="mb-1.5 block text-[13px] font-semibold text-[#16223F]">Grupo</label>
+                            <select
+                                value={grupoId}
+                                onChange={(e) => setGrupoId(e.target.value)}
+                                disabled={enviando}
+                                className="w-full rounded-lg border border-[#D3DDF3] px-3 py-2 text-[14px] focus:ring-2 focus:ring-[#1E3A7B] focus:outline-none"
+                            >
+                                <option value="">Elige el grupo...</option>
+                                {grupos.map((g) => (
+                                    <option key={g.id} value={g.id}>
+                                        {g.codigo} ({g.sede})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    <div className="mt-1 flex justify-end gap-2">
+                        <button type="button" onClick={() => setAbierto(false)} disabled={enviando} className={botonSecundario}>
+                            Cancelar
+                        </button>
+                        <button
+                            type="button"
+                            onClick={confirmar}
+                            disabled={enviando || (alcance === 'grupo' && !grupoId)}
+                            className={botonPrimario}
+                        >
+                            {enviando && <LoaderCircle className="size-4 animate-spin" />}
+                            Deshacer
+                        </button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </>
+    );
+}
+
+/**
  * Acción de la ficha lateral: promover a este estudiante, o a dónde quedó. Si
  * reprobó, al promover repite su mismo grado; se marca (y se quita) aquí.
  */
@@ -332,13 +499,29 @@ export function PromocionEstudiante({
                 </p>
             )}
             {promocion ? (
-                <p className="flex items-center gap-2 rounded-[14px] bg-[#EEF2FB] px-4 py-3 text-[14px] text-[#1E3A7B]">
-                    {promocion.condicion === 'repitente' ? <RotateCcw className="size-4 shrink-0" /> : <ArrowUpRight className="size-4 shrink-0" />}
-                    <span>
-                        {promocion.condicion === 'repitente' ? 'Repite en' : 'Promovido a'}{' '}
-                        <b className="font-semibold">{promocion.grupo ?? promocion.grado}</b> · {promocion.sede} · {promocion.anio}
-                    </span>
-                </p>
+                <>
+                    <p className="flex items-center gap-2 rounded-[14px] bg-[#EEF2FB] px-4 py-3 text-[14px] text-[#1E3A7B]">
+                        {promocion.condicion === 'repitente' ? <RotateCcw className="size-4 shrink-0" /> : <ArrowUpRight className="size-4 shrink-0" />}
+                        <span>
+                            {promocion.condicion === 'repitente' ? 'Repite en' : 'Promovido a'}{' '}
+                            <b className="font-semibold">{promocion.grupo ?? promocion.grado}</b> · {promocion.sede} · {promocion.anio}
+                        </span>
+                    </p>
+                    {puede && (
+                        <button
+                            type="button"
+                            disabled={enviando}
+                            onClick={() => {
+                                setEnviando(true);
+                                revertir(anio, { estudiante_id: estudianteId }, { onFin: () => setEnviando(false) });
+                            }}
+                            className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-[12px] border-[1.5px] border-[#D3DDF3] bg-white text-[14px] font-semibold text-[#3E4A68] transition hover:bg-[#F5F7FC] disabled:opacity-60"
+                        >
+                            {enviando ? <LoaderCircle className="size-4 animate-spin" /> : <Undo2 className="size-4" />}
+                            Deshacer promoción
+                        </button>
+                    )}
+                </>
             ) : (
                 puede && (
                     <BotonPromoverEstudiante

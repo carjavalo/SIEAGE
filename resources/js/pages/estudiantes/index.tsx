@@ -5,7 +5,7 @@ import { BotonCupos, puedeEditarCupos } from '@/components/estudiantes/cupos';
 import { sedeInfo } from '@/components/estudiantes/etiquetas';
 import { FichaEstudiante } from '@/components/estudiantes/ficha-estudiante';
 import { ListaEstudiantes } from '@/components/estudiantes/lista-estudiantes';
-import { BotonPromover, puedePromover } from '@/components/estudiantes/promocion';
+import { BotonDeshacer, BotonPromover, puedePromover } from '@/components/estudiantes/promocion';
 import { TableroGrupos } from '@/components/estudiantes/tablero-grupos';
 import { VeloFicha } from '@/components/ficha';
 import { useListaConFicha } from '@/hooks/use-lista-con-ficha';
@@ -250,6 +250,7 @@ export default function Estudiantes({
                                         estudiantes={estudiantes}
                                     />
                                 )}
+                                {promueve && <BotonDeshacer anio={anio} grado={grado} sede={sedes.find((s) => s.codigo === sede)} grupos={grupos} />}
                             </>
                         )
                     }

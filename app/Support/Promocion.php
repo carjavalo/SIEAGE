@@ -71,6 +71,62 @@ final class Promocion
         return AniosLectivos::abrir((int) $origen->anio + 1);
     }
 
+    /**
+     * Deshace la promoción de un alcance (un estudiante, un grupo, un grado o todo):
+     * borra las matrículas que la promoción creó en el año siguiente, vuelve a "activo"
+     * a los graduados y quita la marca "promovido". No toca a los inscritos nuevos del
+     * año siguiente ni a nadie deshabilitado a mano. A los reprobados se les borra la
+     * matrícula en que repetían, pero siguen marcados como reprobados.
+     *
+     * @return array<string, mixed> resumen para mostrar al usuario
+     */
+    public static function revertir(int $anio, ?int $gradoId = null, ?int $estudianteId = null, int|array|null $sedeId = null, ?int $grupoId = null): array
+    {
+        $origen = DB::table('anios_lectivos')->where('anio', $anio)->first();
+        if (! $origen || $origen->estado !== 'activo') {
+            throw ValidationException::withMessages(['promocion' => 'Solo se deshace la promoción desde el año lectivo en curso.']);
+        }
+        $destino = DB::table('anios_lectivos')->where('anio', $anio + 1)->first();
+        if (! $destino) {
+            return ['anio' => $anio + 1, 'revertidos' => 0, 'reactivados' => 0];
+        }
+
+        return DB::transaction(function () use ($origen, $destino, $gradoId, $estudianteId, $sedeId, $grupoId) {
+            // Matrículas del año en curso en el alcance (las que se promovieron o reprobaron).
+            $delAlcance = DB::table('matriculas as m')
+                ->where('m.anio_lectivo_id', $origen->id)
+                ->when($gradoId, fn ($q) => $q->where('m.grado_id', $gradoId))
+                ->when($estudianteId, fn ($q) => $q->where('m.estudiante_id', $estudianteId))
+                ->when($grupoId, fn ($q) => $q->where('m.grupo_id', $grupoId))
+                ->when($sedeId !== null, fn ($q) => $q->whereIn('m.sede_id', (array) $sedeId))
+                ->get(['m.id', 'm.estudiante_id', 'm.estado', 'm.resultado']);
+            $estudiantes = $delAlcance->pluck('estudiante_id');
+
+            // Las que la promoción creó en el año siguiente para esos estudiantes: "antiguo"
+            // de una promovida, o "repitente" de una reprobada. No toca a los inscritos nuevos.
+            $creadas = DB::table('matriculas as sig')
+                ->join('matriculas as m', fn ($j) => $j->on('m.estudiante_id', '=', 'sig.estudiante_id')->where('m.anio_lectivo_id', $origen->id))
+                ->where('sig.anio_lectivo_id', $destino->id)
+                ->whereIn('sig.estudiante_id', $estudiantes)
+                ->where(fn ($q) => $q->where(fn ($q) => $q->where('sig.condicion', 'antiguo')->where('m.resultado', 'promovido'))
+                    ->orWhere(fn ($q) => $q->where('sig.condicion', 'repitente')->where('m.resultado', 'reprobado')))
+                ->pluck('sig.id');
+            DB::table('matriculas')->whereIn('id', $creadas)->delete();
+
+            // Graduados de undécimo: vuelven a activos. Las que seguían activas: se les quita "promovido".
+            $graduados = $delAlcance->where('estado', 'graduado')->where('resultado', 'promovido')->pluck('id');
+            DB::table('matriculas')->whereIn('id', $graduados)->update(['estado' => 'activo', 'resultado' => null, 'updated_at' => now()]);
+            $activas = $delAlcance->where('estado', 'activo')->where('resultado', 'promovido')->pluck('id');
+            DB::table('matriculas')->whereIn('id', $activas)->update(['resultado' => null, 'updated_at' => now()]);
+
+            return [
+                'anio' => (int) $destino->anio,
+                'revertidos' => $creadas->count(),
+                'reactivados' => $graduados->count(),
+            ];
+        });
+    }
+
     /** Matrículas activas del alcance que todavía no tienen matrícula el año siguiente. */
     private function pendientes(?int $gradoId, ?int $estudianteId, int|array|null $sedeId = null, ?int $grupoId = null): Collection
     {
