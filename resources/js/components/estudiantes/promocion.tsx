@@ -345,11 +345,14 @@ export function BotonDeshacer({
     grado,
     sede,
     grupos,
+    esAnioEnCurso,
 }: {
     anio: number;
     grado: Grado;
     sede?: { codigo: string; nombre: string };
     grupos: Grupo[];
+    /** Se está viendo el año en curso (alcance de origen) o el año destino (grado que recibió). */
+    esAnioEnCurso: boolean;
 }) {
     const { auth } = usePage<SharedData>().props;
     const todoElColegio = auth.todasLasSedes !== false;
@@ -407,17 +410,37 @@ export function BotonDeshacer({
             <Dialog open={abierto} onOpenChange={(v) => !enviando && setAbierto(v)}>
                 <DialogContent className="max-w-md rounded-[22px] border-[#E3E9F6] p-6 font-sans text-[#16223F] sm:rounded-[22px]">
                     <DialogHeader>
-                        <DialogTitle className="text-xl font-semibold">Deshacer la promoción al año {anio + 1}</DialogTitle>
+                        <DialogTitle className="text-xl font-semibold">
+                            {esAnioEnCurso ? `Deshacer la promoción al año ${anio + 1}` : `Deshacer la promoción a ${anio}`}
+                        </DialogTitle>
                         <DialogDescription className="text-[#56627F]">
-                            Borra las matrículas que la promoción creó en {anio + 1} y vuelve a dejar activos a los estudiantes en {anio}. No toca a los
-                            inscritos nuevos de {anio + 1} ni a quien se deshabilitó a mano. A los reprobados se les borra la matrícula en que repetían.
+                            {esAnioEnCurso
+                                ? `Borra las matrículas que la promoción creó en ${anio + 1} y vuelve a dejar activos a los estudiantes en ${anio}. No toca a los inscritos nuevos de ${anio + 1} ni a quien se deshabilitó a mano. A los reprobados se les borra la matrícula en que repetían.`
+                                : `Borra las matrículas que la promoción trajo a ${anio} y les quita la marca de promovido en ${anio - 1}. No toca a los inscritos nuevos de ${anio} ni a quien se deshabilitó a mano.`}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="flex flex-col gap-2">
-                        {opcion('grado', `${grado.nombre}${sede ? ` · solo ${sede.nombre}` : ''}`, `Deshace la promoción de ${grado.nombre} de ${anio}.`)}
-                        {grupos.length > 0 && opcion('grupo', 'Un grupo', 'Deshace la promoción de todo un grupo (p. ej. 5-2).')}
-                        {opcion('todos', todoElColegio ? 'Todo el institución' : 'Todas mis sedes', `Deshace la promoción de todos los grados de ${anio}.`)}
+                        {opcion(
+                            'grado',
+                            `${grado.nombre}${sede ? ` · solo ${sede.nombre}` : ''}`,
+                            esAnioEnCurso
+                                ? `Deshace la promoción de ${grado.nombre} de ${anio}.`
+                                : `Deshace la promoción que llegó a ${grado.nombre} en ${anio}.`,
+                        )}
+                        {grupos.length > 0 &&
+                            opcion(
+                                'grupo',
+                                'Un grupo',
+                                esAnioEnCurso
+                                    ? 'Deshace la promoción de todo un grupo (p. ej. 5-2).'
+                                    : 'Deshace la promoción que llegó a un grupo (p. ej. 6-2).',
+                            )}
+                        {opcion(
+                            'todos',
+                            todoElColegio ? 'Todo el institución' : 'Todas mis sedes',
+                            `Deshace la promoción de todos los grados de ${anio}.`,
+                        )}
                     </div>
 
                     {alcance === 'grupo' && (
