@@ -20,7 +20,7 @@ export function CambiarGrupo({
     nombre: string;
     grupoActual: string;
     sedeActual: string;
-    grupos: Array<{ id: number; codigo: string; sede: string; sede_id: number; grado_id: number }>;
+    grupos: Array<{ id: number; codigo: string; sede: string; sede_id: number; grado_id: number; grado: string; grado_numero: number }>;
     gradoActual: number;
     className?: string;
 }) {
@@ -35,9 +35,14 @@ export function CambiarGrupo({
         return { id, nombre: g?.sede };
     });
 
-    const gruposDelGradoYSede = grupos.filter(
-        (g) => g.grado_id === gradoActual && (sedeId ? g.sede_id.toString() === sedeId : true),
-    );
+    // Todos los grupos de la sede elegida (de cualquier grado), agrupados por grado.
+    const gruposDeLaSede = grupos
+        .filter((g) => (sedeId ? g.sede_id.toString() === sedeId : true))
+        .sort((a, b) => a.grado_numero - b.grado_numero || a.codigo.localeCompare(b.codigo));
+    const gradosDeLaSede = Array.from(new Set(gruposDeLaSede.map((g) => g.grado_id))).map((id) => {
+        const g = gruposDeLaSede.find((x) => x.grado_id === id)!;
+        return { id, nombre: g.grado, numero: g.grado_numero, grupos: gruposDeLaSede.filter((x) => x.grado_id === id) };
+    });
 
     const cambiar = () => {
         if (!grupoId || !razon.trim()) return;
@@ -53,7 +58,7 @@ export function CambiarGrupo({
                     setSedeId('');
                     setGrupoId('');
                     setRazon('');
-                    sileo.success({ title: 'Cambio registrado', description: `${nombre} cambió de grupo y/o sede.` });
+                    sileo.success({ title: 'Cambio registrado', description: `${nombre} cambió de grupo, grado y/o sede.` });
                 },
                 onError: (errores) => sileo.error({ title: 'Error al cambiar', description: Object.values(errores)[0] as string }),
             },
@@ -71,16 +76,16 @@ export function CambiarGrupo({
                 )}
             >
                 <TrendingUp className="size-4" />
-                Cambiar de grupo o sede
+                Cambiar de grupo, grado o sede
             </button>
 
             <Dialog open={abierto} onOpenChange={(v) => !enviando && setAbierto(v)}>
                 <DialogContent className={dialogo}>
                     <DialogHeader>
-                        <DialogTitle className="text-xl font-semibold">Cambiar de grupo o sede</DialogTitle>
+                        <DialogTitle className="text-xl font-semibold">Cambiar de grupo, grado o sede</DialogTitle>
                         <DialogDescription className="text-[#56627F]">
-                            {nombre} está en <b className="font-semibold text-[#16223F]">{grupoActual}</b> ({sedeActual}). Elige el nuevo grupo
-                            y/o sede del mismo grado.
+                            {nombre} está en <b className="font-semibold text-[#16223F]">{grupoActual}</b> ({sedeActual}). Elige el nuevo grupo,
+                            que puede ser de otro grado o sede.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
@@ -108,17 +113,21 @@ export function CambiarGrupo({
                             <select
                                 value={grupoId}
                                 onChange={(e) => setGrupoId(e.target.value)}
-                                disabled={enviando || gruposDelGradoYSede.length === 0}
+                                disabled={enviando || gruposDeLaSede.length === 0}
                                 className="w-full px-4 py-2 border border-[#D3DDF3] rounded-lg text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1E3A7B]"
                             >
                                 <option value="">Elige un grupo...</option>
-                                {gruposDelGradoYSede.map((g) => (
-                                    <option key={g.id} value={g.id}>
-                                        {g.codigo} ({g.sede})
-                                    </option>
+                                {gradosDeLaSede.map((gr) => (
+                                    <optgroup key={gr.id} label={gr.nombre + (gr.id === gradoActual ? ' (grado actual)' : '')}>
+                                        {gr.grupos.map((g) => (
+                                            <option key={g.id} value={g.id}>
+                                                {g.codigo} ({g.sede})
+                                            </option>
+                                        ))}
+                                    </optgroup>
                                 ))}
                             </select>
-                            {gruposDelGradoYSede.length === 0 && sedeId && (
+                            {gruposDeLaSede.length === 0 && sedeId && (
                                 <p className="text-xs text-[#A12B2B] mt-1">No hay grupos disponibles en esta sede</p>
                             )}
                         </div>
@@ -128,7 +137,7 @@ export function CambiarGrupo({
                                 value={razon}
                                 onChange={(e) => setRazon(e.target.value)}
                                 disabled={enviando}
-                                placeholder="Explica por qué cambia de grupo o sede..."
+                                placeholder="Explica por qué cambia de grupo, grado o sede..."
                                 minLength={10}
                                 maxLength={300}
                                 rows={3}

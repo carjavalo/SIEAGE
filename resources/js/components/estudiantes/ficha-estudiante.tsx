@@ -185,13 +185,13 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
                 )}
 
                 {m && enCurso && m.estado === 'activo' && editable && ficha.sedes && ficha.sedes.length > 0 && (
-                    <Bloque titulo="Cambiar de grupo o sede">
+                    <Bloque titulo="Cambiar de grupo, grado o sede">
                         <CambiarGrupo
                             estudianteId={e.id}
                             nombre={e.nombre_completo}
                             grupoActual={m.grupo ?? m.grado}
                             sedeActual={m.sede}
-                            grupos={ficha.sedes.flatMap((s) => s.grupos.map((g) => ({ ...g, sede: s.codigo, sede_id: s.id, grado_id: g.grado_id })))}
+                            grupos={ficha.sedes.flatMap((s) => s.grupos.map((g) => ({ ...g, sede: s.codigo, sede_id: s.id })))}
                             gradoActual={m.grado_id}
                         />
                     </Bloque>

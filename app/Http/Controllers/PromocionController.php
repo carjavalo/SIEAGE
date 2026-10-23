@@ -19,9 +19,29 @@ class PromocionController extends Controller
             'grado_id' => ['nullable', 'integer', 'exists:grados,id'],
             'estudiante_id' => ['nullable', 'integer', 'exists:estudiantes,id'],
             'sede' => ['nullable', 'string', 'exists:sedes,codigo'],
+            // Promover un grupo completo (p. ej. 5-2) a un grupo de destino elegido (6-2).
+            'grupo_id' => ['nullable', 'integer', 'exists:grupos,id'],
+            'grupo_destino_id' => ['nullable', 'integer', 'required_with:grupo_id', 'exists:grupos,id'],
+        ], [
+            'grupo_destino_id.required_with' => 'Elige a qué grupo promover.',
         ]);
 
         $user = $request->user();
+
+        // Promover un grupo completo a un grupo de destino elegido.
+        if (isset($datos['grupo_id'])) {
+            $origen = DB::table('grupos')->where('id', $datos['grupo_id'])->first(['sede_id', 'grado_id']);
+            $destino = DB::table('grupos')->where('id', $datos['grupo_destino_id'])->first(['sede_id', 'grado_id']);
+            if (! $origen || ! $destino) {
+                throw ValidationException::withMessages(['grupo_id' => 'Grupo no válido.']);
+            }
+            Alcance::exigir($user, $origen->sede_id, $origen->grado_id);
+            Alcance::exigir($user, $destino->sede_id, $destino->grado_id);
+            $resumen = Promocion::ejecutar((int) $datos['anio'], null, null, (int) $origen->sede_id, (int) $datos['grupo_id'], (int) $datos['grupo_destino_id']);
+
+            return back()->with('promocion', $resumen);
+        }
+
         $gradoId = isset($datos['grado_id']) ? (int) $datos['grado_id'] : null;
         $sedeId = isset($datos['sede']) ? DB::table('sedes')->where('codigo', $datos['sede'])->value('id') : null;
         if ($sedeId) {
