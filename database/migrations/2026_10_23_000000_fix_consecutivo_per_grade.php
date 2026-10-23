@@ -25,26 +25,19 @@ return new class extends Migration
             $table->unique(['anio_lectivo_id', 'grado_id', 'sede_id', 'consecutivo'], 'uq_matricula_consecutivo_por_grado');
         });
 
-        // Renumerar los consecutivos según grado, sede y año
+        // Renumerar los consecutivos: 1, 2, 3... por cada (año, grado, sede).
         DB::table('matriculas')
+            ->select('anio_lectivo_id', 'grado_id', 'sede_id')
             ->distinct()
-            ->pluck('anio_lectivo_id', 'grado_id')
-            ->each(function ($anio, $grado) {
+            ->get()
+            ->each(function ($combo) {
                 DB::table('matriculas')
-                    ->where('anio_lectivo_id', $anio)
-                    ->where('grado_id', $grado)
-                    ->groupBy('sede_id')
-                    ->select('sede_id')
-                    ->pluck('sede_id')
-                    ->each(function ($sede) use ($anio, $grado) {
-                        DB::table('matriculas')
-                            ->where('anio_lectivo_id', $anio)
-                            ->where('grado_id', $grado)
-                            ->where('sede_id', $sede)
-                            ->orderBy('id')
-                            ->pluck('id')
-                            ->each(fn ($id, $i) => DB::table('matriculas')->where('id', $id)->update(['consecutivo' => $i + 1]));
-                    });
+                    ->where('anio_lectivo_id', $combo->anio_lectivo_id)
+                    ->where('grado_id', $combo->grado_id)
+                    ->where('sede_id', $combo->sede_id)
+                    ->orderBy('id')
+                    ->pluck('id')
+                    ->each(fn ($id, $i) => DB::table('matriculas')->where('id', $id)->update(['consecutivo' => $i + 1]));
             });
     }
 
