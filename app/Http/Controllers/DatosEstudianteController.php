@@ -465,7 +465,7 @@ class DatosEstudianteController extends Controller
             ->where('m.estudiante_id', $estudiante)
             ->where('al.estado', 'activo')
             ->tap(fn ($q) => Alcance::filtrar($q, $request->user(), 'm.sede_id', 'm.grado_id'))
-            ->first(['m.id', 'm.grupo_id', 'g.sede_id', 'm.grado_id', 'g.codigo as grupo_actual', 's.codigo as sede_actual']) ?? abort(404);
+            ->first(['m.id', 'm.grupo_id', 'g.sede_id', 'm.grado_id', 'm.estado', 'g.codigo as grupo_actual', 's.codigo as sede_actual']) ?? abort(404);
 
         $datos = $request->validate([
             'grupo_id' => ['required', 'integer', 'exists:grupos,id'],
@@ -491,8 +491,10 @@ class DatosEstudianteController extends Controller
             throw ValidationException::withMessages(['grupo_id' => 'Ya está en ese grupo.']);
         }
 
-        $cupoDisponible = DB::table('grupos')->where('id', $nuevoGrupo->id)->value('cupo_disponible');
-        if ($cupoDisponible <= 0) {
+        // El cupo no se guarda: es lo proyectado menos los que ya están activos en el grupo.
+        $cupos = (int) DB::table('grupos')->where('id', $nuevoGrupo->id)->value('cupos_proyectados');
+        $activos = (int) DB::table('matriculas')->where('grupo_id', $nuevoGrupo->id)->where('estado', 'activo')->count();
+        if ($cupos - $activos <= 0) {
             throw ValidationException::withMessages(['grupo_id' => 'No hay cupos disponibles en ese grupo.']);
         }
 
@@ -501,8 +503,8 @@ class DatosEstudianteController extends Controller
             DB::table('novedades_matricula')->insert([
                 'matricula_id' => $matricula->id,
                 'tipo' => 'cambio_grupo',
-                'estado_anterior' => null,
-                'estado_nuevo' => null,
+                'estado_anterior' => $matricula->estado,
+                'estado_nuevo' => $matricula->estado,
                 'razon' => "Cambió de {$matricula->grupo_actual} ({$matricula->sede_actual}) a {$nuevoGrupo->codigo} ({$nuevoGrupo->sede}): {$datos['razon']}",
                 'fecha' => now()->toDateString(),
                 'user_id' => $request->user()->id,

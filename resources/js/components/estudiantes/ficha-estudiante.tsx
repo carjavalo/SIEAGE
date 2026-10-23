@@ -181,17 +181,19 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
                     <Bloque titulo={`Estado en ${m.anio}`}>
                         <EstadoMatricula estudianteId={e.id} nombre={e.nombre_completo} estado={m.estado} novedades={ficha.novedades} />
                         {ficha.inscripcion && <DevolverAInscritos solicitudId={ficha.inscripcion} nombre={e.nombre_completo} className="mt-2" />}
-                        {m.estado === 'activo' && ficha.sedes && (
-                            <CambiarGrupo
-                                estudianteId={e.id}
-                                nombre={e.nombre_completo}
-                                grupoActual={m.grupo ?? m.grado}
-                                sedeActual={m.sede}
-                                grupos={ficha.sedes.flatMap((s) => s.grupos.map((g) => ({ ...g, sede: s.codigo, sede_id: s.id, grado_id: g.grado_id })))}
-                                gradoActual={m.grado_id}
-                                className="mt-2"
-                            />
-                        )}
+                    </Bloque>
+                )}
+
+                {m && enCurso && m.estado === 'activo' && editable && ficha.sedes && ficha.sedes.length > 0 && (
+                    <Bloque titulo="Cambiar de grupo o sede">
+                        <CambiarGrupo
+                            estudianteId={e.id}
+                            nombre={e.nombre_completo}
+                            grupoActual={m.grupo ?? m.grado}
+                            sedeActual={m.sede}
+                            grupos={ficha.sedes.flatMap((s) => s.grupos.map((g) => ({ ...g, sede: s.codigo, sede_id: s.id, grado_id: g.grado_id })))}
+                            gradoActual={m.grado_id}
+                        />
                     </Bloque>
                 )}
 

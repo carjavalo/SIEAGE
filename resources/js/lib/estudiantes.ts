@@ -164,6 +164,15 @@ export type FichaDetalle = {
     acudientes: Acudiente[];
     boletines: { numero: number; valor: string }[];
     parentescos: Parentesco[];
+    /** Grupos del grado actual por sede (dentro del alcance) para cambiar de grupo o sede; null si no aplica. */
+    sedes:
+        | {
+              id: number;
+              codigo: string;
+              nombre: string;
+              grupos: { id: number; codigo: string; grado_id: number }[];
+          }[]
+        | null;
     /** Alerta de edad para el grado de su matrícula. */
     edad: AlertaEdad | null;
     /** Los documentos de matrícula de la matrícula actual y cuáles se recibieron (null si no tiene matrícula). */
