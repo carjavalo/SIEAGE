@@ -559,7 +559,7 @@ class InscritoController extends Controller
             : back();
     }
 
-    public function excelInscritos(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    public function excelInscritos(Request $request): \Symfony\Component\HttpFoundation\BinaryFileResponse
     {
         $inscritos = DB::table('solicitudes_inscripcion as s')
             ->join('grados as g', 'g.id', '=', 's.grado_id')
@@ -589,9 +589,9 @@ class InscritoController extends Controller
             'Acudiente', 'Parentesco', 'Documento Acudiente', 'Teléfono', 'Correo', 'Sede Preferida',
         ];
 
-        $fila = 1;
         foreach ($encabezados as $col => $titulo) {
-            $hoja->setCellValueByColumnAndRow($col + 1, $fila, $titulo);
+            $letra = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col + 1);
+            $hoja->setCellValue("{$letra}1", $titulo);
         }
         $hoja->getStyle("A1:{$hoja->getHighestColumn()}1")->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
@@ -608,36 +608,38 @@ class InscritoController extends Controller
             $datos = [
                 $inscrito->grado,
                 "{$apellido}, {$nombre}",
-                $inscrito->numero_documento,
-                $inscrito->fecha_nacimiento,
+                $inscrito->numero_documento ?? '',
+                $inscrito->fecha_nacimiento ?? '',
                 ucfirst($inscrito->estado),
                 "{$acudienteApellido}, {$acudienteNombre}",
-                $inscrito->parentesco,
-                $inscrito->acudiente_numero_documento,
-                $inscrito->acudiente_telefono_1,
-                $inscrito->acudiente_correo,
-                $inscrito->sede_preferida ?? '—',
+                $inscrito->parentesco ?? '',
+                $inscrito->acudiente_numero_documento ?? '',
+                $inscrito->acudiente_telefono_1 ?? '',
+                $inscrito->acudiente_correo ?? '',
+                $inscrito->sede_preferida ?? '',
             ];
 
             foreach ($datos as $col => $valor) {
-                $hoja->setCellValueByColumnAndRow($col + 1, $fila, $valor);
+                $letra = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col + 1);
+                $hoja->setCellValueExplicit("{$letra}{$fila}", (string) $valor, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             }
             $fila++;
         }
 
         foreach (range(1, count($encabezados)) as $col) {
-            $hoja->getColumnDimensionByColumn($col)->setAutoSize(true);
+            $letra = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col);
+            $hoja->getColumnDimension($letra)->setAutoSize(true);
         }
 
         $archivo = 'INSCRITOS-' . now()->format('Y-m-d_His') . '.xlsx';
-        return response()->streamDownload(function () use ($libro) {
-            $escritor = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($libro);
-            $escritor->setPreCalculateFormulas(true);
-            $escritor->save('php://output');
-            $libro->disconnectWorksheets();
-        }, $archivo, [
+        $ruta = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $archivo;
+
+        $escritor = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($libro);
+        $escritor->save($ruta);
+        $libro->disconnectWorksheets();
+
+        return response()->download($ruta, $archivo, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Cache-Control' => 'no-store',
-        ]);
+        ])->deleteFileAfterSend(true);
     }
 }
