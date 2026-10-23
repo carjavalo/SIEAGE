@@ -72,19 +72,32 @@ final class Promocion
     }
 
     /**
-     * Deshace la promoción de un alcance (un estudiante, un grupo, un grado o todo):
-     * borra las matrículas que la promoción creó en el año siguiente, vuelve a "activo"
-     * a los graduados y quita la marca "promovido". No toca a los inscritos nuevos del
-     * año siguiente ni a nadie deshabilitado a mano. A los reprobados se les borra la
-     * matrícula en que repetían, pero siguen marcados como reprobados.
+     * Deshace la promoción de un alcance (un estudiante, un grupo, un grado o todo).
+     *
+     * Se puede pedir desde dos lados:
+     *  - Desde el año en curso: el alcance (grado/grupo) es el de ORIGEN (p. ej. 5.º en 2026)
+     *    y se borra lo que la promoción creó en el año siguiente; los graduados de undécimo
+     *    vuelven a activos.
+     *  - Desde un año planeado (el DESTINO, p. ej. 2027): el alcance es el del grado/grupo que
+     *    recibió a los promovidos (p. ej. 6.º en 2027) y se borra lo que la promoción trajo ahí.
+     *
+     * No toca a los inscritos nuevos del año siguiente ni a nadie deshabilitado a mano. A los
+     * reprobados se les borra la matrícula en que repetían, pero siguen marcados como reprobados.
      *
      * @return array<string, mixed> resumen para mostrar al usuario
      */
     public static function revertir(int $anio, ?int $gradoId = null, ?int $estudianteId = null, int|array|null $sedeId = null, ?int $grupoId = null): array
     {
-        $origen = DB::table('anios_lectivos')->where('anio', $anio)->first();
+        $visto = DB::table('anios_lectivos')->where('anio', $anio)->first();
+
+        // Desde un año planeado (el destino): el alcance se refiere a ese año.
+        if ($visto && $visto->estado !== 'activo') {
+            return self::revertirDesdeDestino($visto, $gradoId, $estudianteId, $sedeId, $grupoId);
+        }
+
+        $origen = $visto;
         if (! $origen || $origen->estado !== 'activo') {
-            throw ValidationException::withMessages(['promocion' => 'Solo se deshace la promoción desde el año lectivo en curso.']);
+            throw ValidationException::withMessages(['promocion' => 'Solo se deshace la promoción desde el año lectivo en curso o el año siguiente.']);
         }
         $destino = DB::table('anios_lectivos')->where('anio', $anio + 1)->first();
         if (! $destino) {
@@ -123,6 +136,46 @@ final class Promocion
                 'anio' => (int) $destino->anio,
                 'revertidos' => $creadas->count(),
                 'reactivados' => $graduados->count(),
+            ];
+        });
+    }
+
+    /**
+     * Deshacer la promoción mirándola desde el año destino (el grado/grupo que recibió a los
+     * promovidos): borra las matrículas que la promoción creó en ese año dentro del alcance y
+     * le quita la marca "promovido" a la matrícula de origen de cada uno.
+     *
+     * @return array<string, mixed>
+     */
+    private static function revertirDesdeDestino(object $destino, ?int $gradoId, ?int $estudianteId, int|array|null $sedeId, ?int $grupoId): array
+    {
+        $origen = DB::table('anios_lectivos')->where('anio', (int) $destino->anio - 1)->where('estado', 'activo')->first();
+        if (! $origen) {
+            throw ValidationException::withMessages(['promocion' => 'No hay promoción que deshacer para ese año.']);
+        }
+
+        return DB::transaction(function () use ($origen, $destino, $gradoId, $estudianteId, $sedeId, $grupoId) {
+            $filas = DB::table('matriculas as sig')
+                ->join('matriculas as m', fn ($j) => $j->on('m.estudiante_id', '=', 'sig.estudiante_id')->where('m.anio_lectivo_id', $origen->id))
+                ->where('sig.anio_lectivo_id', $destino->id)
+                ->where(fn ($q) => $q->where(fn ($q) => $q->where('sig.condicion', 'antiguo')->where('m.resultado', 'promovido'))
+                    ->orWhere(fn ($q) => $q->where('sig.condicion', 'repitente')->where('m.resultado', 'reprobado')))
+                // El alcance (grado/grupo/sede/estudiante) se refiere al año destino.
+                ->when($gradoId, fn ($q) => $q->where('sig.grado_id', $gradoId))
+                ->when($estudianteId, fn ($q) => $q->where('sig.estudiante_id', $estudianteId))
+                ->when($grupoId, fn ($q) => $q->where('sig.grupo_id', $grupoId))
+                ->when($sedeId !== null, fn ($q) => $q->whereIn('sig.sede_id', (array) $sedeId))
+                ->get(['sig.id as sig_id', 'm.id as origen_id', 'm.resultado as origen_resultado']);
+
+            DB::table('matriculas')->whereIn('id', $filas->pluck('sig_id'))->delete();
+            // A los promovidos se les quita la marca; los reprobados siguen reprobados (repiten al promover otra vez).
+            $origenPromovidos = $filas->where('origen_resultado', 'promovido')->pluck('origen_id');
+            DB::table('matriculas')->whereIn('id', $origenPromovidos)->update(['resultado' => null, 'updated_at' => now()]);
+
+            return [
+                'anio' => (int) $destino->anio,
+                'revertidos' => $filas->count(),
+                'reactivados' => 0,
             ];
         });
     }

@@ -95,6 +95,8 @@ export default function Estudiantes({
     const { auth } = usePage<SharedData>().props;
     const anioEnCurso = anios.find((a) => a.estado === 'activo')?.anio ?? null;
     const promueve = puedePromover(auth) && anio === anioEnCurso;
+    // Deshacer promoción: desde el año en curso (grado de origen) o desde el año siguiente (grado destino).
+    const deshace = puedePromover(auth) && anioEnCurso !== null && (anio === anioEnCurso || anio === anioEnCurso + 1);
     const siguienteDe = (g?: Grado) => (g ? grados.find((x) => x.numero === g.numero + 1) : undefined);
     const porPromover = useMemo(() => estudiantes.filter((e) => e.estado === 'activo' && !e.promovido_a).length, [estudiantes]);
 
@@ -250,7 +252,15 @@ export default function Estudiantes({
                                         estudiantes={estudiantes}
                                     />
                                 )}
-                                {promueve && <BotonDeshacer anio={anio} grado={grado} sede={sedes.find((s) => s.codigo === sede)} grupos={grupos} />}
+                                {deshace && (
+                                    <BotonDeshacer
+                                        anio={anio}
+                                        grado={grado}
+                                        sede={sedes.find((s) => s.codigo === sede)}
+                                        grupos={grupos}
+                                        esAnioEnCurso={anio === anioEnCurso}
+                                    />
+                                )}
                             </>
                         )
                     }
