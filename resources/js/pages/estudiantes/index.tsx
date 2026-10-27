@@ -1,4 +1,5 @@
 import { TarjetasEsqueleto } from '@/components/esqueleto';
+import { botonBarra, nombreBarra } from '@/components/estudiantes/barra';
 import { Cabecera } from '@/components/estudiantes/cabecera';
 import { BotonConstancias } from '@/components/estudiantes/constancias';
 import { BotonCupos, puedeEditarCupos } from '@/components/estudiantes/cupos';
@@ -221,21 +222,19 @@ export default function Estudiantes({
                                 {puede(auth, 'informes') && (
                                     <Link
                                         href={`/informes/matricula?anio=${anio}${sede ? `&sede=${encodeURIComponent(sede)}` : ''}`}
-                                        className="flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none"
+                                        title="Informe"
+                                        className={botonBarra}
                                     >
                                         <FileText className="size-4" />
-                                        Informe
+                                        <span className={nombreBarra}>Informe</span>
                                     </Link>
                                 )}
                                 {puede(auth, 'constancias') && <BotonConstancias anio={anio} grado={grado} grupo={grupo} sede={sede} sedes={sedes} />}
                                 {/* Transición tiene boletín de texto: escribirlo e imprimirlo (también los docentes). */}
                                 {grado.numero === 0 && anio === anioEnCurso && puede(auth, 'escribir-boletines') && (
-                                    <Link
-                                        href={`/boletines${grupo ? `?grupo=${grupo.id}` : ''}`}
-                                        className="flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none"
-                                    >
+                                    <Link href={`/boletines${grupo ? `?grupo=${grupo.id}` : ''}`} title="Boletines" className={botonBarra}>
                                         <NotebookPen className="size-4" />
-                                        Boletines
+                                        <span className={nombreBarra}>Boletines</span>
                                     </Link>
                                 )}
                                 {/* Los cupos se editan en cualquier año (también en el planeado, después de promover). */}

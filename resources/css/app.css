@@ -132,16 +132,22 @@
     }
 }
 
-/* Páginas del panel (PanelLayout pone la clase): la barra de desplazamiento se
-   dibuja siempre, haya scroll o no. Así el encabezado y el contenido no se
-   corren al pasar de una página que se desplaza a una que no (p. ej. de
-   Configuración a Estudiantes). Antes solo se reservaba el espacio
-   (scrollbar-gutter), pero sin scroll ese espacio queda vacío y el navegador lo
-   pinta con el color de fondo: junto al encabezado azul se veía una franja
-   blanca. Con la barra dibujada se ve la del navegador, como en cualquier página. */
+/* Páginas del panel (PanelLayout pone la clase): la barra de desplazamiento de
+   la página no se dibuja; se desplaza igual, con la rueda, el teclado o el dedo.
+   Como no ocupa espacio, el encabezado y el contenido no se corren al pasar de
+   una página que se desplaza a una que no (p. ej. de Configuración a
+   Estudiantes), y junto al encabezado azul no queda franja ni barra. Las listas
+   de adentro conservan su barra delgada. */
 html.panel {
-    overflow-y: scroll;
+    scrollbar-width: none;
+    /* Tampoco se desplaza de lado: lo que queda escondido a la derecha (la ficha
+       cerrada en pantallas anchas) no debe poder arrastrarse con el trackpad. */
+    overflow-x: clip;
     background-color: #fff;
+}
+
+html.panel::-webkit-scrollbar {
+    display: none;
 }
 
 /* En ancho de celular la barra de desplazamiento de la página no se dibuja (se
@@ -160,7 +166,7 @@ html.panel {
 
 /* Con un diálogo abierto, Radix bloquea el scroll (marca body[data-scroll-locked])
    y le suma a la página un margen del ancho de la barra para "compensarla". Aquí
-   la barra se dibuja siempre, así que el margen sobra: correría el contenido. */
+   la barra no se dibuja, así que ese margen sobraría: correría el contenido. */
 /* Informe de matrícula: cada .hoja es una página A4 sin márgenes (el diseño ya
    los trae). Página con nombre: no cambia cómo se imprime el resto de la app. */
 @page informe {

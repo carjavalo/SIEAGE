@@ -624,7 +624,7 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios,
                                                                 etiqueta="Sede donde desea estudiar"
                                                                 opciones={sedesPrimaria.map((s) => ({ valor: String(s.id), etiqueta: s.nombre }))}
                                                                 columnas="grid-cols-1 sm:grid-cols-3"
-                                                                ayuda="Opcional, solo para primaria. Si no eliges, el institución asigna la sede."
+                                                                ayuda="Opcional, solo para primaria. Si no eliges, la institución asigna la sede."
                                                             />
                                                         )}
                                                     </Seccion>
@@ -862,7 +862,7 @@ export default function Inscripcion({ anioLectivo, grados, parentescos, barrios,
                                                             type="email"
                                                             autoComplete="email"
                                                             placeholder="nombre@correo.com"
-                                                            ayuda="Por aquí le escribe el institución. Puede ser el mismo correo del paso anterior."
+                                                            ayuda="Por aquí le escribe la institución. Puede ser el mismo correo del paso anterior."
                                                             ancho="completo"
                                                         />
                                                     </Seccion>

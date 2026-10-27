@@ -8,14 +8,14 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Informe de matrícula de un año lectivo: todo el institución, en cifras, más el
+ * Informe de matrícula de un año lectivo: toda la institución, en cifras, más el
  * listado de estudiantes activos por grupo (el anexo).
  *
  * Se trae el año en una sola consulta y se agrupa aquí, en PHP: son unos miles
  * de filas y así el cálculo es el mismo en MySQL y en las pruebas (SQLite).
  *
  * Edad y extraedad: la edad se toma al 31 de marzo del año lectivo y se compara
- * con la tabla de edades del institución (ver App\Support\Edades): adecuada 5 años en
+ * con la tabla de edades de la institución (ver App\Support\Edades): adecuada 5 años en
  * Transición y uno más por grado; extraedad desde 3 años por encima (9 en Primero…
  * 19 en Undécimo).
  */

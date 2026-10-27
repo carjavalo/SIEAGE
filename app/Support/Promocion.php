@@ -18,7 +18,7 @@ use Illuminate\Validation\ValidationException;
  * jornada. Los que quedan sobre el cupo se cuentan para avisar: la secretaría
  * revisa después y deshabilita a quienes no continúan.
  *
- * Como pidió el institución: los de quinto pasan a sexto sin grupo ni jornada (los
+ * Como pidió la institución: los de quinto pasan a sexto sin grupo ni jornada (los
  * grupos de sexto se arman con la proyección de cupos) y los de noveno pasan a
  * décimo sin técnica; las dos cosas se asignan después en Estudiantes. Los
  * grupos del año siguiente no se copian solos: se crean en Sedes, según la
@@ -47,7 +47,7 @@ final class Promocion
 
     /**
      * Promueve las matrículas activas del año indicado (que debe ser el año en
-     * curso). Sin grado ni estudiante: todo el institución.
+     * curso). Sin grado ni estudiante: toda la institución.
      *
      * @return array<string, mixed> resumen para mostrar al usuario
      */

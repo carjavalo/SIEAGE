@@ -9,7 +9,7 @@ use Illuminate\Validation\Rule;
 
 /**
  * Documentos que el acudiente trae para matricular (paso N°1 del procedimiento
- * de matrícula del institución). Hay una lista para primaria y otra para
+ * de matrícula de la institución). Hay una lista para primaria y otra para
  * bachillerato; Transición usa la de primaria.
  *
  * En bachillerato, los certificados de notas que se piden dependen del grado

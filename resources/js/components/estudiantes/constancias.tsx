@@ -1,3 +1,4 @@
+import { botonBarra, nombreBarra } from '@/components/estudiantes/barra';
 import { botonPrimario, botonSecundario } from '@/components/formulario';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { type Grado, type Grupo, type SedeFiltro } from '@/lib/estudiantes';
@@ -11,7 +12,7 @@ type Alcance = { clave: string; titulo: string; detalle: string; n: number; href
 
 /**
  * «Constancias» en la lista de estudiantes: imprimir de una vez las del grupo elegido, del
- * grado, de la sede o de todo el institución (solo los activos del año que se está viendo).
+ * grado, de la sede o de toda la institución (solo los activos del año que se está viendo).
  */
 export function BotonConstancias({
     anio,
@@ -26,7 +27,7 @@ export function BotonConstancias({
     sede: string | null;
     sedes: SedeFiltro[];
 }) {
-    // Para un usuario de sede, "todo el institución" son sus sedes (el servidor ya limita la lista).
+    // Para un usuario de sede, "toda la institución" son sus sedes (el servidor ya limita la lista).
     const todoElColegio = usePage<SharedData>().props.auth.todasLasSedes !== false;
     const laSede = sedes.find((s) => s.codigo === sede);
     const ruta = (filtros: Record<string, string | number | undefined>) => {
@@ -67,7 +68,7 @@ export function BotonConstancias({
             : []),
         {
             clave: 'institución',
-            titulo: todoElColegio ? 'Todo el institución' : 'Todas mis sedes',
+            titulo: todoElColegio ? 'Toda la institución' : 'Todas mis sedes',
             detalle: 'Todas las sedes y grados',
             n: sedes.reduce((t, s) => t + s.activos, 0),
             href: ruta({}),
@@ -86,10 +87,11 @@ export function BotonConstancias({
                     setElegido(alcances[0].clave);
                     setAbierto(true);
                 }}
-                className="flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none"
+                title="Constancias"
+                className={botonBarra}
             >
                 <FileBadge className="size-4" />
-                Constancias
+                <span className={nombreBarra}>Constancias</span>
             </button>
 
             <Dialog open={abierto} onOpenChange={setAbierto}>
@@ -97,7 +99,7 @@ export function BotonConstancias({
                     <DialogHeader className="px-6 pt-6 pr-14 pb-4">
                         <DialogTitle className="text-xl font-semibold">Imprimir constancias</DialogTitle>
                         <DialogDescription className="text-[14px] leading-snug text-[#56627F]">
-                            Una hoja por estudiante, con la copia para la familia y la del institución. Solo los activos de {anio}.
+                            Una hoja por estudiante, con la copia para la familia y la de la institución. Solo los activos de {anio}.
                         </DialogDescription>
                     </DialogHeader>
 

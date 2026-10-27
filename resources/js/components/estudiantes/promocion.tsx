@@ -1,3 +1,4 @@
+import { nombreBarra } from '@/components/estudiantes/barra';
 import { Razon, dialogo } from '@/components/estudiantes/deshabilitar';
 import { botonPrimario, botonSecundario } from '@/components/formulario';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -146,7 +147,7 @@ export function revertir(anio: number, alcance: AlcanceReversion, { onFin }: { o
 }
 
 /**
- * Botón de la lista: promueve el grado a la vista o todo el institución, después
+ * Botón de la lista: promueve el grado a la vista o toda la institución, después
  * de confirmar. Solo en el año en curso y para quien tiene permiso.
  */
 export function BotonPromover({
@@ -259,10 +260,14 @@ export function BotonPromover({
                                 : `${pendientes} estudiante${pendientes === 1 ? '' : 's'} activo${pendientes === 1 ? '' : 's'} por promover.`,
                         )}
                         {puedeGrupo &&
-                            opcion('grupo', 'Un grupo a otro grupo', 'Promueve todo un grupo (p. ej. 5-2) al grupo que elijas del grado siguiente (6-2).')}
+                            opcion(
+                                'grupo',
+                                'Un grupo a otro grupo',
+                                'Promueve todo un grupo (p. ej. 5-2) al grupo que elijas del grado siguiente (6-2).',
+                            )}
                         {opcion(
                             'todos',
-                            todoElColegio ? 'Todo el institución' : 'Todas mis sedes',
+                            todoElColegio ? 'Toda la institución' : 'Todas mis sedes',
                             todoElColegio ? `Todos los grados de ${anio}, de transición a undécimo.` : `Todos los grados de ${anio} en ${misSedes}.`,
                         )}
                     </div>
@@ -314,16 +319,14 @@ export function BotonPromover({
                             type="button"
                             onClick={confirmar}
                             disabled={
-                                enviando ||
-                                (alcance === 'grado' && pendientes === 0) ||
-                                (alcance === 'grupo' && (!grupoOrigen || !grupoDestino))
+                                enviando || (alcance === 'grado' && pendientes === 0) || (alcance === 'grupo' && (!grupoOrigen || !grupoDestino))
                             }
                             className={botonPrimario}
                         >
                             {enviando && <LoaderCircle className="size-4 animate-spin" />}
                             {alcance === 'todos'
                                 ? todoElColegio
-                                    ? 'Promover todo el institución'
+                                    ? 'Promover toda la institución'
                                     : 'Promover mis sedes'
                                 : gradua
                                   ? 'Graduar'
@@ -384,7 +387,13 @@ export function BotonDeshacer({
                 alcance === valor ? 'border-[#1E3A7B] bg-[#EEF2FB]' : 'border-[#E3E9F6] hover:border-[#B9C8EC]',
             )}
         >
-            <input type="radio" name="deshacer" checked={alcance === valor} onChange={() => setAlcance(valor)} className="mt-0.5 size-4 accent-[#1E3A7B]" />
+            <input
+                type="radio"
+                name="deshacer"
+                checked={alcance === valor}
+                onChange={() => setAlcance(valor)}
+                className="mt-0.5 size-4 accent-[#1E3A7B]"
+            />
             <span>
                 <span className="block text-[15px] font-medium">{titulo}</span>
                 <span className="block text-[13px] leading-snug text-[#56627F]">{texto}</span>
@@ -401,10 +410,11 @@ export function BotonDeshacer({
                     setGrupoId('');
                     setAbierto(true);
                 }}
-                className="flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-[12px] border-[1.5px] border-[#D3DDF3] bg-white px-3.5 text-sm font-semibold text-[#3E4A68] transition hover:bg-[#F5F7FC] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none"
+                title="Deshacer promoción"
+                className="relative flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[12px] border-[1.5px] border-[#D3DDF3] bg-white text-sm font-semibold text-[#3E4A68] transition hover:bg-[#F5F7FC] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none @min-[1640px]/lista:w-auto @min-[1640px]/lista:px-3.5"
             >
                 <Undo2 className="size-4" />
-                Deshacer promoción
+                <span className={nombreBarra}>Deshacer promoción</span>
             </button>
 
             <Dialog open={abierto} onOpenChange={(v) => !enviando && setAbierto(v)}>
@@ -438,7 +448,7 @@ export function BotonDeshacer({
                             )}
                         {opcion(
                             'todos',
-                            todoElColegio ? 'Todo el institución' : 'Todas mis sedes',
+                            todoElColegio ? 'Toda la institución' : 'Todas mis sedes',
                             `Deshace la promoción de todos los grados de ${anio}.`,
                         )}
                     </div>
@@ -466,12 +476,7 @@ export function BotonDeshacer({
                         <button type="button" onClick={() => setAbierto(false)} disabled={enviando} className={botonSecundario}>
                             Cancelar
                         </button>
-                        <button
-                            type="button"
-                            onClick={confirmar}
-                            disabled={enviando || (alcance === 'grupo' && !grupoId)}
-                            className={botonPrimario}
-                        >
+                        <button type="button" onClick={confirmar} disabled={enviando || (alcance === 'grupo' && !grupoId)} className={botonPrimario}>
                             {enviando && <LoaderCircle className="size-4 animate-spin" />}
                             Deshacer
                         </button>
@@ -524,7 +529,11 @@ export function PromocionEstudiante({
             {promocion ? (
                 <>
                     <p className="flex items-center gap-2 rounded-[14px] bg-[#EEF2FB] px-4 py-3 text-[14px] text-[#1E3A7B]">
-                        {promocion.condicion === 'repitente' ? <RotateCcw className="size-4 shrink-0" /> : <ArrowUpRight className="size-4 shrink-0" />}
+                        {promocion.condicion === 'repitente' ? (
+                            <RotateCcw className="size-4 shrink-0" />
+                        ) : (
+                            <ArrowUpRight className="size-4 shrink-0" />
+                        )}
                         <span>
                             {promocion.condicion === 'repitente' ? 'Repite en' : 'Promovido a'}{' '}
                             <b className="font-semibold">{promocion.grupo ?? promocion.grado}</b> · {promocion.sede} · {promocion.anio}

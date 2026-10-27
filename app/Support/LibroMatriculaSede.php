@@ -81,7 +81,7 @@ final class LibroMatriculaSede
 
         $libro = (new self($a, $s))->armar();
 
-        // Como los archivos del institución: «PRINCIPAL-2026.xlsx», «PURIFICACION TRUJILLO-2026.xlsx».
+        // Como los archivos de la institución: «PRINCIPAL-2026.xlsx», «PURIFICACION TRUJILLO-2026.xlsx».
         return [$libro, Str::upper(Str::ascii($s->nombre)).'-'.$a->anio.'.xlsx'];
     }
 
@@ -219,7 +219,7 @@ final class LibroMatriculaSede
         $h->getStyle('I1:AF1')->getNumberFormat()->setFormatCode('@');
 
         // --- una fila por estudiante
-        // Como en el libro del institución, unas filas en blanco al final para matricular a mano.
+        // Como en el libro de la institución, unas filas en blanco al final para matricular a mano.
         $ultima = 2 + $filas->count() + self::FILAS_EN_BLANCO;
         $previo = $this->col(self::C_PRIMER_ANIO + 2 * (self::AÑOS_DE_HISTORIA - 2));   // grupo del año anterior (AC)
         $consecutivo = 0;
@@ -261,7 +261,7 @@ final class LibroMatriculaSede
                     $h->setCellValue("{$col}{$r}", $v);
                 }
             }
-            // Historia: grupo y sede de cada año; «No» si no estaba en el institución.
+            // Historia: grupo y sede de cada año; «No» si no estaba en la institución.
             $suya = $historia->get($m->estudiante_id, collect());
             for ($i = 0; $i < self::AÑOS_DE_HISTORIA; $i++) {
                 $c = self::C_PRIMER_ANIO + 2 * $i;

@@ -5,7 +5,7 @@ namespace App\Support;
 use Carbon\CarbonImmutable;
 
 /**
- * La tabla de edades del institución, por grado:
+ * La tabla de edades de la institución, por grado:
  *
  *   Grado      Edad adecuada   Edad aceptable            Extraedad
  *   Primero    6 años          hasta 8 años y 11 meses   9 años en adelante

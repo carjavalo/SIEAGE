@@ -10,7 +10,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Throwable;
 
 /**
- * Carga el libro de matrícula del institución (una hoja por grupo, como
+ * Carga el libro de matrícula de la institución (una hoja por grupo, como
  * «PRINCIPAL-2026.xlsx») o el de ciclos (una hoja por ciclo, como
  * «SABATINOS-2026.xlsx»): mismo formato, ver docs/bd/00-analisis-excel.md.
  *

@@ -1,3 +1,4 @@
+import { botonBarra, nombreBarra } from '@/components/estudiantes/barra';
 import { PuntoSede, sedeInfo } from '@/components/estudiantes/etiquetas';
 import { botonPrimario, botonSecundario } from '@/components/formulario';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -64,14 +65,9 @@ export function BotonCupos({ grado, grupos, anio }: { grado: Grado; grupos: Grup
 
     return (
         <>
-            <button
-                type="button"
-                onClick={abrir}
-                disabled={!grupos.length}
-                className="flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none disabled:opacity-40"
-            >
+            <button type="button" onClick={abrir} disabled={!grupos.length} title="Cupos" className={cn(botonBarra, 'disabled:opacity-40')}>
                 <SlidersHorizontal className="size-4" />
-                Cupos
+                <span className={nombreBarra}>Cupos</span>
             </button>
 
             <Dialog open={abierto} onOpenChange={(v) => !guardando && setAbierto(v)}>

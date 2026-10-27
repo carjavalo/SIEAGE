@@ -59,10 +59,11 @@ export function ListaEstudiantes(p: Props) {
         <section
             aria-label="Lista de estudiantes"
             aria-busy={p.cargando}
-            className="flex min-h-[420px] min-w-0 flex-1 flex-col overflow-hidden rounded-[28px] border border-[#E6EBF4] bg-white lg:min-h-0"
+            // @container/lista: los botones de la barra muestran su nombre según el ancho de la lista (ver estudiantes/barra.ts).
+            className="@container/lista flex min-h-[420px] min-w-0 flex-1 flex-col overflow-hidden rounded-[28px] border border-[#E6EBF4] bg-white lg:min-h-0"
         >
             <div
-                className={`flex shrink-0 flex-col gap-2.5 border-b border-[#EEF2F9] px-4 py-2.5 md:h-[42px] md:flex-row md:items-center md:gap-4 md:px-5 md:py-0 ${alto}:md:h-12`}
+                className={`flex shrink-0 flex-col gap-2.5 border-b border-[#EEF2F9] px-4 py-2.5 md:min-h-[42px] md:flex-row md:flex-wrap md:items-center md:gap-x-4 md:gap-y-1.5 md:px-5 md:py-1 ${alto}:md:min-h-12`}
             >
                 <Alcance cargando={p.cargando} grado={p.grado} grupos={p.grupos} grupo={p.grupo} onQuitarGrupo={p.onQuitarGrupo} />
 
@@ -92,7 +93,8 @@ export function ListaEstudiantes(p: Props) {
                     })}
                 </div>
 
-                <p className="ml-auto hidden shrink-0 items-center gap-1.5 text-[12px] text-[#5E6983] xl:flex">
+                {/* Las teclas, solo si sobra espacio (con los botones con nombre ya no). */}
+                <p className="ml-auto hidden shrink-0 items-center gap-1.5 text-[12px] text-[#5E6983] @min-[1360px]/lista:flex @min-[1640px]/lista:hidden">
                     <Tecla>↑</Tecla>
                     <Tecla>↓</Tecla>
                     <span>moverse</span>
@@ -100,7 +102,7 @@ export function ListaEstudiantes(p: Props) {
                     <span>ver ficha</span>
                 </p>
 
-                <div className="relative md:ml-auto md:w-[220px] xl:ml-0 2xl:w-[260px]">
+                <div className="relative md:ml-auto md:w-[180px] md:shrink-0 xl:w-[220px] 2xl:w-[260px] @min-[1360px]/lista:ml-0">
                     <ListFilter className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#5E6983]" />
                     <input
                         ref={p.campoFiltro}
@@ -187,15 +189,17 @@ function Alcance({
 
     if (cargando) {
         return (
-            <div className="flex min-w-0 items-center gap-x-2.5">
-                <h2 className="text-[16px] font-semibold tracking-[-0.01em] whitespace-nowrap">{nombre}</h2>
+            <div className="flex min-w-0 items-center gap-x-2.5 md:flex-1 @max-[1100px]/lista:basis-full">
+                <h2 className="min-w-0 truncate text-[16px] font-semibold tracking-[-0.01em]">{nombre}</h2>
                 <Esqueleto className="h-3 w-52" />
             </div>
         );
     }
 
     return (
-        <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1 md:flex-nowrap">
+        // md:flex-1: ocupa lo que sobra y se acorta antes de que los botones bajen de línea; si la lista es
+        // angosta (no quedaría ni el nombre del grado), va sola en la primera línea y los botones debajo.
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1 md:flex-1 md:flex-nowrap @max-[1100px]/lista:basis-full">
             {grupo ? (
                 <>
                     <button
@@ -222,7 +226,7 @@ function Alcance({
                     </span>
                 </>
             ) : (
-                <h2 className="text-[16px] font-semibold tracking-[-0.01em] whitespace-nowrap">{nombre}</h2>
+                <h2 className="min-w-0 truncate text-[16px] font-semibold tracking-[-0.01em]">{nombre}</h2>
             )}
             {alcance.length > 0 && (
                 <p className="min-w-0 text-[14px] text-[#56627F] md:truncate">

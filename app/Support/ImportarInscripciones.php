@@ -12,11 +12,11 @@ use PhpOffice\PhpSpreadsheet\Shared\Date;
 use Throwable;
 
 /**
- * Importa las respuestas del formulario de Google del institución («FORMULARIO DE
+ * Importa las respuestas del formulario de Google de la institución («FORMULARIO DE
  * INSCRIPCIÓN ESTUDIANTE NUEVO …», descargado como Excel) como inscripciones
  * pendientes, igual que si las familias hubieran llenado el formulario de SIEAGE.
  *
- * - Quien respondió que ya estudia en el institución se omite: el formulario mismo le
+ * - Quien respondió que ya estudia en la institución se omite: el formulario mismo le
  *   decía que no hacía falta llenarlo.
  * - Si una familia respondió dos veces por el mismo estudiante, vale la última.
  * - Se puede importar el mismo archivo otra vez (o uno con más respuestas): el
@@ -24,7 +24,7 @@ use Throwable;
  * - Las preguntas de caracterización que no tienen columna (vivienda, preescolar,
  *   especialidad de 10.º…) quedan en datos_adicionales, en el orden del formulario.
  *
- * Las columnas se buscan por su título, no por su posición: si el institución agrega
+ * Las columnas se buscan por su título, no por su posición: si la institución agrega
  * o mueve preguntas en el formulario, sigue funcionando.
  */
 final class ImportarInscripciones
@@ -261,7 +261,7 @@ final class ImportarInscripciones
             'acudiente_ciudad_expedicion' => $t('acudiente_ciudad_expedicion') ?? '',
             'acudiente_parentesco_id' => $parentescoId,
             'acudiente_parentesco_otro' => isset($parentescos[$parentesco]) ? null : $parentesco,
-            // El formulario del institución pregunta una sola dirección: la del hogar, que es la del acudiente.
+            // El formulario de la institución pregunta una sola dirección: la del hogar, que es la del acudiente.
             'acudiente_direccion' => $t('direccion'),
             'acudiente_barrio' => $t('barrio'),
             'acudiente_telefono_1' => $telefono1 ?? '',

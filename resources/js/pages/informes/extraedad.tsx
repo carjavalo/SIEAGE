@@ -17,7 +17,7 @@ type Fila =
 const fecha = (iso: string | null) => (iso ? iso.split('-').reverse().join('/') : '—');
 
 /**
- * Estudiantes en extraedad según la tabla de edades del institución, con los mismos
+ * Estudiantes en extraedad según la tabla de edades de la institución, con los mismos
  * filtros del informe de matrícula. La primera hoja trae la tabla y cuántos hay por
  * grado; las demás, sede por sede y grupo por grupo, quiénes son. Se guarda en PDF.
  */
@@ -113,7 +113,7 @@ function Resumen({ informe: i }: { informe: Informe }) {
                           : `${cifra(t.extraedad)} de ${cifra(t.activos)} estudiantes están en extraedad`
                 }
             >
-                Según la tabla de edades del institución, con la edad al 31 de marzo de {i.anio}. En las hojas siguientes, sede por sede y grupo por
+                Según la tabla de edades de la institución, con la edad al 31 de marzo de {i.anio}. En las hojas siguientes, sede por sede y grupo por
                 grupo, quiénes son.
             </Titular>
 

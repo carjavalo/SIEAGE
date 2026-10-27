@@ -187,7 +187,7 @@ class InscritoController extends Controller
             'gradoNumero' => DB::table('grados')->where('id', $solicitud->grado_id)->value('numero'),
             // Solo los grupos de las sedes del usuario.
             'grupos' => Grupos::conOcupacion($anioId, $solicitud->grado_id, Alcance::sedesDelGrado(request()->user(), (int) $solicitud->grado_id)),
-            // Si ya está en el institución este año (por su documento): activo, no se matricula otra vez; retirado, se reactiva.
+            // Si ya está en la institución este año (por su documento): activo, no se matricula otra vez; retirado, se reactiva.
             'matriculaExistente' => $solicitud->estado === SolicitudInscripcion::PENDIENTE
                 ? $this->matriculaDelAnio(DB::table('estudiantes')->where('numero_documento', $solicitud->numero_documento)->value('id'), $anioId)
                 : null,
@@ -216,7 +216,7 @@ class InscritoController extends Controller
     }
 
     /**
-     * Aprueba la inscripción: crea (o completa, si ya estuvo en el institución) el
+     * Aprueba la inscripción: crea (o completa, si ya estuvo en la institución) el
      * estudiante y el acudiente, pasa a su nombre la madre y el padre, y lo
      * matricula en el grupo elegido. Todo o nada.
      */
@@ -279,7 +279,7 @@ class InscritoController extends Controller
             ]);
 
             // Si ya tiene matrícula este año: activa, ya estudia aquí y no se matricula otra vez;
-            // retirada (o cancelada), vuelve al institución y esa misma matrícula se reactiva más abajo.
+            // retirada (o cancelada), vuelve a la institución y esa misma matrícula se reactiva más abajo.
             $existente = $this->matriculaDelAnio($estudianteId, $anioId);
             if ($existente?->estado === 'activo') {
                 throw ValidationException::withMessages([
@@ -347,7 +347,7 @@ class InscritoController extends Controller
                     'tipo' => 'habilitada',
                     'estado_anterior' => $existente->estado,
                     'estado_nuevo' => 'activo',
-                    'razon' => "Volvió al institución: se matriculó otra vez por el formulario de inscripción (solicitud {$s->id}).",
+                    'razon' => "Volvió a la institución: se matriculó otra vez por el formulario de inscripción (solicitud {$s->id}).",
                     'fecha' => $ahora->toDateString(),
                     'user_id' => $request->user()?->id,
                     'created_at' => $ahora,

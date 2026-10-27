@@ -173,7 +173,7 @@ function Resumen({ informe: i }: { informe: Informe }) {
             {t.sinRegistro > 0 && (
                 <p className="mt-[18px] max-w-[600px] text-[11px] leading-[1.55] text-[#56627F]">
                     <b className="text-[#16223F]">{cifra(t.sinRegistro)}</b> estudiantes no tienen ningún documento marcado; casi siempre son los que
-                    vinieron del Excel del institución, antes de SIEAGE. Aparecen con todo pendiente hasta que se marquen en su ficha.
+                    vinieron del Excel de la institución, antes de SIEAGE. Aparecen con todo pendiente hasta que se marquen en su ficha.
                 </p>
             )}
 

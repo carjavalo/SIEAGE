@@ -12,7 +12,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Las sedes del institución y, de cada una, sus grupos en el año lectivo que se
+ * Las sedes de la institución y, de cada una, sus grupos en el año lectivo que se
  * consulta. Desde aquí se crean las sedes y sus grupos (GrupoController); antes
  * los grupos solo nacían al importar el Excel o al promover.
  */
@@ -136,7 +136,7 @@ class SedeController extends Controller
     }
 
     /**
-     * Nombre y código únicos en el institución, sin distinguir mayúsculas. El código
+     * Nombre y código únicos en la institución, sin distinguir mayúsculas. El código
      * se guarda en mayúsculas: es el que sale junto a cada grupo en el libro de Excel.
      *
      * @return array{nombre: string, codigo: string, direccion: ?string}

@@ -2,7 +2,7 @@ import { type CSSProperties, type ReactNode } from 'react';
 
 /**
  * La hoja del boletín de transición («Informe escolar de valoración»), copiada del
- * formato que usa el institución: carta, medidas en puntos (pt) como el PDF original,
+ * formato que usa la institución: carta, medidas en puntos (pt) como el PDF original,
  * Tahoma en el encabezado y las firmas, Arial en el contenido.
  *
  * Solo el texto es de cada estudiante. Si no cabe en una hoja, primero se achica

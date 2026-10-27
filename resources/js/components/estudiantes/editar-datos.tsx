@@ -58,7 +58,7 @@ const SISBEN: Opcion<string>[] = [
     { valor: '1', etiqueta: 'Nivel 1' },
     { valor: '2', etiqueta: 'Nivel 2' },
     { valor: '3', etiqueta: 'Nivel 3' },
-    // SISBÉN IV (el que usa el formulario del institución).
+    // SISBÉN IV (el que usa el formulario de la institución).
     { valor: 'A', etiqueta: 'Grupo A' },
     { valor: 'B', etiqueta: 'Grupo B' },
     { valor: 'C', etiqueta: 'Grupo C' },

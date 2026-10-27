@@ -20,7 +20,7 @@ final class Presencia
     {
         $desde = now()->subMinutes(self::MINUTOS);
 
-        // Con las sesiones en la base (como en el institución) se sabe al instante; si no, por la última actividad.
+        // Con las sesiones en la base (como en la institución) se sabe al instante; si no, por la última actividad.
         $ids = config('session.driver') === 'database'
             ? DB::connection(config('session.connection'))->table(config('session.table', 'sessions'))
                 ->whereNotNull('user_id')

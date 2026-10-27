@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * Informe de extraedad: de los estudiantes activos del año (con los mismos filtros
  * del informe de matrícula), quiénes pasan la edad máxima aceptable de su grado
- * según la tabla de edades del institución (ver App\Support\Edades), por grupo, y
+ * según la tabla de edades de la institución (ver App\Support\Edades), por grupo, y
  * cuántos hay en cada grado. La edad es al 31 de marzo del año lectivo.
  */
 final class InformeExtraedad
@@ -65,7 +65,7 @@ final class InformeExtraedad
                 'extraedad' => $extra->count(),
                 'sinFecha' => $filas->whereNull('estado')->count(),
             ],
-            // La tabla de edades del institución, con cuántos hay en cada grado.
+            // La tabla de edades de la institución, con cuántos hay en cada grado.
             'grados' => $filas->groupBy('grado')->sortKeys()->map(fn (Collection $de, $numero) => [
                 'numero' => (int) $numero,
                 'nombre' => $de->first()->grado_nombre,
