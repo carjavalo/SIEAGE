@@ -295,4 +295,18 @@ class DatosEstudianteTest extends TestCase
         // Un acudiente que no es de este estudiante: no existe para él.
         $this->actingAs($this->secretaria)->delete("/estudiantes/{$id}/acudientes/{$acudiente}")->assertNotFound();
     }
+
+    public function test_cambia_la_modalidad_de_un_estudiante_nuevo_y_queda_en_el_historial()
+    {
+        $m = DB::table('matriculas')->where('condicion', 'nuevo')->where('estado', 'activo')->orderBy('id')->first();
+        DB::table('matriculas')->where('id', $m->id)->update(['modalidad_id' => null]);
+
+        $this->actingAs($this->secretaria)
+            ->put("/estudiantes/{$m->estudiante_id}/modalidad", ['matricula_id' => $m->id, 'modalidad' => 'Sistemas'])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $this->assertSame('Sistemas', DB::table('modalidades')->where('id', DB::table('matriculas')->where('id', $m->id)->value('modalidad_id'))->value('nombre'));
+        $this->assertDatabaseHas('cambios_ficha', ['estudiante_id' => $m->estudiante_id, 'accion' => 'modalidad_editada']);
+    }
 }
