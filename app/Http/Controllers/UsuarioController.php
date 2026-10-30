@@ -5,18 +5,21 @@ namespace App\Http\Controllers;
 use App\Models\Rol;
 use App\Models\User;
 use App\Support\Alcance;
+use App\Support\Permisos;
 use App\Support\Presencia;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Gestor básico de usuarios (permiso 'gestionar-usuarios'). No se borran
- * usuarios: se desactivan, para no perder quién registró qué. A los
+ * Gestor básico de usuarios (permiso 'gestionar-usuarios'). Lo normal es
+ * desactivar (no entra, pero sigue constando quién registró qué); también se
+ * puede eliminar, y lo que registró se queda sin su nombre. A los
  * administradores solo los toca otro administrador, y a los super
  * administradores (el equipo de SIEAGE) solo otro super administrador: para
  * los demás ni siquiera aparecen.
@@ -32,6 +35,8 @@ class UsuarioController extends Controller
         'unique' => 'Ya hay otro usuario con este valor.',
         'exists' => 'Elige uno de los roles.',
         'confirmed' => 'Las claves no coinciden.',
+        'password.letters' => 'La clave debe tener al menos una letra.',
+        'password.numbers' => 'La clave debe tener al menos un número.',
     ];
 
     public function index(Request $request): Response
@@ -74,9 +79,10 @@ class UsuarioController extends Controller
     {
         $datos = $request->validate([
             ...$this->reglas(),
-            'password' => ['required', 'string', 'min:8', 'max:72'],
+            'password' => ['required', 'string', Password::defaults()],
         ], self::MENSAJES);
         $this->soloAdministradores($request, null, (int) $datos['rol_id']);
+        $this->soloSusSedes($request, $datos);
 
         // En una transacción: si faltan sedes, el usuario no queda creado a medias.
         DB::transaction(fn () => $this->asignarSedes(User::create([...collect($datos)->except(['sedes', 'grados'])->all(), 'activo' => true]), $datos));
@@ -88,35 +94,77 @@ class UsuarioController extends Controller
     {
         $datos = $request->validate([
             ...$this->reglas($usuario),
-            'activo' => ['required', 'boolean'],
+            // Se desactiva con su propio botón (ver estado); aquí sigue aceptándose.
+            'activo' => ['sometimes', 'boolean'],
         ], self::MENSAJES);
 
         $this->soloAdministradores($request, $usuario, (int) $datos['rol_id']);
-        $this->protegerAdministradores($request, $usuario, (int) $datos['rol_id'], (bool) $datos['activo']);
+        $this->soloSusSedes($request, $datos);
+        $this->protegerAdministradores($request, $usuario, (int) $datos['rol_id'], (bool) ($datos['activo'] ?? $usuario->activo));
 
         DB::transaction(function () use ($usuario, $datos) {
             $usuario->update(collect($datos)->except(['sedes', 'grados'])->all());
             $this->asignarSedes($usuario, $datos);
         });
         if (! $usuario->activo) {
-            $this->cerrarSesiones($usuario);
+            $usuario->cerrarSesiones();
         }
 
         return back()->with('success', "Usuario «{$usuario->usuario}» actualizado.");
     }
 
+    /** Desactivar (no puede entrar y se cierran sus sesiones) o volver a activar. */
+    public function estado(Request $request, User $usuario): RedirectResponse
+    {
+        $activo = (bool) $request->validate(['activo' => ['required', 'boolean']], self::MENSAJES)['activo'];
+        $this->soloAdministradores($request, $usuario);
+        if (! $activo && $usuario->is($request->user())) {
+            throw ValidationException::withMessages(['activo' => 'No puedes desactivar tu propio usuario.']);
+        }
+        $this->protegerAdministradores($request, $usuario, (int) $usuario->rol_id, $activo);
+
+        $usuario->update(['activo' => $activo]);
+        if (! $activo) {
+            $usuario->cerrarSesiones();
+        }
+
+        return back()->with('success', $activo ? "«{$usuario->usuario}» puede volver a ingresar." : "«{$usuario->usuario}» quedó desactivado.");
+    }
+
+    /**
+     * Elimina el usuario. Lo que registró (matrículas, boletines, documentos…) se
+     * queda, pero ya no dice quién lo hizo; si era docente, el docente sigue (sin
+     * usuario). Mismas reglas que al desactivar: nadie se elimina a sí mismo y
+     * siempre queda un administrador activo.
+     */
+    public function destroy(Request $request, User $usuario): RedirectResponse
+    {
+        if ($usuario->is($request->user())) {
+            throw ValidationException::withMessages(['usuario' => 'No puedes eliminar tu propio usuario.']);
+        }
+        $this->soloAdministradores($request, $usuario);
+        $this->protegerAdministradores($request, $usuario, 0, false);
+
+        DB::transaction(function () use ($usuario) {
+            DB::table('docentes')->where('user_id', $usuario->id)->update(['user_id' => null, 'updated_at' => now()]);
+            $usuario->cerrarSesiones();
+            // Sus sedes y grados se van con él; lo demás que lo nombra queda en blanco (nullOnDelete).
+            $usuario->delete();
+        });
+
+        return back()->with('success', "Usuario «{$usuario->usuario}» eliminado.");
+    }
+
     public function clave(Request $request, User $usuario): RedirectResponse
     {
         $datos = $request->validate([
-            'password' => ['required', 'string', 'min:8', 'max:72'],
+            'password' => ['required', 'string', Password::defaults()],
         ], self::MENSAJES);
         $this->soloAdministradores($request, $usuario);
 
         // La clave anterior deja de servir, también en los equipos donde quedó recordada.
-        $usuario->forceFill(['password' => $datos['password'], 'remember_token' => null])->save();
-        if (! $usuario->is($request->user())) {
-            $this->cerrarSesiones($usuario);
-        }
+        $usuario->forceFill(['password' => $datos['password']])->save();
+        $usuario->cerrarSesiones(salvo: $usuario->is($request->user()) ? $request->session()->getId() : null);
 
         return back()->with('success', "Clave de «{$usuario->usuario}» cambiada.");
     }
@@ -167,14 +215,6 @@ class UsuarioController extends Controller
         return (int) Rol::where('nombre', $nombre)->value('id');
     }
 
-    /** Saca al usuario de las sesiones que tenga abiertas en otros equipos. */
-    private function cerrarSesiones(User $usuario): void
-    {
-        if (config('session.driver') === 'database') {
-            DB::table(config('session.table', 'sessions'))->where('user_id', $usuario->id)->delete();
-        }
-    }
-
     /** @return array<string, mixed> */
     private function reglas(?User $usuario = null): array
     {
@@ -219,6 +259,33 @@ class UsuarioController extends Controller
         }
         if ($toca($this->rolId('administrador')) && ! $yo->esAdministrador()) {
             throw ValidationException::withMessages(['rol_id' => 'Solo un administrador puede dar ese rol o cambiar a un administrador.']);
+        }
+
+        // Quien gestiona usuarios sin ser administrador no reparte más de lo que puede, ni le
+        // cambia la clave a alguien que puede más que él (entraría como esa persona).
+        if (! $yo->esAdministrador()) {
+            foreach (array_filter([$usuario?->rol_id, $rolId]) as $id) {
+                if (array_diff(DB::table('rol_permiso')->where('rol_id', $id)->pluck('permiso')->all(), Permisos::de($yo))) {
+                    throw ValidationException::withMessages(['rol_id' => 'Ese rol puede más que el tuyo: pídeselo a un administrador.']);
+                }
+            }
+        }
+    }
+
+    /**
+     * Y solo da las sedes que él mismo ve: sin esto, quien gestiona una sede podía
+     * darse (o darle a otro) todas las demás.
+     *
+     * @param  array<string, mixed>  $datos
+     */
+    private function soloSusSedes(Request $request, array $datos): void
+    {
+        $mias = Alcance::sedes($request->user());
+        if ($mias === null) {
+            return;
+        }
+        if (! empty($datos['todas_las_sedes']) || array_diff(array_map('intval', $datos['sedes'] ?? []), $mias)) {
+            throw ValidationException::withMessages(['sedes' => 'Solo puedes dar las sedes que tú ves.']);
         }
     }
 

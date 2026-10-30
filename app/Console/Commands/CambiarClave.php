@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Models\User;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Para cuando nadie puede entrar (se olvidó la clave del administrador): cambia
@@ -26,9 +25,9 @@ class CambiarClave extends Command
             return self::FAILURE;
         }
 
-        $clave = (string) $this->secret('Nueva clave (mínimo 8 caracteres, no se ve al escribir)');
-        if (mb_strlen($clave) < 8 || mb_strlen($clave) > 72) {
-            $this->error('La clave debe tener entre 8 y 72 caracteres.');
+        $clave = (string) $this->secret('Nueva clave (mínimo 10 caracteres, con letras y números; no se ve al escribir)');
+        if (mb_strlen($clave) < 10 || mb_strlen($clave) > 72 || ! preg_match('/\pL/u', $clave) || ! preg_match('/\d/', $clave)) {
+            $this->error('La clave debe tener entre 10 y 72 caracteres, con letras y números.');
 
             return self::FAILURE;
         }
@@ -39,10 +38,8 @@ class CambiarClave extends Command
         }
 
         // Como al cambiarla desde Usuarios: la anterior deja de servir, también donde quedó recordada.
-        $usuario->forceFill(['password' => $clave, 'remember_token' => null, 'activo' => true])->save();
-        if (config('session.driver') === 'database') {
-            DB::table(config('session.table', 'sessions'))->where('user_id', $usuario->id)->delete();
-        }
+        $usuario->forceFill(['password' => $clave, 'activo' => true])->save();
+        $usuario->cerrarSesiones();
 
         $this->info("Listo: ya puedes entrar como «{$usuario->usuario}» con la clave nueva.");
 

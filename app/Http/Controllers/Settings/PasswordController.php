@@ -40,6 +40,10 @@ class PasswordController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
+        // Si alguien más la conocía, también se queda afuera de la sesión que tenga abierta.
+        $request->user()->cerrarSesiones(salvo: $request->session()->getId());
+        $request->session()->regenerate();
+
         return back();
     }
 }

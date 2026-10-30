@@ -49,10 +49,10 @@ convierte en **una fila por año** en `matriculas` — no en 24 columnas.
 
 ## Hallazgos de calidad de datos (revisar antes de importar)
 
-1. **Documento duplicado**: `9900000008` aparece en dos estudiantes.
+1. **Documento duplicado**: un mismo documento aparece en dos estudiantes.
 2. El nombre viene en un solo campo → no se puede partir en apellidos/nombres de forma fiable.
 3. Parentescos con variantes: `Prima` / `prima` / `Hermana` / `Hermana(o)` / `Cuñada` → normalizar al catálogo.
-4. Teléfonos mezclan número y texto (`395 0011`, `318 718 4003`) → guardar como `VARCHAR`.
+4. Teléfonos mezclan número y texto (`385 2436`, `318 718 4003`) → guardar como `VARCHAR`.
 5. 112 barrios distintos escritos a mano, con y sin espacios finales.
 6. `GRUPO 2026` a veces trae `9°` / `10°` sin número de grupo → por eso `matriculas.grado_id` es obligatorio y `grupo_id` es opcional.
 7. 16 filas sin marca en la columna A (ni activo ni retirado).

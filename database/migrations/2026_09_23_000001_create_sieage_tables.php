@@ -9,7 +9,7 @@ return new class extends Migration
 {
     /**
      * Tablas del dominio académico (institución, sedes, estudiantes, acudientes, matrículas…).
-     * Reproduce la estructura de docs/bd/sieage.sql.
+     * Reproduce la estructura de la base original.
      */
     public function up(): void
     {
@@ -18,7 +18,7 @@ return new class extends Migration
         // En MySQL se conservan los nombres de índice originales; SQLite exige nombres únicos en toda la BD.
         $indice = fn (string $tabla, string $nombre) => DB::getDriverName() === 'mysql' ? $nombre : "{$tabla}_{$nombre}";
 
-        // Hay equipos donde la base se cargó antes desde docs/bd/sieage.sql: esas tablas
+        // Hay equipos donde la base se cargó antes desde un volcado (sieage.sql: esas tablas
         // ya existen (con los mismos datos) y no se vuelven a crear. Así `migrate`
         // funciona igual en una base vacía que en una importada del SQL.
         $crear = function (string $tabla, Closure $definicion): void {

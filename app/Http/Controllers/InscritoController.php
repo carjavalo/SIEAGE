@@ -17,6 +17,12 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Estudiantes inscritos por el formulario público que la secretaría revisa:
@@ -559,7 +565,7 @@ class InscritoController extends Controller
             : back();
     }
 
-    public function excelInscritos(Request $request): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    public function excelInscritos(Request $request): StreamedResponse
     {
         $inscritos = DB::table('solicitudes_inscripcion as s')
             ->join('grados as g', 'g.id', '=', 's.grado_id')
@@ -580,7 +586,7 @@ class InscritoController extends Controller
                 'sp.codigo as sede_preferida_codigo', 'sp.nombre as sede_preferida',
             ]);
 
-        $libro = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $libro = new Spreadsheet;
         $hoja = $libro->getActiveSheet();
         $hoja->setTitle('Inscritos');
 
@@ -590,12 +596,12 @@ class InscritoController extends Controller
         ];
 
         foreach ($encabezados as $col => $titulo) {
-            $letra = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col + 1);
+            $letra = Coordinate::stringFromColumnIndex($col + 1);
             $hoja->setCellValue("{$letra}1", $titulo);
         }
         $hoja->getStyle("A1:{$hoja->getHighestColumn()}1")->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '1E3A7B']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1E3A7B']],
         ]);
 
         $fila = 2;
@@ -620,26 +626,24 @@ class InscritoController extends Controller
             ];
 
             foreach ($datos as $col => $valor) {
-                $letra = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col + 1);
-                $hoja->setCellValueExplicit("{$letra}{$fila}", (string) $valor, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+                $letra = Coordinate::stringFromColumnIndex($col + 1);
+                $hoja->setCellValueExplicit("{$letra}{$fila}", (string) $valor, DataType::TYPE_STRING);
             }
             $fila++;
         }
 
         foreach (range(1, count($encabezados)) as $col) {
-            $letra = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col);
+            $letra = Coordinate::stringFromColumnIndex($col);
             $hoja->getColumnDimension($letra)->setAutoSize(true);
         }
 
-        $archivo = 'INSCRITOS-' . now()->format('Y-m-d_His') . '.xlsx';
-        $ruta = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $archivo;
-
-        $escritor = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($libro);
-        $escritor->save($ruta);
-        $libro->disconnectWorksheets();
-
-        return response()->download($ruta, $archivo, [
+        // Directo al navegador: sin un archivo con todos los datos en la carpeta temporal del servidor.
+        return response()->streamDownload(function () use ($libro) {
+            (new Xlsx($libro))->save('php://output');
+            $libro->disconnectWorksheets();
+        }, 'INSCRITOS-'.now()->format('Y-m-d_His').'.xlsx', [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        ])->deleteFileAfterSend(true);
+            'Cache-Control' => 'no-store',
+        ]);
     }
 }

@@ -4,15 +4,16 @@ import {
     Campo,
     CampoClaveNueva,
     EstadoGuardado,
-    Interruptor,
+    botonPrimario,
     botonSecundario,
     claseCampo,
     claveAleatoria,
 } from '@/components/formulario';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { type Rol, haceCuanto, inicialesPersona, nombreRol, puntoRol } from '@/lib/usuarios';
 import { cn } from '@/lib/utils';
-import { useForm, usePage } from '@inertiajs/react';
-import { Check, KeyRound, UserPlus } from 'lucide-react';
+import { router, useForm, usePage } from '@inertiajs/react';
+import { Check, KeyRound, LoaderCircle, Trash2, UserCheck, UserPlus, UserX } from 'lucide-react';
 import { type FormEventHandler, type RefObject, useState } from 'react';
 import { sileo } from 'sileo';
 
@@ -117,7 +118,6 @@ function FormularioUsuario({
         usuario: usuario?.usuario ?? '',
         email: usuario?.email ?? '',
         rol_id: usuario?.rol_id ?? roles.find((r) => r.nombre === 'secretaria')?.id ?? roles[0]?.id ?? 0,
-        activo: usuario?.activo ?? true,
         todas_las_sedes: usuario?.todas_las_sedes ?? false,
         sedes: usuario?.sedes ?? ([] as number[]),
         grados: usuario?.grados ?? ({} as Record<string, number[]>),
@@ -344,24 +344,11 @@ function FormularioUsuario({
                                 valor={form.data.password}
                                 onCambio={(v) => form.setData('password', v)}
                                 error={form.errors.password}
-                                ayuda="Mínimo 8 caracteres. Entrégasela; podrá cambiarla en su perfil."
+                                ayuda="Mínimo 10 caracteres, con letras y números. Entrégasela; podrá cambiarla en su perfil."
                             />
                         </Bloque>
                     ) : (
-                        <Bloque titulo="Acceso">
-                            <Interruptor
-                                titulo="Puede ingresar"
-                                detalle={
-                                    esYo
-                                        ? 'No puedes desactivar tu propio usuario.'
-                                        : 'Si lo desactivas, se cierra su sesión y no podrá volver a entrar.'
-                                }
-                                activo={form.data.activo}
-                                onCambio={(v) => form.setData('activo', v)}
-                                desactivado={esYo}
-                            />
-                            {form.errors.activo && <p className="mt-2 text-[13px] text-[#B42318]">{form.errors.activo}</p>}
-                        </Bloque>
+                        <Acceso usuario={usuario} esYo={esYo} onEliminado={onCerrar} />
                     )}
 
                     {/* La clave se cambia aparte, con su propio botón: no se mezcla con "Guardar cambios". */}
@@ -394,6 +381,109 @@ function FormularioUsuario({
         </div>
     );
 }
+
+/**
+ * Desactivar (no entra, pero sigue constando lo que hizo) o eliminar. Las dos con su
+ * confirmación; las reglas (no a uno mismo, siempre un administrador activo…) las pone el servidor.
+ */
+function Acceso({ usuario, esYo, onEliminado }: { usuario: Usuario; esYo: boolean; onEliminado: () => void }) {
+    const [pregunta, setPregunta] = useState<'desactivar' | 'eliminar' | null>(null);
+    const [enviando, setEnviando] = useState(false);
+    const nombre = `@${usuario.usuario}`;
+
+    const hacer = (accion: 'desactivar' | 'reactivar' | 'eliminar') => {
+        setEnviando(true);
+        const opciones = {
+            preserveScroll: true,
+            onSuccess: () => {
+                setPregunta(null);
+                if (accion === 'eliminar') {
+                    sileo.success({ title: 'Usuario eliminado', description: `${nombre} ya no aparece en Usuarios.` });
+                    onEliminado();
+                } else {
+                    sileo.success({
+                        title: accion === 'desactivar' ? 'Usuario desactivado' : 'Usuario activo otra vez',
+                        description: accion === 'desactivar' ? `${nombre} ya no puede ingresar.` : `${nombre} puede volver a ingresar.`,
+                    });
+                }
+            },
+            onError: (errores: Record<string, string>) =>
+                sileo.warning({ title: 'No se pudo', description: Object.values(errores)[0] ?? 'Inténtalo de nuevo.' }),
+            onFinish: () => setEnviando(false),
+        };
+        if (accion === 'eliminar') router.delete(`/usuarios/${usuario.id}`, opciones);
+        else router.put(`/usuarios/${usuario.id}/estado`, { activo: accion === 'reactivar' }, opciones);
+    };
+
+    if (esYo) {
+        return (
+            <Bloque titulo="Acceso">
+                <p className="text-[14px] text-[#56627F]">Es tu usuario: no puedes desactivarlo ni eliminarlo.</p>
+            </Bloque>
+        );
+    }
+
+    return (
+        <Bloque titulo="Acceso">
+            <p className="text-[14px] text-[#56627F]">
+                {usuario.activo ? 'Puede ingresar a SIEAGE.' : 'Desactivado: no puede ingresar. Lo que registró sigue constando a su nombre.'}
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+                {usuario.activo ? (
+                    <button type="button" onClick={() => setPregunta('desactivar')} className={claseAccion}>
+                        <UserX className="size-4" />
+                        Desactivar
+                    </button>
+                ) : (
+                    <button type="button" onClick={() => hacer('reactivar')} disabled={enviando} className={claseAccion}>
+                        {enviando ? <LoaderCircle className="size-4 animate-spin" /> : <UserCheck className="size-4" />}
+                        Reactivar
+                    </button>
+                )}
+                <button
+                    type="button"
+                    onClick={() => setPregunta('eliminar')}
+                    className={cn(claseAccion, 'text-[#B42318] hover:border-[#B42318] hover:bg-[#FDECEC]')}
+                >
+                    <Trash2 className="size-4" />
+                    Eliminar
+                </button>
+            </div>
+
+            <Dialog open={pregunta !== null} onOpenChange={(v) => !enviando && !v && setPregunta(null)}>
+                <DialogContent className="max-w-md rounded-[22px] border-[#E3E9F6] p-6 font-sans text-[#16223F] sm:rounded-[22px]">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-semibold">
+                            {pregunta === 'eliminar' ? `¿Eliminar a ${usuario.name}?` : `¿Desactivar a ${usuario.name}?`}
+                        </DialogTitle>
+                        <DialogDescription className="text-[15px] leading-relaxed text-[#56627F]">
+                            {pregunta === 'eliminar'
+                                ? `${nombre} desaparece de Usuarios y no podrá ingresar. Lo que registró (matrículas, boletines, documentos…) se queda, pero ya no dirá quién lo hizo. No se puede deshacer: si solo quieres que no entre, mejor desactívalo.`
+                                : `${nombre} no podrá ingresar y se cierran las sesiones que tenga abiertas. Lo que registró sigue a su nombre, y puedes reactivarlo cuando quieras.`}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="mt-2 flex justify-end gap-2">
+                        <button type="button" onClick={() => setPregunta(null)} disabled={enviando} className={botonSecundario}>
+                            Cancelar
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => pregunta && hacer(pregunta)}
+                            disabled={enviando}
+                            className={cn(botonPrimario, pregunta === 'eliminar' && 'bg-[#B42318] hover:bg-[#912018]')}
+                        >
+                            {enviando && <LoaderCircle className="size-4 animate-spin" />}
+                            {pregunta === 'eliminar' ? 'Eliminar usuario' : 'Desactivar'}
+                        </button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </Bloque>
+    );
+}
+
+const claseAccion =
+    'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-[13px] border-[1.5px] border-[#D3DDF3] text-[15px] font-semibold text-[#1E3A7B] transition hover:border-[#1E3A7B] hover:bg-[#F7F9FF] disabled:cursor-default disabled:opacity-60';
 
 /** Nueva clave para otro usuario (o para uno mismo): la anterior deja de servir y se cierran sus sesiones. */
 function CambiarClave({ usuario }: { usuario: Usuario }) {

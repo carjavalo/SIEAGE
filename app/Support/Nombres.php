@@ -21,7 +21,7 @@ final class Nombres
     private const PARTICULAS = ['de', 'del', 'la', 'las', 'los', 'san', 'santa', 'da', 'do', 'dos', 'di', 'van', 'von', 'y', 'mc', 'mac'];
 
     /**
-     * "Gomez Rojas Pedro Pablo" → apellidos Restrepo / Lopez, nombres Juan / Manuel.
+     * "Gomez Rojas Pedro Pablo" → apellidos Gomez / Rojas, nombres Pedro / Pablo.
      *
      * @return array{primer_apellido: ?string, segundo_apellido: ?string, primer_nombre: ?string, segundo_nombre: ?string}
      */
@@ -38,7 +38,7 @@ final class Nombres
     }
 
     /**
-     * "Luz Rosa Cano Duarte" → nombres Aura / Maria, apellidos Pineda / Urbano.
+     * "Luz Rosa Cano Duarte" → nombres Luz / Rosa, apellidos Cano / Duarte.
      *
      * @return array{primer_apellido: ?string, segundo_apellido: ?string, primer_nombre: ?string, segundo_nombre: ?string}
      */

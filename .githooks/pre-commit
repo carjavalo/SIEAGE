@@ -5,6 +5,14 @@
 #
 # Se activa solo con `npm install` (script "prepare" de package.json).
 
+# El repositorio es público: ni claves ni volcados con datos de personas.
+prohibidos=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '(^|/)\.env(\..+)?$|\.(sql|sqlite|csv|xlsx?|pem|key)$|respaldo' | grep -vE '(^|/)\.env\.example$')
+if [ -n "$prohibidos" ]; then
+    echo "pre-commit: estos archivos no pueden subirse al repositorio (claves o datos de personas):" >&2
+    echo "$prohibidos" >&2
+    exit 1
+fi
+
 if ! git diff --cached --name-only | grep -qE '^(resources/(js|css)/|vite\.config\.|package(-lock)?\.json$|tsconfig\.json$)'; then
     exit 0
 fi

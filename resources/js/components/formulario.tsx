@@ -95,10 +95,14 @@ export function CampoSecreto({ className, ...props }: Omit<ComponentProps<'input
 }
 
 /** Sin letras que se confunden al dictarlas o copiarlas a mano (0/O, 1/l/I). */
-export function claveAleatoria(largo = 10) {
+export function claveAleatoria(largo = 12) {
     const letras = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
-    const azar = crypto.getRandomValues(new Uint32Array(largo));
-    return Array.from(azar, (n) => letras[n % letras.length]).join('');
+    // Con letras y números, como exige el servidor.
+    for (;;) {
+        const azar = crypto.getRandomValues(new Uint32Array(largo));
+        const clave = Array.from(azar, (n) => letras[n % letras.length]).join('');
+        if (/\d/.test(clave) && /[a-zA-Z]/.test(clave)) return clave;
+    }
 }
 
 /** Clave que se le entrega a otra persona: se genera, se ve y se copia. */

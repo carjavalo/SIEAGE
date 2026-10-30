@@ -257,9 +257,14 @@ final class LibroMatriculaSede
                 ...$this->padre($padres->get($m->estudiante_id)?->get('padre'), 'padre'),
             ];
             foreach ($valores as $col => $v) {
-                if ($v !== null && $v !== '') {
-                    $h->setCellValue("{$col}{$r}", $v);
+                if ($v === null || $v === '') {
+                    continue;
                 }
+                // Lo que escribió una persona va siempre como texto: un «=…» en la dirección del formulario
+                // público no debe volverse una fórmula al abrir el Excel. La única fórmula es la edad (AL).
+                $col === 'AL' || ! is_string($v)
+                    ? $h->setCellValue("{$col}{$r}", $v)
+                    : $h->setCellValueExplicit("{$col}{$r}", $v, DataType::TYPE_STRING);
             }
             // Historia: grupo y sede de cada año; «No» si no estaba en la institución.
             $suya = $historia->get($m->estudiante_id, collect());
@@ -276,7 +281,7 @@ final class LibroMatriculaSede
             $suyos = $boletines->get($m->id, collect());
             foreach ($suyos as $numero => $valor) {
                 $c = self::C_BOLETIN + (int) $numero - 1;
-                $h->setCellValue($this->col($c).$r, $valor);
+                $h->setCellValueExplicit($this->col($c).$r, $valor, DataType::TYPE_STRING);
                 if (strtoupper($valor) === 'NO APLICA' && $numero < 10 && $suyos->keys()->max() == $numero) {
                     $h->mergeCells($this->col($c).$r.':AX'.$r);
                 }
@@ -329,7 +334,7 @@ final class LibroMatriculaSede
 
         // Bajo OBSERVACIONES va el director del grupo, como en el original.
         if ($g->director) {
-            $h->setCellValue('BQ2', $g->director);
+            $h->setCellValueExplicit('BQ2', $g->director, DataType::TYPE_STRING);
         }
 
         // Fila 1: cupo del grupo (B1) y cupos disponibles (A1), en rojo si ya no quedan.
@@ -394,7 +399,7 @@ final class LibroMatriculaSede
             $desde = $r;
             foreach ($delGrado as $g) {
                 $hoja = "'{$g->codigo}'";
-                $h->setCellValue("B{$r}", $g->codigo);
+                $h->setCellValueExplicit("B{$r}", $g->codigo, DataType::TYPE_STRING);
                 $h->setCellValue("C{$r}", $g->jornada);
                 $h->setCellValue("D{$r}", (int) $g->cupos);
                 $h->setCellValue("E{$r}", "={$hoja}!A{$this->hojas[$g->id]['antiguos']}");

@@ -28,9 +28,8 @@ Route::get('/', fn (Request $request) => redirect($request->user() ? Permisos::i
 // Formulario público: lo llena el acudiente sin iniciar sesión.
 Route::get('inscripcion', [InscripcionController::class, 'create'])->name('inscripcion.create');
 Route::post('inscripcion', [InscripcionController::class, 'store'])
-    // 30/min por IP: en una jornada de inscripción en la sala de sistemas todos
-    // los equipos salen por la misma IP; 6/min bloqueaba familias legítimas.
-    ->middleware('throttle:30,1')
+    // Los topes están en AppServiceProvider.
+    ->middleware('throttle:inscripcion')
     ->name('inscripcion.store');
 
 // El video «Cómo inscribir a un estudiante» del login. Sin sesión ni cookies: el navegador lo pide por trozos.
@@ -141,6 +140,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('usuarios', [UsuarioController::class, 'store'])->name('usuarios.store');
         Route::put('usuarios/{usuario}', [UsuarioController::class, 'update'])->whereNumber('usuario')->name('usuarios.update');
         Route::put('usuarios/{usuario}/clave', [UsuarioController::class, 'clave'])->whereNumber('usuario')->name('usuarios.clave');
+        Route::put('usuarios/{usuario}/estado', [UsuarioController::class, 'estado'])->whereNumber('usuario')->name('usuarios.estado');
+        Route::delete('usuarios/{usuario}', [UsuarioController::class, 'destroy'])->whereNumber('usuario')->name('usuarios.destroy');
     });
 
     // Roles y permisos: crear roles y decidir qué puede hacer cada uno.

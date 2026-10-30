@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Middleware\CabecerasSeguridad;
+use App\Http\Middleware\ExigirUsuarioActivo;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RegistrarActividad;
+use App\Http\Middleware\RegistrarAuditoria;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -22,10 +24,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectUsersTo('/');
 
         $middleware->web(append: [
+            ExigirUsuarioActivo::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
             // Para «En línea» y «Última vez» en Usuarios.
             RegistrarActividad::class,
+            RegistrarAuditoria::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

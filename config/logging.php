@@ -52,6 +52,15 @@ return [
 
     'channels' => [
 
+        // Quién entró y qué hizo (ver App\Support\Auditoria). Un archivo por día, un año.
+        'auditoria' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/auditoria.log'),
+            'level' => 'info',
+            'days' => 365,
+            'replace_placeholders' => true,
+        ],
+
         'stack' => [
             'driver' => 'stack',
             'channels' => explode(',', env('LOG_STACK', 'single')),

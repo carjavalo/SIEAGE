@@ -33,7 +33,8 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Sin ruta /storage/… con enlace firmado: nadie la usa, y ahí están los Excel importados.
+            'serve' => false,
             'throw' => false,
         ],
 

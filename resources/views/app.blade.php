@@ -37,7 +37,7 @@
 
         {{-- Sin sesión, el navegador solo conoce las rutas de las páginas públicas (config/ziggy.php).
              Al ingresar se recarga la página completa y ya llegan todas. --}}
-        @routes(auth()->check() ? null : 'publico')
+        @routes(auth()->check() ? null : 'publico', nonce: \Illuminate\Support\Facades\Vite::cspNonce())
         @viteReactRefresh
         @vite(['resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
         @inertiaHead

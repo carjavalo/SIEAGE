@@ -16,7 +16,7 @@ class CambiarClaveTest extends TestCase
         $u = User::factory()->create(['usuario' => 'admin', 'activo' => false]);
 
         $this->artisan('usuario:clave', ['usuario' => 'Admin'])
-            ->expectsQuestion('Nueva clave (mínimo 8 caracteres, no se ve al escribir)', 'clave-nueva-1')
+            ->expectsQuestion('Nueva clave (mínimo 10 caracteres, con letras y números; no se ve al escribir)', 'clave-nueva-1')
             ->expectsQuestion('Repítela', 'clave-nueva-1')
             ->assertSuccessful();
 
@@ -31,7 +31,7 @@ class CambiarClaveTest extends TestCase
         $antes = $u->password;
 
         $this->artisan('usuario:clave', ['usuario' => 'admin'])
-            ->expectsQuestion('Nueva clave (mínimo 8 caracteres, no se ve al escribir)', 'clave-nueva-1')
+            ->expectsQuestion('Nueva clave (mínimo 10 caracteres, con letras y números; no se ve al escribir)', 'clave-nueva-1')
             ->expectsQuestion('Repítela', 'otra-cosa-22')
             ->assertFailed();
         $this->artisan('usuario:clave', ['usuario' => 'nadie'])->assertFailed();

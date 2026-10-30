@@ -43,7 +43,7 @@ export default function Login({ status }: { status?: string }) {
     const { data, setData, post, processing, errors, reset } = useForm<LoginForm>({
         usuario: '',
         password: '',
-        remember: true,
+        remember: false,
     });
     // El acceso del personal va plegado debajo de la inscripción; se abre solo si hubo un intento fallido o un aviso.
     const [operativo, setOperativo] = useState(() => !!status || Object.keys(errors).length > 0);

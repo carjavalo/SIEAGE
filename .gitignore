@@ -1,7 +1,7 @@
 .DS_Store
 .env
-.env.backup
-.env.production
+.env.*
+!.env.example
 .phpactor.json
 .phpunit.result.cache
 /.fleet
@@ -31,3 +31,11 @@ yarn-error.log
 
 # public/build SÍ va en el repo: el servidor de producción no tiene Node y no puede compilar.
 # Se compila solo al hacer commit (ver .githooks/pre-commit).
+
+# El repositorio es público: ni volcados de la base, ni archivos con datos de personas.
+*.sqlite
+/database/data/*.sql
+/docs/bd/*.sql
+/docs/bd/*.csv
+/docs/bd/reporte-*.txt
+/docs/bd/respaldos/

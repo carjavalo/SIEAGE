@@ -7,6 +7,7 @@ use App\Support\Permisos;
 use App\Support\Pulso;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -39,6 +40,11 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        // Inertia guarda cada página en el historial del navegador: en un equipo compartido, «Atrás»
+        // después de salir la volvía a mostrar sin preguntarle al servidor. Cifrada, y con la llave
+        // borrada al salir, ya no se puede leer. El navegador solo cifra en https (o en localhost).
+        Inertia::encryptHistory($request->secure() || in_array($request->getHost(), ['localhost', '127.0.0.1'], true));
+
         return [
             ...parent::share($request),
             'auth' => [

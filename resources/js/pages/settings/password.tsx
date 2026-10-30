@@ -42,7 +42,7 @@ export default function Clave() {
                     <div className="min-w-0">
                         <p className="text-[20px] leading-7 font-semibold tracking-[-0.015em]">Cambiar mi clave</p>
                         <p className="mt-0.5 text-[14px] text-[#56627F]">
-                            Usa al menos 8 caracteres y que no sea fácil de adivinar. Tu sesión aquí sigue abierta.
+                            Usa al menos 10 caracteres, con letras y números. Se cierra tu sesión en los demás equipos; aquí sigue abierta.
                         </p>
                     </div>
                 </div>

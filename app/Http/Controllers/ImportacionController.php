@@ -39,7 +39,7 @@ class ImportacionController extends Controller
 
         $archivo = $request->file('archivo');
         $original = $archivo->getClientOriginalName();
-        $nombre = now()->format('Ymd-His').'-'.$datos['tipo'].'-'.Str::slug(pathinfo($original, PATHINFO_FILENAME)).'.'.$archivo->getClientOriginalExtension();
+        $nombre = now()->format('Ymd-His').'-'.$datos['tipo'].'-'.Str::slug(pathinfo($original, PATHINFO_FILENAME)).'.'.$archivo->guessExtension();
         $ruta = Storage::path($archivo->storeAs('importaciones', $nombre));
 
         if ($datos['tipo'] === 'formulario') {

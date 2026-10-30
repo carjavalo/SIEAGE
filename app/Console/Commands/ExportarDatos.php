@@ -11,13 +11,14 @@ class ExportarDatos extends Command
 {
     protected $signature = 'sieage:exportar-datos {--tabla=* : Solo estas tablas (p. ej. --tabla=users)}';
 
-    protected $description = 'Guarda los datos actuales de la BD en database/data/*.json para que db:seed los recree en otro equipo';
+    protected $description = 'Guarda los catálogos de la BD en database/data/*.json (sin datos de personas: el repositorio es público)';
 
     public function handle(): int
     {
-        $tablas = $this->option('tabla') ?: DatosIniciales::TABLAS;
-        if ($desconocidas = array_diff($tablas, DatosIniciales::TABLAS)) {
-            $this->error('No se exportan estas tablas: '.implode(', ', $desconocidas));
+        $catalogos = array_values(array_diff(DatosIniciales::TABLAS, DatosIniciales::PERSONALES));
+        $tablas = $this->option('tabla') ?: $catalogos;
+        if ($desconocidas = array_diff($tablas, $catalogos)) {
+            $this->error('No se exportan estas tablas: '.implode(', ', $desconocidas).'. Las de personas no van al repositorio: para pasarlas a otro equipo, un respaldo con mysqldump.');
 
             return self::FAILURE;
         }

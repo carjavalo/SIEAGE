@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 
 class User extends Authenticatable
 {
@@ -65,6 +66,18 @@ class User extends Authenticatable
     public function esAdministrador(): bool
     {
         return $this->activo && in_array($this->rol?->nombre, ['administrador', 'superadministrador'], true);
+    }
+
+    /** Lo saca de los equipos donde tenga una sesión abierta o recordada, menos de la sesión $salvo. */
+    public function cerrarSesiones(?string $salvo = null): void
+    {
+        $this->forceFill(['remember_token' => null])->save();
+
+        if (config('session.driver') === 'database') {
+            DB::table(config('session.table', 'sessions'))->where('user_id', $this->id)
+                ->when($salvo, fn ($q) => $q->where('id', '!=', $salvo))
+                ->delete();
+        }
     }
 
     /** El equipo de SIEAGE: además de todo, es el único que maneja Roles y permisos. */
