@@ -14,6 +14,10 @@ export type GrupoSede = {
     activos: number;
     /** Matrículas de cualquier estado: con alguna, el grupo no se puede eliminar. */
     matriculas: number;
+    /** Quien dirige el grupo (sale en el boletín); null si no tiene. */
+    director: string | null;
+    /** Su usuario; null si no tiene director o es uno antiguo sin usuario. */
+    director_usuario_id: number | null;
 };
 
 export type SedeConGrupos = {
@@ -28,6 +32,8 @@ export type SedeConGrupos = {
     grupos: GrupoSede[];
     /** Sin grupos ni matrículas de ningún año. */
     se_puede_eliminar: boolean;
+    /** Quienes pueden dirigir un grupo de la sede (vacío sin permiso para cambiar grupos). */
+    firmantes: { id: number; name: string; rol: string }[];
 };
 
 export type GradoSede = { id: number; numero: number; nombre: string };

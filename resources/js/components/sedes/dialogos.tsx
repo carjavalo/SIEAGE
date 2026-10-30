@@ -227,7 +227,12 @@ export function DialogoGrupo({ abierto, onCambio, ...props }: PropsGrupo & { abi
     );
 }
 
-type FormGrupo = { anio: number; grado_id: number; numero: string; jornada: string; cupos: string };
+type FormGrupo = { anio: number; grado_id: number; numero: string; jornada: string; cupos: string; director_id: number };
+
+/** Sin director(a) en la lista del grupo. */
+const SIN_DIRECTOR = 0;
+/** El director(a) que ya estaba sin usuario (no es un id de usuario): al guardar se deja igual. */
+const SIN_USUARIO = -1;
 
 function FormularioGrupo({
     sede,
@@ -252,6 +257,7 @@ function FormularioGrupo({
         numero: grupo ? String(grupo.numero) : gradoInicial ? siguiente(gradoInicial) : '1',
         jornada: grupo?.jornada ?? jornadaHabitual,
         cupos: String(grupo?.cupos ?? 34),
+        director_id: grupo?.director_usuario_id ?? (grupo?.director ? SIN_USUARIO : SIN_DIRECTOR),
     });
     const errores = form.errors as Partial<Record<string, string>>;
     const d = form.data;
@@ -273,8 +279,19 @@ function FormularioGrupo({
         ...extra,
     });
 
+    const opcionesDirector = [
+        { valor: SIN_DIRECTOR, etiqueta: 'Sin asignar' },
+        ...(grupo?.director && grupo.director_usuario_id === null ? [{ valor: SIN_USUARIO, etiqueta: grupo.director }] : []),
+        ...sede.firmantes.map((u) => ({ valor: u.id, etiqueta: `${u.name} · ${u.rol}` })),
+    ];
+
     const guardar: FormEventHandler = (ev) => {
         ev.preventDefault();
+        form.transform(({ director_id, ...resto }) => ({
+            ...resto,
+            // Sin director_id: el que ya estaba (sin usuario) se queda.
+            ...(director_id === SIN_USUARIO ? {} : { director_id: director_id || null }),
+        }));
         const opciones = {
             preserveScroll: true,
             preserveState: true,
@@ -333,6 +350,24 @@ function FormularioGrupo({
                                 opciones={jornadas.map((j) => ({ valor: j, etiqueta: j }))}
                                 onCambio={(v) => form.setData('jornada', v)}
                                 invalido={!!errores.jornada}
+                                claseBoton={claseLista}
+                            />
+                        </Campo>
+                    </div>
+                    <div className="sm:col-span-2">
+                        <Campo
+                            id={id('director_id')}
+                            etiqueta="Director(a) de grupo"
+                            ayuda="Su nombre sale en el boletín del grupo."
+                            error={errores.director_id}
+                        >
+                            <Desplegable
+                                id={id('director_id')}
+                                etiqueta="Director(a) de grupo"
+                                valor={d.director_id}
+                                opciones={opcionesDirector}
+                                onCambio={(v) => form.setData('director_id', v)}
+                                invalido={!!errores.director_id}
                                 claseBoton={claseLista}
                             />
                         </Campo>

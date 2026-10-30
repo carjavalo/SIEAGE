@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Support\Alcance;
 use App\Support\AniosLectivos;
+use App\Support\Firmantes;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -46,13 +47,15 @@ class SedeController extends Controller
         $grupos = DB::table('grupos as g')
             ->join('grados as gr', 'gr.id', '=', 'g.grado_id')
             ->leftJoin('matriculas as m', 'm.grupo_id', '=', 'g.id')
+            ->leftJoin('docentes as d', 'd.id', '=', 'g.director_id')
             ->where('g.anio_lectivo_id', $anio?->id)
             ->tap(fn ($q) => Alcance::filtrar($q, $request->user(), 'g.sede_id', 'g.grado_id'))
-            ->groupBy('g.id', 'g.sede_id', 'g.codigo', 'g.numero', 'g.jornada', 'g.cupos_proyectados', 'gr.id', 'gr.numero', 'gr.nombre')
+            ->groupBy('g.id', 'g.sede_id', 'g.codigo', 'g.numero', 'g.jornada', 'g.cupos_proyectados', 'gr.id', 'gr.numero', 'gr.nombre', 'd.nombre_completo', 'd.user_id')
             ->orderBy('gr.numero')
             ->orderBy('g.numero')
             ->selectRaw("g.id, g.sede_id, g.codigo, g.numero, g.jornada, g.cupos_proyectados as cupos,
                 gr.id as grado_id, gr.numero as grado_numero, gr.nombre as grado,
+                d.nombre_completo as director, d.user_id as director_usuario_id,
                 sum(m.estado = 'activo') as activos, count(m.id) as matriculas")
             ->get()
             ->map(fn ($g) => [...(array) $g, 'activos' => (int) $g->activos, 'matriculas' => (int) $g->matriculas, 'cupos' => (int) $g->cupos])
@@ -80,6 +83,8 @@ class SedeController extends Controller
             'sin_grupo' => (int) ($activos[$s->id]->sin_grupo ?? 0),
             'grupos' => $grupos->get($s->id, collect())->values(),
             'se_puede_eliminar' => ! $enUso->contains($s->id),
+            // Para elegir quién dirige cada grupo: solo a quien puede cambiar los grupos.
+            'firmantes' => $request->user()->can('gestionar-sedes') ? Firmantes::paraElegir($s->id) : [],
         ]);
 
         return Inertia::render('sedes/index', [

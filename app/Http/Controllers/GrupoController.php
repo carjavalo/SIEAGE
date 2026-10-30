@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Support\Alcance;
 use App\Support\AniosLectivos;
+use App\Support\Firmantes;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -37,7 +38,7 @@ class GrupoController extends Controller
                 ['exists:anios_lectivos,anio'],
             )],
             'grado_id' => ['required', 'integer', 'exists:grados,id'],
-            ...$this->reglas(),
+            ...$this->reglas($sede->id),
         ], self::MENSAJES);
         Alcance::exigir($request->user(), $sede->id, $datos['grado_id']);
 
@@ -56,6 +57,7 @@ class GrupoController extends Controller
                 'codigo' => $codigo,
                 'jornada' => $datos['jornada'],
                 'cupos_proyectados' => (int) $datos['cupos'],
+                'director_id' => empty($datos['director_id']) ? null : Firmantes::docenteDe((int) $datos['director_id']),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
@@ -70,7 +72,7 @@ class GrupoController extends Controller
     {
         $actual = DB::table('grupos')->find($grupo) ?? abort(404);
         Alcance::exigir($request->user(), $actual->sede_id, $actual->grado_id);
-        $datos = $request->validate($this->reglas(), self::MENSAJES);
+        $datos = $request->validate($this->reglas($actual->sede_id), self::MENSAJES);
 
         $this->abierto(DB::table('anios_lectivos')->where('id', $actual->anio_lectivo_id)->value('estado'));
         $grado = DB::table('grados')->find($actual->grado_id);
@@ -82,6 +84,8 @@ class GrupoController extends Controller
                 'codigo' => $codigo,
                 'jornada' => $datos['jornada'],
                 'cupos_proyectados' => (int) $datos['cupos'],
+                // Si no llega, se deja como está (p. ej. un director(a) que ya estaba y no tiene usuario).
+                ...(array_key_exists('director_id', $datos) ? ['director_id' => $datos['director_id'] ? Firmantes::docenteDe((int) $datos['director_id']) : null] : []),
                 'updated_at' => now(),
             ]);
             // Sus estudiantes llevan la jornada del grupo en la matrícula: cambia con él.
@@ -113,12 +117,14 @@ class GrupoController extends Controller
     }
 
     /** @return array<string, list<mixed>> */
-    private function reglas(): array
+    private function reglas(int $sedeId): array
     {
         return [
             'numero' => ['required', 'integer', 'min:1', 'max:30'],
             'jornada' => ['required', Rule::in(SedeController::JORNADAS)],
             'cupos' => ['required', 'integer', 'min:1', 'max:99'],
+            // Quien dirige el grupo: sale en el boletín. Es alguien activo de esa sede.
+            'director_id' => ['sometimes', 'nullable', 'integer', Firmantes::regla($sedeId)],
         ];
     }
 

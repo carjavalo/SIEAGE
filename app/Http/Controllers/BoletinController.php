@@ -6,7 +6,7 @@ use App\Models\Rol;
 use App\Models\User;
 use App\Support\Alcance;
 use App\Support\Boletines;
-use Illuminate\Contracts\Database\Query\Builder;
+use App\Support\Firmantes;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -65,11 +65,7 @@ class BoletinController extends Controller
             // Crear ahí mismo a quien firma (es crear un usuario): solo administradores.
             'puedeCrearFirmantes' => $configura && $user->can('gestionar-usuarios'),
             // Para elegir quién firma: quienes trabajan en la sede del grupo (los docentes primero).
-            'usuarios' => $configura
-                ? $this->firmantes($grupo->sede_id)
-                    ->orderByRaw("CASE r.nombre WHEN 'docente' THEN 0 WHEN 'coordinacion' THEN 1 ELSE 2 END")->orderBy('u.name')
-                    ->get(['u.id', 'u.name', DB::raw('COALESCE(r.etiqueta, r.nombre) as rol')])
-                : [],
+            'usuarios' => $configura ? Firmantes::paraElegir($grupo->sede_id) : [],
         ]);
     }
 
@@ -173,7 +169,7 @@ class BoletinController extends Controller
         $g = $this->grupo($request->user(), $grupo);
 
         // Solo alguien activo que trabaje en esa sede (o en todas).
-        $firmante = Rule::exists('users', 'id')->where(fn ($q) => $this->deLaSede($q, $g->sede_id, 'users'));
+        $firmante = Firmantes::regla($g->sede_id);
         $datos = $request->validate([
             // Si no llega, se deja como está (p. ej. un director(a) que ya estaba y no tiene usuario).
             'director_id' => ['sometimes', 'nullable', 'integer', $firmante],
@@ -182,7 +178,7 @@ class BoletinController extends Controller
         ], ['exists' => 'Elige a alguien de la lista.', 'max' => 'Es demasiado largo: máximo :max caracteres.']);
 
         DB::transaction(function () use ($g, $datos) {
-            $director = array_key_exists('director_id', $datos) ? ['director_id' => $datos['director_id'] ? $this->docenteDe((int) $datos['director_id']) : null] : [];
+            $director = array_key_exists('director_id', $datos) ? ['director_id' => $datos['director_id'] ? Firmantes::docenteDe((int) $datos['director_id']) : null] : [];
             DB::table('grupos')->where('id', $g->id)->update([
                 ...$director,
                 'jornada_boletin' => trim((string) ($datos['jornada_boletin'] ?? '')) ?: null,
@@ -311,36 +307,6 @@ class BoletinController extends Controller
         Alcance::exigir($user, $m->sede_id, $m->grado_id);
 
         return $m;
-    }
-
-    /** Los usuarios que pueden firmar en una sede: activos y que trabajan en ella (o ven todas, o administran). */
-    private function firmantes(int $sedeId): Builder
-    {
-        return DB::table('users as u')->leftJoin('roles as r', 'r.id', '=', 'u.rol_id')->where(fn ($q) => $this->deLaSede($q, $sedeId, 'u'));
-    }
-
-    /** Condición «activo y de esa sede» sobre la tabla de usuarios con ese alias. */
-    private function deLaSede(Builder $q, int $sedeId, string $tabla): Builder
-    {
-        return $q->where("{$tabla}.activo", true)->where(fn ($w) => $w
-            ->where("{$tabla}.todas_las_sedes", true)
-            ->orWhereIn("{$tabla}.rol_id", DB::table('roles')->where('nombre', 'administrador')->select('id'))
-            ->orWhereIn("{$tabla}.id", DB::table('sede_user')->where('sede_id', $sedeId)->select('user_id')));
-    }
-
-    /** El docente de ese usuario (grupos.director_id apunta a docentes); se crea si no existe. */
-    private function docenteDe(int $userId): int
-    {
-        // docentes.nombre_completo es de 120: un nombre de usuario más largo se recorta.
-        $nombre = mb_substr(trim((string) DB::table('users')->where('id', $userId)->value('name')), 0, 120);
-        $docente = DB::table('docentes')->where('user_id', $userId)->orderBy('id')->value('id');
-        if ($docente) {
-            DB::table('docentes')->where('id', $docente)->update(['nombre_completo' => $nombre, 'updated_at' => now()]);
-
-            return (int) $docente;
-        }
-
-        return (int) DB::table('docentes')->insertGetId(['user_id' => $userId, 'nombre_completo' => $nombre, 'activo' => true, 'created_at' => now(), 'updated_at' => now()]);
     }
 
     /** Si la versión con la que llega es la última guardada (null: estaba vacío). */

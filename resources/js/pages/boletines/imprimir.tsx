@@ -15,6 +15,7 @@ export default function ImprimirBoletines({ titulo, volver, periodo, grupo, estu
     const n = estudiantes.length;
     const hojas = useMemo(() => estudiantes.reduce((s, e) => s + paginar(e.nombres_apellidos, e.texto).paginas.length, 0), [estudiantes]);
     const periodoCorto = periodo.charAt(0) + periodo.slice(1).toLowerCase();
+    const faltan = [!grupo.director && 'el director(a) del grupo', !grupo.coordinador && 'el coordinador(a)'].filter((f): f is string => !!f);
 
     return (
         <>
@@ -45,6 +46,15 @@ export default function ImprimirBoletines({ titulo, volver, periodo, grupo, estu
                             Imprimir
                         </button>
                     </div>
+                    {faltan.length > 0 && (
+                        <p className="flex items-center justify-center gap-2 border-t border-[#F1E3C4] bg-[#FFF8E8] px-4 py-2 text-center text-[13px] text-[#6B4E12]">
+                            <CircleAlert className="size-4 shrink-0" />
+                            {faltan.length === 1
+                                ? `Falta ${faltan[0]}: sale en blanco en el boletín.`
+                                : `Faltan ${faltan.join(' y ')}: salen en blanco en el boletín.`}{' '}
+                            Se asignan en Firmas y jornada.
+                        </p>
+                    )}
                     {sinTexto > 0 && (
                         <p className="flex items-center justify-center gap-2 border-t border-[#F1E3C4] bg-[#FFF8E8] px-4 py-2 text-center text-[13px] text-[#6B4E12]">
                             <CircleAlert className="size-4 shrink-0" />

@@ -319,6 +319,23 @@ class BoletinesTest extends TestCase
         $this->actingAs($admin)->get("/boletines/imprimir?grupo={$this->grupos['0-1']}&periodo={$this->periodo3}")->assertNotFound();
     }
 
+    public function test_el_director_asignado_desde_sedes_sale_en_la_impresion()
+    {
+        $admin = $this->usuario('administrador');
+        $g = DB::table('grupos')->where('id', $this->grupos['0-1'])->first();
+        $directora = $this->usuario('docente', [$this->sedeA]);
+        $directora->update(['name' => 'Ana Lucía Prueba Gómez']);
+        $this->actingAs($admin)->putJson("/boletines/{$this->mat['Prueba Uno Ana María']}/{$this->periodo1}", ['texto' => 'Muy bien.'])->assertOk();
+        $imprimir = "/boletines/imprimir?grupo={$g->id}&periodo={$this->periodo1}";
+
+        DB::table('grupos')->where('id', $g->id)->update(['director_id' => null]);
+        $this->actingAs($admin)->get($imprimir)->assertInertia(fn (Assert $page) => $page->where('grupo.director', null));
+
+        $this->actingAs($admin)->put("/grupos/{$g->id}", ['numero' => $g->numero, 'jornada' => $g->jornada, 'cupos' => $g->cupos_proyectados, 'director_id' => $directora->id])
+            ->assertSessionHasNoErrors();
+        $this->actingAs($admin)->get($imprimir)->assertInertia(fn (Assert $page) => $page->where('grupo.director', 'ANA LUCÍA PRUEBA GÓMEZ'));
+    }
+
     public function test_la_ficha_dice_si_tiene_boletin()
     {
         $admin = $this->usuario('administrador');

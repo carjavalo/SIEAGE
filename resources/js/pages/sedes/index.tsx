@@ -239,15 +239,18 @@ function PorGrado({ grupos, sede, anio, abrir }: { grupos: GrupoSede[]; sede: Se
                                         <span className={cn('text-[12.5px] tabular-nums', lleno ? 'text-[#A12B2B]' : 'text-[#56627F]')}>
                                             {g.activos}/{g.cupos}
                                         </span>
+                                        {!g.director && <span aria-hidden className="size-1.5 self-center rounded-full bg-[#D98A1F]" />}
                                     </>
                                 );
-                                const etiqueta = `Grupo ${g.codigo}, jornada ${g.jornada}: ${g.activos} de ${g.cupos} cupos`;
+                                const director = g.director ? `Director(a): ${g.director}` : 'Sin director(a) de grupo';
+                                const etiqueta = `Grupo ${g.codigo}, jornada ${g.jornada}: ${g.activos} de ${g.cupos} cupos. ${director}`;
 
                                 return abrir ? (
                                     <button
                                         key={g.id}
                                         type="button"
                                         onClick={() => abrir(g)}
+                                        title={director}
                                         aria-label={`${etiqueta}. Editar`}
                                         className={cn(clase(lleno), 'cursor-pointer')}
                                     >
@@ -257,6 +260,7 @@ function PorGrado({ grupos, sede, anio, abrir }: { grupos: GrupoSede[]; sede: Se
                                     <Link
                                         key={g.id}
                                         href={`/estudiantes?anio=${anio}&grado=${g.grado_id}&sede=${encodeURIComponent(sede.codigo)}`}
+                                        title={director}
                                         aria-label={`${etiqueta}. Ver estudiantes`}
                                         className={clase(lleno)}
                                     >

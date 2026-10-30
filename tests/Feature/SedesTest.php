@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Rol;
 use App\Models\User;
+use App\Support\Boletines;
 use Database\Seeders\DatosInicialesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -215,5 +216,71 @@ class SedesTest extends TestCase
         $this->actingAs($this->usuario('docente'))->delete("/grupos/{$vacio}")->assertForbidden();
         $this->actingAs($this->secretaria)->delete("/grupos/{$vacio}")->assertSessionHasNoErrors();
         $this->assertDatabaseMissing('grupos', ['id' => $vacio]);
+    }
+
+    /** Un docente activo de la sede. */
+    private function docenteDe(int $sedeId, string $nombre): User
+    {
+        $u = $this->usuario('docente');
+        $u->update(['name' => $nombre, 'todas_las_sedes' => false]);
+        DB::table('sede_user')->insert(['sede_id' => $sedeId, 'user_id' => $u->id]);
+
+        return $u;
+    }
+
+    public function test_asigna_cambia_y_quita_el_director_del_grupo_y_sale_en_el_boletin()
+    {
+        $g = DB::table('grupos')->where('anio_lectivo_id', $this->anioId)->orderBy('id')->first();
+        DB::table('grupos')->where('id', $g->id)->update(['director_id' => null]);
+        $datos = ['numero' => $g->numero, 'jornada' => $g->jornada, 'cupos' => $g->cupos_proyectados];
+        $ana = $this->docenteDe($g->sede_id, 'Ana Lucía Prueba');
+        $luis = $this->docenteDe($g->sede_id, 'Luis Prueba Díaz');
+        $director = fn () => Boletines::datosGrupo($g->id)->director;
+
+        // La lista de la sede trae a sus docentes, y el grupo dice que no tiene director.
+        $this->actingAs($this->secretaria)->get('/sedes?anio=2026')->assertInertia(fn (Assert $page) => $page
+            ->where('sedes', fn ($sedes) => collect(collect($sedes)->firstWhere('id', $g->sede_id)['firmantes'])->pluck('id')->contains($ana->id)));
+
+        $this->actingAs($this->secretaria)->put("/grupos/{$g->id}", [...$datos, 'director_id' => $ana->id])->assertSessionHasNoErrors();
+        $this->assertSame('ANA LUCÍA PRUEBA', $director());
+
+        // Editar sin enviar el campo no lo borra.
+        $this->actingAs($this->secretaria)->put("/grupos/{$g->id}", $datos)->assertSessionHasNoErrors();
+        $this->assertSame('ANA LUCÍA PRUEBA', $director());
+
+        $this->actingAs($this->secretaria)->put("/grupos/{$g->id}", [...$datos, 'director_id' => $luis->id])->assertSessionHasNoErrors();
+        $this->assertSame('LUIS PRUEBA DÍAZ', $director());
+
+        $this->actingAs($this->secretaria)->put("/grupos/{$g->id}", [...$datos, 'director_id' => null])->assertSessionHasNoErrors();
+        $this->assertNull($director());
+    }
+
+    public function test_el_director_debe_ser_de_la_sede_y_quien_no_puede_cambiar_grupos_no_ve_la_lista()
+    {
+        $g = DB::table('grupos')->where('anio_lectivo_id', $this->anioId)->orderBy('id')->first();
+        $otraSede = DB::table('sedes')->where('id', '<>', $g->sede_id)->value('id');
+        $ajeno = $this->docenteDe($otraSede, 'De Otra Sede');
+        $datos = ['numero' => $g->numero, 'jornada' => $g->jornada, 'cupos' => $g->cupos_proyectados];
+        $antes = $g->director_id;
+
+        $this->actingAs($this->secretaria)->put("/grupos/{$g->id}", [...$datos, 'director_id' => $ajeno->id])->assertSessionHasErrors('director_id');
+        $this->assertEquals($antes, DB::table('grupos')->where('id', $g->id)->value('director_id'));
+
+        $this->actingAs($this->usuario('docente'))->put("/grupos/{$g->id}", [...$datos, 'director_id' => null])->assertForbidden();
+        $this->actingAs($this->usuario('docente'))->get('/sedes')->assertInertia(fn (Assert $page) => $page
+            ->where('sedes', fn ($sedes) => collect($sedes)->every(fn ($s) => collect($s['firmantes'])->isEmpty())));
+    }
+
+    public function test_crea_un_grupo_con_su_director()
+    {
+        $sede = $this->nuevaSede();
+        $ana = $this->docenteDe($sede, 'Ana Directora');
+
+        $this->actingAs($this->secretaria)->post("/sedes/{$sede}/grupos", [
+            'anio' => 2026, 'grado_id' => DB::table('grados')->where('numero', 0)->value('id'), 'numero' => 1, 'jornada' => 'Mañana', 'cupos' => 30, 'director_id' => $ana->id,
+        ])->assertSessionHasNoErrors();
+
+        $g = DB::table('grupos')->where('sede_id', $sede)->first();
+        $this->assertSame('ANA DIRECTORA', Boletines::datosGrupo($g->id)->director);
     }
 }
