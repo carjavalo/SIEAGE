@@ -53,14 +53,12 @@ export function CambiarGrupo({
             {
                 onStart: () => setEnviando(true),
                 onFinish: () => setEnviando(false),
-                onSuccess: (pagina) => {
+                onSuccess: () => {
                     setAbierto(false);
                     setSedeId('');
                     setGrupoId('');
                     setRazon('');
-                    const { aviso } = (pagina.props as unknown as { flash: { aviso?: string | null } }).flash;
                     sileo.success({ title: 'Cambio registrado', description: `${nombre} cambió de grupo, grado y/o sede.` });
-                    if (aviso) sileo.warning({ title: 'Grupo sobre el cupo', description: aviso, duration: 8000 });
                 },
                 onError: (errores) => sileo.error({ title: 'Error al cambiar', description: Object.values(errores)[0] as string }),
             },
@@ -86,13 +84,13 @@ export function CambiarGrupo({
                     <DialogHeader>
                         <DialogTitle className="text-xl font-semibold">Cambiar de grupo, grado o sede</DialogTitle>
                         <DialogDescription className="text-[#56627F]">
-                            {nombre} está en <b className="font-semibold text-[#16223F]">{grupoActual}</b> ({sedeActual}). Elige el nuevo grupo, que
-                            puede ser de otro grado o sede.
+                            {nombre} está en <b className="font-semibold text-[#16223F]">{grupoActual}</b> ({sedeActual}). Elige el nuevo grupo,
+                            que puede ser de otro grado o sede.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                         <div>
-                            <label className="mb-2 block text-sm font-semibold text-[#16223F]">Sede</label>
+                            <label className="block text-sm font-semibold text-[#16223F] mb-2">Sede</label>
                             <select
                                 value={sedeId}
                                 onChange={(e) => {
@@ -100,7 +98,7 @@ export function CambiarGrupo({
                                     setGrupoId('');
                                 }}
                                 disabled={enviando}
-                                className="w-full rounded-lg border border-[#D3DDF3] px-4 py-2 text-[14px] focus:ring-2 focus:ring-[#1E3A7B] focus:outline-none"
+                                className="w-full px-4 py-2 border border-[#D3DDF3] rounded-lg text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1E3A7B]"
                             >
                                 <option value="">Todas las sedes</option>
                                 {sedes.map((s) => (
@@ -111,12 +109,12 @@ export function CambiarGrupo({
                             </select>
                         </div>
                         <div>
-                            <label className="mb-2 block text-sm font-semibold text-[#16223F]">Nuevo grupo</label>
+                            <label className="block text-sm font-semibold text-[#16223F] mb-2">Nuevo grupo</label>
                             <select
                                 value={grupoId}
                                 onChange={(e) => setGrupoId(e.target.value)}
                                 disabled={enviando || gruposDeLaSede.length === 0}
-                                className="w-full rounded-lg border border-[#D3DDF3] px-4 py-2 text-[14px] focus:ring-2 focus:ring-[#1E3A7B] focus:outline-none"
+                                className="w-full px-4 py-2 border border-[#D3DDF3] rounded-lg text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1E3A7B]"
                             >
                                 <option value="">Elige un grupo...</option>
                                 {gradosDeLaSede.map((gr) => (
@@ -130,11 +128,11 @@ export function CambiarGrupo({
                                 ))}
                             </select>
                             {gruposDeLaSede.length === 0 && sedeId && (
-                                <p className="mt-1 text-xs text-[#A12B2B]">No hay grupos disponibles en esta sede</p>
+                                <p className="text-xs text-[#A12B2B] mt-1">No hay grupos disponibles en esta sede</p>
                             )}
                         </div>
                         <div>
-                            <label className="mb-2 block text-sm font-semibold text-[#16223F]">Razón del cambio</label>
+                            <label className="block text-sm font-semibold text-[#16223F] mb-2">Razón del cambio</label>
                             <textarea
                                 value={razon}
                                 onChange={(e) => setRazon(e.target.value)}
@@ -143,9 +141,9 @@ export function CambiarGrupo({
                                 minLength={10}
                                 maxLength={300}
                                 rows={3}
-                                className="w-full rounded-lg border border-[#D3DDF3] px-4 py-2 text-[14px] focus:ring-2 focus:ring-[#1E3A7B] focus:outline-none"
+                                className="w-full px-4 py-2 border border-[#D3DDF3] rounded-lg text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1E3A7B]"
                             />
-                            <p className="mt-1 text-xs text-[#8C97B3]">{razon.length}/300</p>
+                            <p className="text-xs text-[#8C97B3] mt-1">{razon.length}/300</p>
                         </div>
                     </div>
                     <div className="flex justify-end gap-2">
@@ -167,3 +165,5 @@ export function CambiarGrupo({
         </>
     );
 }
+
+

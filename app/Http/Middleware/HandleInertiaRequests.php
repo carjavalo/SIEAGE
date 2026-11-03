@@ -72,8 +72,6 @@ class HandleInertiaRequests extends Middleware
             'pulso' => fn () => $request->user() ? Pulso::firma() : null,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
-                // Algo que se hizo igual pero conviene revisar (p. ej. un grupo que queda sobre el cupo).
-                'aviso' => fn () => $request->session()->get('aviso'),
                 // Resumen de la última promoción, para el aviso (toast) en pantalla.
                 'promocion' => fn () => $request->session()->get('promocion'),
                 // Resumen de la última reversión de promoción (deshacer), para el aviso en pantalla.
