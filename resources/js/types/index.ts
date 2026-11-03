@@ -68,7 +68,7 @@ export interface SharedData {
     inscritosPendientes: number;
     /** Los datos tal como estaban al armar la página; null sin sesión. */
     pulso: Pulso | null;
-    flash: { success: string | null; importacion?: ResumenImportacion | null };
+    flash: { success: string | null; aviso?: string | null; importacion?: ResumenImportacion | null };
     [key: string]: unknown;
 }
 

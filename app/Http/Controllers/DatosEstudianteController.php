@@ -489,12 +489,11 @@ class DatosEstudianteController extends Controller
             throw ValidationException::withMessages(['grupo_id' => 'Ya está en ese grupo.']);
         }
 
-        // El cupo no se guarda: es lo proyectado menos los que ya están activos en el grupo.
+        // El cupo no detiene el cambio (como al matricular o promover): si el grupo queda
+        // por encima, solo se avisa. El cupo se sube en Sedes.
         $cupos = (int) DB::table('grupos')->where('id', $nuevoGrupo->id)->value('cupos_proyectados');
-        $activos = (int) DB::table('matriculas')->where('grupo_id', $nuevoGrupo->id)->where('estado', 'activo')->count();
-        if ($cupos - $activos <= 0) {
-            throw ValidationException::withMessages(['grupo_id' => 'No hay cupos disponibles en ese grupo.']);
-        }
+        $quedan = (int) DB::table('matriculas')->where('grupo_id', $nuevoGrupo->id)->where('estado', 'activo')->count()
+            + ($matricula->estado === 'activo' ? 1 : 0);
 
         $cambiaGrado = $nuevoGrupo->grado_id != $matricula->grado_id;
         $cambiaSede = $nuevoGrupo->sede_id != $matricula->sede_id;
@@ -529,7 +528,11 @@ class DatosEstudianteController extends Controller
 
         $destino = $cambiaGrado ? "{$nuevoGrupo->grado} – {$nuevoGrupo->codigo}" : $nuevoGrupo->codigo;
 
-        return back()->with('success', "Cambió a {$destino}.");
+        return back()
+            ->with('success', "Cambió a {$destino}.")
+            ->with('aviso', $quedan > $cupos
+                ? "El grupo {$nuevoGrupo->codigo} queda sobre el cupo: {$quedan} de {$cupos}. Revisa el cupo en Sedes."
+                : null);
     }
 
     /**

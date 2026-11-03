@@ -309,4 +309,27 @@ class DatosEstudianteTest extends TestCase
         $this->assertSame('Sistemas', DB::table('modalidades')->where('id', DB::table('matriculas')->where('id', $m->id)->value('modalidad_id'))->value('nombre'));
         $this->assertDatabaseHas('cambios_ficha', ['estudiante_id' => $m->estudiante_id, 'accion' => 'modalidad_editada']);
     }
+
+    public function test_cambiar_de_grupo_a_uno_lleno_se_hace_igual_y_avisa_el_sobrecupo()
+    {
+        $m = DB::table('matriculas as m')->join('anios_lectivos as al', 'al.id', '=', 'm.anio_lectivo_id')
+            ->where('al.estado', 'activo')->where('m.estado', 'activo')->whereNotNull('m.grupo_id')
+            ->orderBy('m.id')->first(['m.id', 'm.estudiante_id', 'm.grupo_id', 'm.grado_id', 'm.anio_lectivo_id']);
+        $destino = DB::table('grupos')->where('anio_lectivo_id', $m->anio_lectivo_id)->where('grado_id', $m->grado_id)->where('id', '<>', $m->grupo_id)->value('id');
+        $activos = DB::table('matriculas')->where('grupo_id', $destino)->where('estado', 'activo')->count();
+        $admin = $this->usuario('administrador');
+
+        // Lleno: el cupo es igual a los activos que ya tiene.
+        DB::table('grupos')->where('id', $destino)->update(['cupos_proyectados' => $activos]);
+        $this->actingAs($admin)->post("/estudiantes/{$m->estudiante_id}/cambiar-grupo", ['grupo_id' => $destino, 'razon' => 'Se cambia por pedido de la familia.'])
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('aviso', fn ($t) => str_contains($t, 'queda sobre el cupo: '.($activos + 1)." de {$activos}"));
+        $this->assertSame($destino, (int) DB::table('matriculas')->where('id', $m->id)->value('grupo_id'));
+
+        // Con cupo, sin aviso.
+        DB::table('grupos')->where('id', $m->grupo_id)->update(['cupos_proyectados' => 99]);
+        $this->actingAs($admin)->post("/estudiantes/{$m->estudiante_id}/cambiar-grupo", ['grupo_id' => $m->grupo_id, 'razon' => 'Vuelve a su grupo de antes.'])
+            ->assertSessionHasNoErrors()
+            ->assertSessionMissing('aviso');
+    }
 }
