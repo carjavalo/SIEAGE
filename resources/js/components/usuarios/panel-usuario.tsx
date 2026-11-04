@@ -142,6 +142,11 @@ function FormularioUsuario({
 
     const guardar: FormEventHandler = (e) => {
         e.preventDefault();
+        // El botón no se apaga (parecía dañado): sin cambios, solo se avisa.
+        if (!nuevo && !form.isDirty) {
+            sileo.info({ title: 'No hay cambios por guardar', description: 'Cambia el rol, las sedes o los datos y vuelve a guardar.' });
+            return;
+        }
         const opciones = {
             preserveScroll: true,
             onSuccess: () => {
@@ -371,7 +376,7 @@ function FormularioUsuario({
                             <span className="mr-auto">
                                 <EstadoGuardado sucio={form.isDirty} />
                             </span>
-                            <BotonGuardar cargando={form.processing} disabled={!form.isDirty}>
+                            <BotonGuardar cargando={form.processing}>
                                 Guardar cambios
                             </BotonGuardar>
                         </>
