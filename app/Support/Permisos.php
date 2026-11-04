@@ -23,6 +23,7 @@ final class Permisos
             'deshabilitar-matriculas' => ['Deshabilitar matrículas', 'Retirar una matrícula o volver a habilitarla.'],
             'promover-estudiantes' => ['Promover', 'Pasar estudiantes al grado siguiente.'],
             'constancias' => ['Constancias', 'Sacar constancias de estudio, una o varias.'],
+            'actas-grado' => ['Actas de grado', 'Imprimir las actas y diplomas de undécimo y llenar los datos del grado.'],
         ],
         'Inscritos' => [
             'ver-inscritos' => ['Ver inscritos', 'Las inscripciones que llegan del formulario.'],
@@ -61,6 +62,7 @@ final class Permisos
         'deshabilitar-matriculas' => 'ver-estudiantes',
         'promover-estudiantes' => 'ver-estudiantes',
         'constancias' => 'ver-estudiantes',
+        'actas-grado' => 'ver-estudiantes',
         'matricular' => 'ver-inscritos',
         'configurar-boletines' => 'escribir-boletines',
         'gestionar-sedes' => 'ver-sedes',

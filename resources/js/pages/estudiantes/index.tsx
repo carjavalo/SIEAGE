@@ -28,7 +28,7 @@ import {
 import { puede } from '@/lib/permisos';
 import { type SharedData } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
-import { FileText, NotebookPen } from 'lucide-react';
+import { FileText, GraduationCap, NotebookPen } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 
 type Props = {
@@ -230,6 +230,13 @@ export default function Estudiantes({
                                     </Link>
                                 )}
                                 {puede(auth, 'constancias') && <BotonConstancias anio={anio} grado={grado} grupo={grupo} sede={sede} sedes={sedes} />}
+                                {/* Undécimo: las actas de grado y los diplomas, cada uno con el formato de su modalidad. */}
+                                {grado.numero === 11 && puede(auth, 'actas-grado') && (
+                                    <Link href={`/actas-grado?anio=${anio}`} title="Actas de grado" className={botonBarra}>
+                                        <GraduationCap className="size-4" />
+                                        <span className={nombreBarra}>Actas de grado</span>
+                                    </Link>
+                                )}
                                 {/* Transición tiene boletín de texto: escribirlo e imprimirlo (también los docentes). */}
                                 {grado.numero === 0 && anio === anioEnCurso && puede(auth, 'escribir-boletines') && (
                                     <Link href={`/boletines${grupo ? `?grupo=${grupo.id}` : ''}`} title="Boletines" className={botonBarra}>

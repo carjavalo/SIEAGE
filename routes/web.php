@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ActaGradoController;
 use App\Http\Controllers\AyudaController;
 use App\Http\Controllers\BoletinController;
 use App\Http\Controllers\ConstanciaController;
@@ -58,6 +59,12 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('can:constancias')->group(function () {
         Route::get('estudiantes/{estudiante}/constancia', [ConstanciaController::class, 'estudiante'])->whereNumber('estudiante')->name('constancias.estudiante');
         Route::get('constancias', [ConstanciaController::class, 'lote'])->name('constancias.lote');
+    });
+
+    // Actas de grado y diplomas de undécimo, con el formato de cada modalidad, y los datos del grado de cada año.
+    Route::middleware('can:actas-grado')->group(function () {
+        Route::get('actas-grado', [ActaGradoController::class, 'index'])->name('actas-grado.index');
+        Route::put('actas-grado/{anio}', [ActaGradoController::class, 'guardar'])->whereNumber('anio')->name('actas-grado.guardar');
     });
 
     // Boletines de transición: escribir el texto de cada estudiante e imprimirlos.

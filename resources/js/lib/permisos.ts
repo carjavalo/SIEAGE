@@ -7,6 +7,7 @@ export type Permiso =
     | 'deshabilitar-matriculas'
     | 'promover-estudiantes'
     | 'constancias'
+    | 'actas-grado'
     | 'ver-inscritos'
     | 'matricular'
     | 'escribir-boletines'
