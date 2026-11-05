@@ -288,7 +288,7 @@ class BoletinController extends Controller
             ->where('g.id', $id)->where('gr.numero', Boletines::GRADO)->where('al.estado', 'activo')
             ->first(['g.id', 'g.sede_id', 'g.grado_id']);
         abort_unless($g, 404);
-        Alcance::exigir($user, $g->sede_id, $g->grado_id);
+        Alcance::exigir($user, $g->sede_id, $g->grado_id, $g->id);
 
         return $g;
     }
@@ -302,9 +302,10 @@ class BoletinController extends Controller
             ->where('m.id', $id)
             ->where('gr.numero', Boletines::GRADO)
             ->where('al.estado', 'activo')
-            ->first(['m.id', 'm.sede_id', 'm.grado_id', 'm.anio_lectivo_id']);
+            ->first(['m.id', 'm.sede_id', 'm.grado_id', 'm.grupo_id', 'm.anio_lectivo_id']);
         abort_unless($m, 404);
-        Alcance::exigir($user, $m->sede_id, $m->grado_id);
+        // Sin grupo (0, que no existe): si solo tiene algunos grupos del grado, no la ve.
+        Alcance::exigir($user, $m->sede_id, $m->grado_id, $m->grupo_id ?? 0);
 
         return $m;
     }

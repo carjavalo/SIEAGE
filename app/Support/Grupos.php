@@ -7,10 +7,10 @@ use Illuminate\Support\Facades\DB;
 
 final class Grupos
 {
-    /** El código de un grupo: «6-1»; en Transición (grado 0), «T1», «T2»… */
+    /** El código de un grupo: «6-1»; en Transición (grado 0), «0-1», «0-2»… */
     public static function codigo(int $grado, int $numero): string
     {
-        return $grado === 0 ? "T{$numero}" : "{$grado}-{$numero}";
+        return "{$grado}-{$numero}";
     }
 
     /**

@@ -31,6 +31,8 @@ export type Usuario = {
     sedes: number[];
     /** En una sede, solo estos grados: {sede_id: [grado_id, …]}. Sin entrada, todos. */
     grados: Record<string, number[]>;
+    /** En esos grados, solo estos grupos (por número): {sede_id: {grado_id: [número, …]}}. Sin entrada, todos. */
+    grupos: Record<string, Record<string, number[]>>;
     ultimo_acceso: string | null;
     /** Usando el panel en este momento. */
     en_linea: boolean;
@@ -39,8 +41,8 @@ export type Usuario = {
     created_at: string;
 };
 
-/** `grados`: los que tiene la sede (los de sus grupos). */
-export type SedeOpcion = { id: number; codigo: string; nombre: string; grados?: number[] };
+/** `grados`: los que tiene la sede (los de sus grupos). `grupos`: {grado_id: [{numero, codigo}, …]}, para elegir grupos. */
+export type SedeOpcion = { id: number; codigo: string; nombre: string; grados?: number[]; grupos?: Record<string, { numero: number; codigo: string }[]> };
 type GradoOpcion = { id: number; numero: number; nombre: string };
 
 type Props = {
@@ -121,23 +123,32 @@ function FormularioUsuario({
         todas_las_sedes: usuario?.todas_las_sedes ?? false,
         sedes: usuario?.sedes ?? ([] as number[]),
         grados: usuario?.grados ?? ({} as Record<string, number[]>),
+        grupos: usuario?.grupos ?? ({} as Record<string, Record<string, number[]>>),
         password: nuevo ? claveAleatoria() : '',
     });
     const catalogo = usePage<{ grados?: GradoOpcion[] }>().props.grados ?? [];
+    // Los de grados y grupos (p. ej. «grupos.2.1.0») van con los de sedes: si no, no se verían.
+    const errores = form.errors as Record<string, string | undefined>;
+    const errorSedes = errores.sedes ?? Object.entries(errores).find(([k]) => /^(grados|grupos)\./.test(k))?.[1];
     const rolElegido = roles.find((r) => r.id === form.data.rol_id);
     const esAdministrador = rolElegido?.nombre === 'administrador' || rolElegido?.nombre === 'superadministrador';
     const marcarSede = (id: number, si: boolean) => {
-        // Al quitar una sede se olvidan sus grados.
-        const grados = sinSede(form.data.grados, id);
+        // Al quitar una sede se olvidan sus grados y sus grupos.
         form.setData({
             ...form.data,
             sedes: si ? [...form.data.sedes, id] : form.data.sedes.filter((s) => s !== id),
-            grados: si ? form.data.grados : grados,
+            grados: si ? form.data.grados : sinSede(form.data.grados, id),
+            grupos: si ? form.data.grupos : sinSede(form.data.grupos, id),
         });
     };
-    const marcarGrados = (sede: number, grados: number[]) => {
-        const resto = sinSede(form.data.grados, sede);
-        form.setData('grados', grados.length ? { ...resto, [sede]: grados } : resto);
+    const marcarGrados = (sede: number, grados: number[], grupos: Record<string, number[]>) => {
+        // Solo los grupos de los grados que quedan marcados.
+        const deEsos = Object.fromEntries(Object.entries(grupos).filter(([g, n]) => grados.includes(Number(g)) && n.length));
+        form.setData({
+            ...form.data,
+            grados: grados.length ? { ...sinSede(form.data.grados, sede), [sede]: grados } : sinSede(form.data.grados, sede),
+            grupos: Object.keys(deEsos).length ? { ...sinSede(form.data.grupos, sede), [sede]: deEsos } : sinSede(form.data.grupos, sede),
+        });
     };
 
     const guardar: FormEventHandler = (e) => {
@@ -331,13 +342,14 @@ function FormularioUsuario({
                                                     sede={s}
                                                     catalogo={catalogo}
                                                     marcados={form.data.grados[s.id] ?? []}
-                                                    onCambio={(g) => marcarGrados(s.id, g)}
+                                                    grupos={form.data.grupos[s.id] ?? {}}
+                                                    onCambio={(g, n) => marcarGrados(s.id, g, n)}
                                                 />
                                             )}
                                         </div>
                                     ))}
                                 </div>
-                                {form.errors.sedes && <p className="mt-2 text-[13px] text-[#B42318]">{form.errors.sedes}</p>}
+                                {errorSedes && <p className="mt-2 text-[13px] text-[#B42318]">{errorSedes}</p>}
                             </>
                         )}
                     </Bloque>
@@ -568,24 +580,45 @@ export function MarcaActivo({ activo }: { activo: boolean }) {
 }
 
 /** Una casilla de la lista de sedes, con el mismo aspecto que la elección de rol. */
-/** Los grados marcados, sin los de esa sede. */
-const sinSede = (grados: Record<string, number[]>, sede: number) => Object.fromEntries(Object.entries(grados).filter(([s]) => Number(s) !== sede));
+/** Lo marcado (grados o grupos), sin lo de esa sede. */
+const sinSede = <T,>(marcado: Record<string, T>, sede: number) => Object.fromEntries(Object.entries(marcado).filter(([s]) => Number(s) !== sede));
 
 const gradoCorto = (g: GradoOpcion) => (g.numero <= 0 ? g.nombre : `${g.numero}°`);
 
-/** Los grados de una sede asignada: «Todos» o los que se marquen (solo verá esos en esa sede). */
+/**
+ * Los grados de una sede asignada: «Todos» o los que se marquen (solo verá esos en esa
+ * sede), por grupos (0-1, 6-2…): marcar todos los grupos de un grado es todo el grado.
+ * Un grado sin grupos en la sede se marca entero.
+ */
 function GradosDeSede({
     sede,
     catalogo,
     marcados,
+    grupos,
     onCambio,
 }: {
     sede: SedeOpcion;
     catalogo: GradoOpcion[];
     marcados: number[];
-    onCambio: (grados: number[]) => void;
+    grupos: Record<string, number[]>;
+    onCambio: (grados: number[], grupos: Record<string, number[]>) => void;
 }) {
     const deLaSede = catalogo.filter((g) => !sede.grados?.length || sede.grados.includes(g.id) || marcados.includes(g.id));
+    const codigoDe = (g: GradoOpcion, n: number) => sede.grupos?.[g.id]?.find((x) => x.numero === n)?.codigo ?? `${g.numero}-${n}`;
+    // Los de la sede y los que ya tenía marcados (aunque ese grupo ya no exista).
+    const numerosDe = (g: GradoOpcion) =>
+        [...new Set([...(sede.grupos?.[g.id] ?? []).map((x) => x.numero), ...(grupos[g.id] ?? [])])].sort((a, b) => a - b);
+    const marcarGrupo = (g: GradoOpcion, numero: number) => {
+        const todos = numerosDe(g);
+        const elegido = marcados.includes(g.id);
+        // Marcado sin grupos = todos sus grupos.
+        const activos = elegido ? (grupos[g.id]?.length ? grupos[g.id] : todos) : [];
+        const nuevos = activos.includes(numero) ? activos.filter((n) => n !== numero) : [...activos, numero].sort((a, b) => a - b);
+        const resto = Object.fromEntries(Object.entries(grupos).filter(([id]) => Number(id) !== g.id));
+        if (!nuevos.length) return onCambio(marcados.filter((x) => x !== g.id), resto);
+        const grados = elegido ? marcados : [...marcados, g.id];
+        onCambio(grados, nuevos.length === todos.length ? resto : { ...resto, [g.id]: nuevos });
+    };
     const chip = (activo: boolean) =>
         cn(
             'h-7 cursor-pointer rounded-full px-2.5 text-[12.5px] font-semibold ring-1 transition focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none',
@@ -598,18 +631,34 @@ function GradosDeSede({
             className="mt-1.5 mb-1 ml-3 flex flex-wrap items-center gap-1 border-l-2 border-[#E3E9F6] pl-3"
         >
             <span className="mr-0.5 text-[12.5px] text-[#56627F]">Grados:</span>
-            <button type="button" aria-pressed={marcados.length === 0} onClick={() => onCambio([])} className={chip(marcados.length === 0)}>
+            <button type="button" aria-pressed={marcados.length === 0} onClick={() => onCambio([], {})} className={chip(marcados.length === 0)}>
                 Todos
             </button>
             {deLaSede.map((g) => {
                 const si = marcados.includes(g.id);
+                const numeros = numerosDe(g);
+                if (numeros.length) {
+                    const activos = si ? (grupos[g.id]?.length ? grupos[g.id] : numeros) : [];
+                    return numeros.map((n) => (
+                        <button
+                            key={`${g.id}-${n}`}
+                            type="button"
+                            aria-pressed={activos.includes(n)}
+                            title={`${g.nombre}, grupo ${codigoDe(g, n)}`}
+                            onClick={() => marcarGrupo(g, n)}
+                            className={chip(activos.includes(n))}
+                        >
+                            {codigoDe(g, n)}
+                        </button>
+                    ));
+                }
                 return (
                     <button
                         key={g.id}
                         type="button"
                         aria-pressed={si}
                         title={g.nombre}
-                        onClick={() => onCambio(si ? marcados.filter((x) => x !== g.id) : [...marcados, g.id])}
+                        onClick={() => onCambio(si ? marcados.filter((x) => x !== g.id) : [...marcados, g.id], grupos)}
                         className={chip(si)}
                     >
                         {gradoCorto(g)}

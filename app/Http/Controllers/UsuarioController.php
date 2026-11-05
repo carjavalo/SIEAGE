@@ -47,6 +47,12 @@ class UsuarioController extends Controller
         $gradosMarcados = DB::table('sede_user_grado')->get(['user_id', 'sede_id', 'grado_id'])->groupBy('user_id');
         // Los grados que tiene cada sede (los de sus grupos), para ofrecer solo esos.
         $gradosDeSede = DB::table('grupos')->select('sede_id', 'grado_id')->distinct()->get()->groupBy('sede_id');
+        $gruposMarcados = DB::table('sede_user_grupo')->get(['user_id', 'sede_id', 'grado_id', 'numero'])->groupBy('user_id');
+        // Los grupos de cada grado y sede (por número) del año en curso y los ya planeados, para elegir uno o varios.
+        $gruposDeSede = DB::table('grupos as g')
+            ->join('anios_lectivos as al', 'al.id', '=', 'g.anio_lectivo_id')->whereIn('al.estado', ['activo', 'planeado'])
+            ->whereNotNull('g.numero')
+            ->select('g.sede_id', 'g.grado_id', 'g.numero', 'g.codigo')->orderBy('g.numero')->orderByDesc('al.anio')->get()->groupBy('sede_id');
         $enLinea = Presencia::enLinea()->flip();
 
         return Inertia::render('usuarios/index', [
@@ -61,6 +67,9 @@ class UsuarioController extends Controller
                     // En cada sede, si solo ve algunos grados: {sede_id: [grado_id, …]}.
                     'grados' => (object) $gradosMarcados->get($u->id, collect())->groupBy('sede_id')
                         ->map(fn ($filas) => $filas->pluck('grado_id')->map(fn ($id) => (int) $id)->values())->all(),
+                    // En esos grados, si solo ve algunos grupos: {sede_id: {grado_id: [número, …]}}.
+                    'grupos' => (object) $gruposMarcados->get($u->id, collect())->groupBy('sede_id')
+                        ->map(fn ($filas) => (object) $filas->groupBy('grado_id')->map(fn ($f) => $f->pluck('numero')->map(fn ($n) => (int) $n)->sort()->values())->all())->all(),
                     // Usando el panel ahora mismo; si no, la última vez que lo usó (o, de antes, cuándo ingresó).
                     'en_linea' => $enLinea->has($u->id),
                     'ultima_vez' => ($u->ultima_actividad ?? $u->ultimo_acceso)?->toIso8601String(),
@@ -70,7 +79,13 @@ class UsuarioController extends Controller
                 ->get(['id', 'nombre', 'etiqueta', 'descripcion'])->map(fn (Rol $r) => [...$r->toArray(), 've_todas' => $this->rolVeTodas($r->id)]),
             // Para asignar a cada usuario las sedes que puede ver.
             'sedes' => DB::table('sedes')->orderByDesc('es_principal')->orderBy('nombre')->get(['id', 'codigo', 'nombre'])
-                ->map(fn ($s) => [...(array) $s, 'grados' => $gradosDeSede->get($s->id, collect())->pluck('grado_id')->map(fn ($id) => (int) $id)->values()]),
+                ->map(fn ($s) => [
+                    ...(array) $s,
+                    'grados' => $gradosDeSede->get($s->id, collect())->pluck('grado_id')->map(fn ($id) => (int) $id)->values(),
+                    // {grado_id: [{numero, codigo}, …]}: los grupos que tiene cada grado.
+                    'grupos' => (object) $gruposDeSede->get($s->id, collect())->groupBy('grado_id')
+                        ->map(fn ($f) => $f->unique('numero')->map(fn ($g) => ['numero' => (int) $g->numero, 'codigo' => $g->codigo])->values())->all(),
+                ]),
             'grados' => DB::table('grados')->orderBy('numero')->get(['id', 'numero', 'nombre']),
         ]);
     }
@@ -85,7 +100,7 @@ class UsuarioController extends Controller
         $this->soloSusSedes($request, $datos);
 
         // En una transacción: si faltan sedes, el usuario no queda creado a medias.
-        DB::transaction(fn () => $this->asignarSedes(User::create([...collect($datos)->except(['sedes', 'grados'])->all(), 'activo' => true]), $datos));
+        DB::transaction(fn () => $this->asignarSedes(User::create([...collect($datos)->except(['sedes', 'grados', 'grupos'])->all(), 'activo' => true]), $datos));
 
         return back()->with('success', "Usuario «{$datos['usuario']}» creado.");
     }
@@ -103,7 +118,7 @@ class UsuarioController extends Controller
         $this->protegerAdministradores($request, $usuario, (int) $datos['rol_id'], (bool) ($datos['activo'] ?? $usuario->activo));
 
         DB::transaction(function () use ($usuario, $datos) {
-            $usuario->update(collect($datos)->except(['sedes', 'grados'])->all());
+            $usuario->update(collect($datos)->except(['sedes', 'grados', 'grupos'])->all());
             $this->asignarSedes($usuario, $datos);
         });
         if (! $usuario->activo) {
@@ -184,21 +199,28 @@ class UsuarioController extends Controller
             throw ValidationException::withMessages(['sedes' => 'Marca al menos una sede, o «Todas las sedes».']);
         }
 
-        // Los grados marcados de cada sede asignada (con «todas las sedes» no hay límite de grado).
+        // Los grados marcados de cada sede asignada (con «todas las sedes» no hay límite de grado),
+        // y en cada uno, si se marcaron, solo esos grupos (por número).
         $grados = [];
+        $grupos = [];
         foreach ($todas ? [] : $sedes as $sede) {
             foreach (array_unique(array_map('intval', $datos['grados'][$sede] ?? [])) as $grado) {
                 $grados[] = ['user_id' => $usuario->id, 'sede_id' => $sede, 'grado_id' => $grado];
+                foreach (array_unique(array_map('intval', $datos['grupos'][$sede][$grado] ?? [])) as $numero) {
+                    $grupos[] = ['user_id' => $usuario->id, 'sede_id' => $sede, 'grado_id' => $grado, 'numero' => $numero];
+                }
             }
         }
 
-        DB::transaction(function () use ($usuario, $todas, $sedes, $grados) {
+        DB::transaction(function () use ($usuario, $todas, $sedes, $grados, $grupos) {
             $usuario->forceFill(['todas_las_sedes' => $todas])->save();
             DB::table('sede_user')->where('user_id', $usuario->id)->delete();
             DB::table('sede_user')->insert(array_map(fn ($id) => ['user_id' => $usuario->id, 'sede_id' => $id, 'created_at' => now()], $todas ? [] : $sedes));
             // Sedes y grados juntos: en cada sede, solo los grados marcados (o todos).
             DB::table('sede_user_grado')->where('user_id', $usuario->id)->delete();
             DB::table('sede_user_grado')->insert($grados);
+            DB::table('sede_user_grupo')->where('user_id', $usuario->id)->delete();
+            DB::table('sede_user_grupo')->insert($grupos);
         });
         Alcance::olvidar($usuario);
     }
@@ -239,7 +261,12 @@ class UsuarioController extends Controller
             // En una sede, solo estos grados (sin grados: todos los de la sede).
             'grados' => ['sometimes', 'array'],
             'grados.*' => ['array'],
-            'grados.*.*' => ['integer', 'distinct', 'exists:grados,id'],
+            'grados.*.*' => ['integer', 'exists:grados,id'],
+            // Y en un grado marcado, solo estos grupos, por número (sin grupos: todos los del grado).
+            'grupos' => ['sometimes', 'array'],
+            'grupos.*' => ['array'],
+            'grupos.*.*' => ['array'],
+            'grupos.*.*.*' => ['integer', 'min:1', 'max:99'],
         ];
     }
 
@@ -286,6 +313,27 @@ class UsuarioController extends Controller
         }
         if (! empty($datos['todas_las_sedes']) || array_diff(array_map('intval', $datos['sedes'] ?? []), $mias)) {
             throw ValidationException::withMessages(['sedes' => 'Solo puedes dar las sedes que tú ves.']);
+        }
+
+        // Ni más grados o grupos de los que tiene: en una sede donde solo ve algunos grados, el otro
+        // también (sin grados sería toda la sede); y en un grado con grupos marcados, solo de esos.
+        $yo = $request->user();
+        foreach (array_map('intval', $datos['sedes'] ?? []) as $sede) {
+            $misGrados = Alcance::grados($yo)[$sede] ?? null;
+            if ($misGrados === null) {
+                continue;
+            }
+            $suyos = array_map('intval', $datos['grados'][$sede] ?? []);
+            if ($suyos === [] || array_diff($suyos, $misGrados)) {
+                throw ValidationException::withMessages(['sedes' => 'Solo puedes dar los grados que tú ves en cada sede.']);
+            }
+            foreach ($suyos as $grado) {
+                $misNumeros = Alcance::numerosDelGrado($yo, $sede, $grado);
+                $numeros = array_map('intval', $datos['grupos'][$sede][$grado] ?? []);
+                if ($misNumeros !== null && ($numeros === [] || array_diff($numeros, $misNumeros))) {
+                    throw ValidationException::withMessages(['sedes' => 'Solo puedes dar los grupos que tú ves.']);
+                }
+            }
         }
     }
 

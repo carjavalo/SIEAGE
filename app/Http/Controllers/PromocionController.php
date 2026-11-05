@@ -35,8 +35,8 @@ class PromocionController extends Controller
             if (! $origen || ! $destino) {
                 throw ValidationException::withMessages(['grupo_id' => 'Grupo no válido.']);
             }
-            Alcance::exigir($user, $origen->sede_id, $origen->grado_id);
-            Alcance::exigir($user, $destino->sede_id, $destino->grado_id);
+            Alcance::exigir($user, $origen->sede_id, $origen->grado_id, $datos['grupo_id']);
+            Alcance::exigir($user, $destino->sede_id, $destino->grado_id, $datos['grupo_destino_id']);
             $resumen = Promocion::ejecutar((int) $datos['anio'], null, null, (int) $origen->sede_id, (int) $datos['grupo_id'], (int) $datos['grupo_destino_id']);
 
             return back()->with('promocion', $resumen);
@@ -52,6 +52,9 @@ class PromocionController extends Controller
         } elseif (! $gradoId && Alcance::grados($user) !== []) {
             // Quien solo ve algunos grados promueve grado por grado.
             throw ValidationException::withMessages(['grado_id' => 'Elige el grado: solo puedes promover los grados que tienes asignados.']);
+        }
+        if ($gradoId && ! isset($datos['estudiante_id']) && ! Alcance::veGradoCompleto($user, $sedeId, $gradoId)) {
+            throw ValidationException::withMessages(['grupo_id' => 'Elige el grupo: en este grado solo tienes algunos grupos.']);
         }
         if ($sedeId && ! $gradoId && isset(Alcance::grados($user)[(int) $sedeId])) {
             throw ValidationException::withMessages(['grado_id' => 'Elige el grado: en esta sede solo tienes algunos grados.']);
@@ -82,7 +85,7 @@ class PromocionController extends Controller
             if (! $grupo) {
                 throw ValidationException::withMessages(['grupo_id' => 'Grupo no válido.']);
             }
-            Alcance::exigir($user, $grupo->sede_id, $grupo->grado_id);
+            Alcance::exigir($user, $grupo->sede_id, $grupo->grado_id, $datos['grupo_id']);
             $resumen = Promocion::revertir((int) $datos['anio'], null, null, (int) $grupo->sede_id, (int) $datos['grupo_id']);
 
             return back()->with('reversion', $resumen);
@@ -97,6 +100,9 @@ class PromocionController extends Controller
             Alcance::exigirEstudiante($user, (int) $datos['estudiante_id']);
         } elseif (! $gradoId && Alcance::grados($user) !== []) {
             throw ValidationException::withMessages(['grado_id' => 'Elige el grado: solo puedes deshacer la promoción de los grados que tienes asignados.']);
+        }
+        if ($gradoId && ! isset($datos['estudiante_id']) && ! Alcance::veGradoCompleto($user, $sedeId, $gradoId)) {
+            throw ValidationException::withMessages(['grupo_id' => 'Elige el grupo: en este grado solo tienes algunos grupos.']);
         }
         if ($sedeId && ! $gradoId && isset(Alcance::grados($user)[(int) $sedeId])) {
             throw ValidationException::withMessages(['grado_id' => 'Elige el grado: en esta sede solo tienes algunos grados.']);

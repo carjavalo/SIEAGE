@@ -267,8 +267,7 @@ function FormularioGrupo({
     useAvisar(estado, form.isDirty, form.processing || borrar.ocupado);
 
     const grado = grados.find((g) => g.id === d.grado_id);
-    // Como Grupos::codigo del servidor: Transición es «T1», «T2»…
-    const codigo = grado && d.numero ? (grado.numero === 0 ? `T${d.numero}` : `${grado.numero}-${d.numero}`) : null;
+    const codigo = grado && d.numero ? `${grado.numero}-${d.numero}` : null;
     const numero = (campo: 'numero' | 'cupos', extra: ComponentProps<'input'>) => ({
         id: id(campo),
         type: 'number',

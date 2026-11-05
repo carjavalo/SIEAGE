@@ -192,7 +192,7 @@ class InscritoController extends Controller
             'anios' => $anios->map(fn ($a) => ['anio' => (int) $a->anio, 'estado' => $a->estado])->values(),
             'gradoNumero' => DB::table('grados')->where('id', $solicitud->grado_id)->value('numero'),
             // Solo los grupos de las sedes del usuario.
-            'grupos' => Grupos::conOcupacion($anioId, $solicitud->grado_id, Alcance::sedesDelGrado(request()->user(), (int) $solicitud->grado_id)),
+            'grupos' => Alcance::soloGruposVisibles(Grupos::conOcupacion($anioId, $solicitud->grado_id, Alcance::sedesDelGrado(request()->user(), (int) $solicitud->grado_id)), request()->user()),
             // Si ya está en la institución este año (por su documento): activo, no se matricula otra vez; retirado, se reactiva.
             'matriculaExistente' => $solicitud->estado === SolicitudInscripcion::PENDIENTE
                 ? $this->matriculaDelAnio(DB::table('estudiantes')->where('numero_documento', $solicitud->numero_documento)->value('id'), $anioId)
@@ -241,6 +241,9 @@ class InscritoController extends Controller
             'grupo_id.required' => 'Elige el grupo.',
             'grupo_id.exists' => 'Ese grupo no es del grado que pidió la familia.',
         ])['grupo_id'];
+        // Y, si solo tiene algunos grupos del grado, uno de esos.
+        $elegido = DB::table('grupos')->where('id', $grupoId)->first(['sede_id', 'grado_id']);
+        Alcance::exigir($request->user(), $elegido->sede_id, $elegido->grado_id, $grupoId);
         // El año es el del grupo elegido.
         $anioId = (int) DB::table('grupos')->where('id', $grupoId)->value('anio_lectivo_id');
 

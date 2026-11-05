@@ -315,7 +315,7 @@ final class ImportarLibroMatricula
 
     // ------------------------------------------------------------------ catálogos
 
-    /** «6-1» → [6, 1, '6-1']; «9°» → [9, null, '9°']; «0-2» o «T2» → [0, 2, 'T2']. Un ciclo («III») también. */
+    /** «6-1» → [6, 1, '6-1']; «9°» → [9, null, '9°']; «0-2» o «T2» → [0, 2, '0-2']. Un ciclo («III») también. */
     private function delCodigo(?string $codigo): ?array
     {
         $c = trim((string) $codigo);

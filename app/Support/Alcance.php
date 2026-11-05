@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\User;
 use Illuminate\Contracts\Database\Query\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -14,6 +15,8 @@ use Illuminate\Support\Facades\DB;
  * - Los demás: solo las sedes asignadas en sede_user. Sin ninguna, ninguna.
  * - Y en cada sede asignada, si tiene grados marcados (sede_user_grado), solo
  *   esos grados (p. ej. Rafael Pombo → Transición); sin grados marcados, todos.
+ * - Y en un grado marcado, si tiene grupos marcados (sede_user_grupo, por número),
+ *   solo esos grupos (p. ej. Rafael Pombo → 0-1); sin grupos marcados, todos.
  *
  * Todo lo que lee o modifica datos de estudiantes, grupos, inscritos o informes
  * pasa por aquí: el filtro se aplica en el servidor, no solo en la pantalla.
@@ -78,21 +81,82 @@ final class Alcance
         return $guardado;
     }
 
-    /** Si puede ver ese grado en esa sede. */
-    public static function puedeVer(?User $user, int|string|null $sedeId, int|string|null $gradoId): bool
+    /**
+     * En los grados marcados donde solo ve algunos grupos: [sede_id => [grado_id => [número, …]]].
+     * Un grado que no aparece se ve con todos sus grupos.
+     *
+     * @return array<int, array<int, list<int>>>
+     */
+    public static function grupos(?User $user): array
+    {
+        $grados = self::grados($user);
+        if ($grados === []) {
+            return [];
+        }
+
+        $clave = "alcance.grupos.{$user->id}";
+        $guardado = request()->attributes->get($clave);
+        if ($guardado === null) {
+            $guardado = [];
+            foreach (DB::table('sede_user_grupo')->where('user_id', $user->id)->get(['sede_id', 'grado_id', 'numero']) as $f) {
+                // Solo cuenta si el grado sigue marcado en esa sede.
+                if (in_array((int) $f->grado_id, $grados[(int) $f->sede_id] ?? [], true)) {
+                    $guardado[(int) $f->sede_id][(int) $f->grado_id][] = (int) $f->numero;
+                }
+            }
+            request()->attributes->set($clave, $guardado);
+        }
+
+        return $guardado;
+    }
+
+    /**
+     * Si puede ver ese grado en esa sede. Con `$grupoId`, además ese grupo (si en ese
+     * grado solo tiene algunos). Sin él, basta con que vea parte del grado: lo que se
+     * lista después se limita con filtrar().
+     */
+    public static function puedeVer(?User $user, int|string|null $sedeId, int|string|null $gradoId, int|string|null $grupoId = null): bool
     {
         if (! self::puedeVerSede($user, $sedeId)) {
             return false;
         }
         $limitados = self::grados($user)[(int) $sedeId] ?? null;
+        if ($limitados !== null && ($gradoId === null || ! in_array((int) $gradoId, $limitados, true))) {
+            return false;
+        }
+        $numeros = self::numerosDelGrado($user, $sedeId, $gradoId);
+        if ($numeros === null || $grupoId === null) {
+            return true;
+        }
+        $grupo = DB::table('grupos')->where('id', (int) $grupoId)->first(['sede_id', 'grado_id', 'numero']);
 
-        return $limitados === null || ($gradoId !== null && in_array((int) $gradoId, $limitados, true));
+        return $grupo && (int) $grupo->sede_id === (int) $sedeId && (int) $grupo->grado_id === (int) $gradoId
+            && in_array((int) $grupo->numero, $numeros, true);
     }
 
     /** Como puedeVer, pero responde 404 si no puede. */
-    public static function exigir(?User $user, int|string|null $sedeId, int|string|null $gradoId): void
+    public static function exigir(?User $user, int|string|null $sedeId, int|string|null $gradoId, int|string|null $grupoId = null): void
     {
-        abort_unless(self::puedeVer($user, $sedeId, $gradoId), 404);
+        abort_unless(self::puedeVer($user, $sedeId, $gradoId, $grupoId), 404);
+    }
+
+    /** Los números de grupo que ve en ese grado de esa sede (null = todos). */
+    public static function numerosDelGrado(?User $user, int|string|null $sedeId, int|string|null $gradoId): ?array
+    {
+        return $sedeId === null || $gradoId === null ? null : (self::grupos($user)[(int) $sedeId][(int) $gradoId] ?? null);
+    }
+
+    /**
+     * Si ve el grado entero en esa sede (o, sin sede, en todas las suyas): para lo que
+     * actúa sobre todo el grado de una vez, como promoverlo o crearle grupos.
+     */
+    public static function veGradoCompleto(?User $user, int|string|null $sedeId, int|string|null $gradoId): bool
+    {
+        if ($sedeId !== null) {
+            return self::puedeVer($user, $sedeId, $gradoId) && self::numerosDelGrado($user, $sedeId, $gradoId) === null;
+        }
+
+        return ! collect(self::grupos($user))->contains(fn ($grados) => isset($grados[(int) $gradoId]));
     }
 
     /** Las sedes donde puede ver ese grado (null = todas). */
@@ -129,9 +193,11 @@ final class Alcance
     /**
      * Limita una consulta a las sedes del usuario por la columna indicada (p. ej.
      * 'm.sede_id') y, con `$grado` (p. ej. 'm.grado_id'), a los grados que tenga
-     * marcados en cada sede.
+     * marcados en cada sede y, en ellos, a los grupos marcados, por `$grupo`: el id
+     * del grupo ('m.grupo_id' en matrículas, 'g.id' o 'id' en grupos). Sin `$grupo`
+     * se deduce: 'g.grado_id' → 'g.id'; 'm.grado_id' → 'm.grupo_id'.
      */
-    public static function filtrar(Builder $consulta, ?User $user, string $columna, ?string $grado = null): Builder
+    public static function filtrar(Builder $consulta, ?User $user, string $columna, ?string $grado = null, ?string $grupo = null): Builder
     {
         $sedes = self::sedes($user);
         if ($sedes === null) {
@@ -142,13 +208,35 @@ final class Alcance
             return $consulta->whereIn($columna, $sedes);
         }
         $libres = array_values(array_diff($sedes, array_keys($limitados)));
+        $porGrupo = self::grupos($user);
+        $grupo ??= str_starts_with($grado, 'g.') ? 'g.id' : str_replace('grado_id', 'grupo_id', $grado);
 
-        return $consulta->where(function ($w) use ($columna, $grado, $libres, $limitados) {
+        return $consulta->where(function ($w) use ($columna, $grado, $grupo, $libres, $limitados, $porGrupo) {
             $w->whereIn($columna, $libres);
             foreach ($limitados as $sede => $grados) {
-                $w->orWhere(fn ($o) => $o->where($columna, $sede)->whereIn($grado, $grados));
+                $enteros = array_values(array_diff($grados, array_keys($porGrupo[$sede] ?? [])));
+                $w->orWhere(fn ($o) => $o->where($columna, $sede)->whereIn($grado, $enteros));
+                // En los grados con grupos marcados, solo los de esos números (y nada sin grupo).
+                foreach ($porGrupo[$sede] ?? [] as $gradoId => $numeros) {
+                    $w->orWhere(fn ($o) => $o->where($columna, $sede)->where($grado, $gradoId)
+                        ->whereIn($grupo, DB::table('grupos')->select('id')->where('sede_id', $sede)->where('grado_id', $gradoId)->whereIn('numero', $numeros)));
+                }
             }
         });
+    }
+
+    /**
+     * De una lista de grupos (cada uno con `id`), solo los que ve: en los grados con
+     * grupos marcados, los de esos números.
+     */
+    public static function soloGruposVisibles(Collection $grupos, ?User $user): Collection
+    {
+        if (self::grupos($user) === [] || $grupos->isEmpty()) {
+            return $grupos;
+        }
+        $visibles = self::filtrar(DB::table('grupos')->whereIn('id', $grupos->pluck('id')), $user, 'sede_id', 'grado_id', 'id')->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+        return $grupos->filter(fn ($g) => in_array((int) $g->id, $visibles, true))->values();
     }
 
     /**
@@ -188,12 +276,21 @@ final class Alcance
         // En las sedes con grados marcados, solo las solicitudes de esos grados.
         $libres = array_values(array_diff($sedes, array_keys($limitados)));
 
-        return $consulta->where(function ($w) use ($libres, $limitados, $alias) {
+        $consulta->where(function ($w) use ($libres, $limitados, $alias) {
             $w->where(fn ($q) => self::solicitudesDeSedes($q, $libres, $alias));
             foreach ($limitados as $sede => $grados) {
                 $w->orWhere(fn ($q) => self::solicitudesDeSedes($q, [$sede], $alias)->whereIn("{$alias}.grado_id", $grados));
             }
         });
+
+        // Con grupos marcados, una ya matriculada solo si ve esa matrícula (la de 0-2 no es de quien tiene 0-1).
+        // Las pendientes siguen: al matricular solo puede elegir sus grupos.
+        if (self::grupos($user) !== []) {
+            $consulta->where(fn ($q) => $q->whereNull("{$alias}.matricula_id")
+                ->orWhereExists(fn ($m) => self::filtrar($m->from('matriculas as sm')->whereColumn('sm.id', "{$alias}.matricula_id"), $user, 'sm.sede_id', 'sm.grado_id')));
+        }
+
+        return $consulta;
     }
 
     /**
@@ -230,5 +327,6 @@ final class Alcance
     {
         request()->attributes->remove("alcance.sedes.{$user->id}");
         request()->attributes->remove("alcance.grados.{$user->id}");
+        request()->attributes->remove("alcance.grupos.{$user->id}");
     }
 }

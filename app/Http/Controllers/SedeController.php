@@ -65,6 +65,7 @@ class SedeController extends Controller
         $activos = DB::table('matriculas')
             ->where('anio_lectivo_id', $anio?->id)
             ->where('estado', 'activo')
+            ->tap(fn ($q) => Alcance::filtrar($q, $request->user(), 'sede_id', 'grado_id'))
             ->groupBy('sede_id')
             ->selectRaw('sede_id, count(*) as n, sum(grupo_id is null) as sin_grupo')
             ->get()

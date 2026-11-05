@@ -83,7 +83,7 @@ class EstudianteController extends Controller
             ")
             ->first();
 
-        $grupos = Grupos::conOcupacion($anio?->id, $gradoId, $sede ? (Alcance::puedeVer($request->user(), $sede->id, $gradoId) ? $sede->id : []) : Alcance::sedesDelGrado($request->user(), $gradoId));
+        $grupos = Alcance::soloGruposVisibles(Grupos::conOcupacion($anio?->id, $gradoId, $sede ? (Alcance::puedeVer($request->user(), $sede->id, $gradoId) ? $sede->id : []) : Alcance::sedesDelGrado($request->user(), $gradoId)), $request->user());
 
         // Si ya fue promovido: el grupo que tiene en el año siguiente.
         $siguienteId = DB::table('anios_lectivos')->where('anio', ($anio?->anio ?? 0) + 1)->value('id');
@@ -316,7 +316,7 @@ class EstudianteController extends Controller
             'actual' => $actual,
             // Transición del año en curso: escribe e imprime su boletín (ver BoletinController).
             'boletin' => $actual && request()->user()->can('escribir-boletines') && (int) $actual->grado_numero === Boletines::GRADO && $actual->estado === 'activo'
-                && $actual->grupo_id !== null && Alcance::puedeVer(request()->user(), $actual->sede_id, $actual->grado_id)
+                && $actual->grupo_id !== null && Alcance::puedeVer(request()->user(), $actual->sede_id, $actual->grado_id, $actual->grupo_id)
                 && DB::table('anios_lectivos')->where('anio', $actual->anio)->value('estado') === 'activo',
             'documentos' => $actual ? self::documentos($actual->id, (int) $actual->grado_numero, $alumno) : null,
             // Alerta de edad para el grado de la matrícula (tabla de edades de la institución).

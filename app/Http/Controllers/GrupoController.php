@@ -42,6 +42,8 @@ class GrupoController extends Controller
             ...$this->reglas($sede->id),
         ], self::MENSAJES);
         Alcance::exigir($request->user(), $sede->id, $datos['grado_id']);
+        // Quien solo tiene algunos grupos del grado no le crea grupos nuevos.
+        abort_unless(Alcance::veGradoCompleto($request->user(), $sede->id, $datos['grado_id']), 404);
 
         // El año siguiente nace con su primer grupo; si el grupo no se puede crear, tampoco el año.
         $codigo = DB::transaction(function () use ($datos, $sede) {
@@ -72,8 +74,13 @@ class GrupoController extends Controller
     public function update(Request $request, int $grupo): RedirectResponse
     {
         $actual = DB::table('grupos')->find($grupo) ?? abort(404);
-        Alcance::exigir($request->user(), $actual->sede_id, $actual->grado_id);
+        Alcance::exigir($request->user(), $actual->sede_id, $actual->grado_id, $actual->id);
         $datos = $request->validate($this->reglas($actual->sede_id), self::MENSAJES);
+        // Con solo algunos grupos del grado, no lo vuelve un número que no tiene.
+        $numeros = Alcance::numerosDelGrado($request->user(), $actual->sede_id, $actual->grado_id);
+        if ($numeros !== null && ! in_array((int) $datos['numero'], $numeros, true)) {
+            throw ValidationException::withMessages(['numero' => 'Solo puedes usar los números de tus grupos.']);
+        }
 
         $this->abierto(DB::table('anios_lectivos')->where('id', $actual->anio_lectivo_id)->value('estado'));
         $grado = DB::table('grados')->find($actual->grado_id);
@@ -102,7 +109,7 @@ class GrupoController extends Controller
     public function destroy(Request $request, int $grupo): RedirectResponse
     {
         $actual = DB::table('grupos')->find($grupo) ?? abort(404);
-        Alcance::exigir($request->user(), $actual->sede_id, $actual->grado_id);
+        Alcance::exigir($request->user(), $actual->sede_id, $actual->grado_id, $actual->id);
         $this->abierto(DB::table('anios_lectivos')->where('id', $actual->anio_lectivo_id)->value('estado'));
 
         $matriculas = DB::table('matriculas')->where('grupo_id', $actual->id)->count();
@@ -168,7 +175,7 @@ class GrupoController extends Controller
 
         $ids = array_map('intval', array_keys($datos['cupos']));
         // Todos deben existir y ser de las sedes del usuario.
-        $validos = Alcance::filtrar(DB::table('grupos')->whereIn('id', $ids), $request->user(), 'sede_id', 'grado_id')->count();
+        $validos = Alcance::filtrar(DB::table('grupos')->whereIn('id', $ids), $request->user(), 'sede_id', 'grado_id', 'id')->count();
         abort_if($validos !== count($ids), 404);
 
         DB::transaction(function () use ($datos) {

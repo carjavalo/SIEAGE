@@ -147,22 +147,18 @@ class SedesTest extends TestCase
                 ->where('grupos.0.sede_codigo', 'SP'));
     }
 
-    public function test_los_grupos_de_transicion_se_llaman_t1_t2()
+    public function test_los_grupos_de_transicion_se_llaman_0_1_0_2()
     {
         $sede = $this->nuevaSede();
         $transicion = DB::table('grados')->where('numero', 0)->value('id');
 
         $this->actingAs($this->secretaria)->post("/sedes/{$sede}/grupos", ['anio' => 2026, 'grado_id' => $transicion, 'numero' => 2, 'jornada' => 'Mañana', 'cupos' => 25])
             ->assertSessionHasNoErrors();
-        $this->assertDatabaseHas('grupos', ['sede_id' => $sede, 'grado_id' => $transicion, 'numero' => 2, 'codigo' => 'T2']);
+        $this->assertDatabaseHas('grupos', ['sede_id' => $sede, 'grado_id' => $transicion, 'numero' => 2, 'codigo' => '0-2']);
 
-        // Los que venían como «0-1» se renombran con la migración (y vuelven al deshacerla).
-        $viejo = DB::table('grupos')->insertGetId(['anio_lectivo_id' => $this->anioId, 'sede_id' => $sede, 'grado_id' => $transicion, 'numero' => 3, 'codigo' => '0-3', 'jornada' => 'Mañana']);
-        $migracion = require database_path('migrations/2026_11_04_000002_codigo_de_grupos_de_transicion.php');
-        $migracion->up();
-        $this->assertSame('T3', DB::table('grupos')->where('id', $viejo)->value('codigo'));
-        $this->assertSame(0, DB::table('grupos')->where('codigo', 'like', '0-%')->count());
-        $migracion->down();
+        // Los que una versión anterior pasó a «T3» vuelven a «0-3».
+        $viejo = DB::table('grupos')->insertGetId(['anio_lectivo_id' => $this->anioId, 'sede_id' => $sede, 'grado_id' => $transicion, 'numero' => 3, 'codigo' => 'T3', 'jornada' => 'Mañana']);
+        (require database_path('migrations/2026_11_05_000000_codigo_de_grupos_de_transicion.php'))->up();
         $this->assertSame('0-3', DB::table('grupos')->where('id', $viejo)->value('codigo'));
     }
 
