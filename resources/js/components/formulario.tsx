@@ -131,7 +131,8 @@ export function CampoClaveNueva({
                     id={id}
                     type={ver ? 'text' : 'password'}
                     value={valor}
-                    onChange={(e) => onCambio(e.target.value)}
+                    // Sin espacios: al copiarla de un mensaje se cuela uno y luego no deja ingresar.
+                    onChange={(e) => onCambio(e.target.value.replace(/\s/g, ''))}
                     autoComplete="new-password"
                     spellCheck={false}
                     aria-invalid={!!error}

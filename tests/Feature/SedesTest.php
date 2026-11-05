@@ -147,6 +147,25 @@ class SedesTest extends TestCase
                 ->where('grupos.0.sede_codigo', 'SP'));
     }
 
+    public function test_los_grupos_de_transicion_se_llaman_t1_t2()
+    {
+        $sede = $this->nuevaSede();
+        $transicion = DB::table('grados')->where('numero', 0)->value('id');
+
+        $this->actingAs($this->secretaria)->post("/sedes/{$sede}/grupos", ['anio' => 2026, 'grado_id' => $transicion, 'numero' => 2, 'jornada' => 'Mañana', 'cupos' => 25])
+            ->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('grupos', ['sede_id' => $sede, 'grado_id' => $transicion, 'numero' => 2, 'codigo' => 'T2']);
+
+        // Los que venían como «0-1» se renombran con la migración (y vuelven al deshacerla).
+        $viejo = DB::table('grupos')->insertGetId(['anio_lectivo_id' => $this->anioId, 'sede_id' => $sede, 'grado_id' => $transicion, 'numero' => 3, 'codigo' => '0-3', 'jornada' => 'Mañana']);
+        $migracion = require database_path('migrations/2026_11_04_000002_codigo_de_grupos_de_transicion.php');
+        $migracion->up();
+        $this->assertSame('T3', DB::table('grupos')->where('id', $viejo)->value('codigo'));
+        $this->assertSame(0, DB::table('grupos')->where('codigo', 'like', '0-%')->count());
+        $migracion->down();
+        $this->assertSame('0-3', DB::table('grupos')->where('id', $viejo)->value('codigo'));
+    }
+
     public function test_los_grupos_del_anio_siguiente_se_crean_aqui_antes_de_promover()
     {
         // 2027 todavía no existe, pero ya sale para prepararlo según la proyección de matrícula.

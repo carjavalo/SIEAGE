@@ -7,6 +7,12 @@ use Illuminate\Support\Facades\DB;
 
 final class Grupos
 {
+    /** El código de un grupo: «6-1»; en Transición (grado 0), «T1», «T2»… */
+    public static function codigo(int $grado, int $numero): string
+    {
+        return $grado === 0 ? "T{$numero}" : "{$grado}-{$numero}";
+    }
+
     /**
      * Grupos de un grado en un año lectivo con su sede, jornada, director,
      * cupos y cuántos estudiantes activos (y nuevos) tienen. Lo usan el

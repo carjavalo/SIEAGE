@@ -315,12 +315,16 @@ final class ImportarLibroMatricula
 
     // ------------------------------------------------------------------ catálogos
 
-    /** «6-1» → [6, 1, '6-1']; «9°» → [9, null, '9°']; «0-2» → [0, 2, '0-2']. Un ciclo («III») también. */
+    /** «6-1» → [6, 1, '6-1']; «9°» → [9, null, '9°']; «0-2» o «T2» → [0, 2, 'T2']. Un ciclo («III») también. */
     private function delCodigo(?string $codigo): ?array
     {
         $c = trim((string) $codigo);
         if (preg_match('/^(\d{1,2})\s*-\s*(\d{1,2})$/', $c, $m) && isset($this->grados[(int) $m[1]])) {
-            return [(int) $m[1], (int) $m[2], "{$m[1]}-{$m[2]}"];
+            return [(int) $m[1], (int) $m[2], Grupos::codigo((int) $m[1], (int) $m[2])];
+        }
+        // Transición escrita «T1», «T-1», «TR1» o «TR-1».
+        if (preg_match('/^TR?\s*-?\s*(\d{1,2})$/i', $c, $m) && isset($this->grados[0])) {
+            return [0, (int) $m[1], Grupos::codigo(0, (int) $m[1])];
         }
         if (preg_match('/^(\d{1,2})\s*[°º]?$/u', $c, $m) && isset($this->grados[(int) $m[1]])) {
             return [(int) $m[1], null, $c];

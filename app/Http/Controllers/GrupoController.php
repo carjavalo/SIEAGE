@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Support\Alcance;
 use App\Support\AniosLectivos;
 use App\Support\Firmantes;
+use App\Support\Grupos;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -141,7 +142,7 @@ class GrupoController extends Controller
      */
     private function libre(int $anioId, int $sedeId, object $grado, int $numero, ?int $excepto = null): string
     {
-        $codigo = "{$grado->numero}-{$numero}";
+        $codigo = Grupos::codigo((int) $grado->numero, $numero);
         $ocupado = DB::table('grupos')
             ->where(['anio_lectivo_id' => $anioId, 'sede_id' => $sedeId, 'grado_id' => $grado->id, 'numero' => $numero])
             ->when($excepto, fn ($q) => $q->where('id', '<>', $excepto))

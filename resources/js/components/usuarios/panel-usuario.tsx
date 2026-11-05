@@ -508,7 +508,15 @@ function CambiarClave({ usuario }: { usuario: Usuario }) {
     return (
         <Bloque titulo="Clave">
             {abierta ? (
-                <div className="grid gap-3">
+                // Está dentro del formulario del usuario: Enter aquí cambiaba sus datos, no la clave.
+                <div
+                    className="grid gap-3"
+                    onKeyDown={(e) => {
+                        if (e.key !== 'Enter' || !(e.target instanceof HTMLInputElement)) return;
+                        e.preventDefault();
+                        if (!form.processing) cambiar();
+                    }}
+                >
                     <CampoClaveNueva
                         id="u-clave-nueva"
                         valor={form.data.password}
