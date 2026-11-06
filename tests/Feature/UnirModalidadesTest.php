@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Support\Modalidades;
 use Database\Seeders\DatosInicialesSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -37,5 +38,25 @@ class UnirModalidadesTest extends TestCase
         $this->assertNotNull(DB::table('modalidades')->find($electronica));
         // El número de acta que se había llenado para la repetida pasa a la original.
         $this->assertSame(['acta' => '7'], json_decode(DB::table('graduaciones')->value('actas'), true)["modalidad-{$original}"]);
+    }
+
+    public function test_lo_que_llega_escrito_se_busca_en_el_catalogo_y_no_crea_otra()
+    {
+        $this->seed(DatosInicialesSeeder::class);
+        $id = fn (string $nombre) => (int) DB::table('modalidades')->where('nombre', $nombre)->value('id');
+        $antes = DB::table('modalidades')->count();
+
+        foreach (['Asist. Admin.', 'Asistencia Administrativa', 'ASIST ADMIN', 'asist. admin'] as $texto) {
+            $this->assertSame($id('Asist. Admin.'), Modalidades::buscar($texto), $texto);
+        }
+        $this->assertSame($id('Electrónica'), Modalidades::buscar('ELECTRONICA'));
+        $this->assertSame($id('Electricidad'), Modalidades::buscar('electricidad'));
+        $this->assertSame($id('Ebanistería'), Modalidades::buscar('Ebanisteria'));
+        // Lo que no es ninguna no se inventa: queda sin modalidad.
+        $this->assertSame($id('Electrónica'), Modalidades::buscar('Electro'));
+        foreach (['Elec', 'Sistemas', 'Asistencia', '', null] as $texto) {
+            $this->assertNull(Modalidades::buscar($texto), (string) $texto);
+        }
+        $this->assertSame($antes, DB::table('modalidades')->count());
     }
 }

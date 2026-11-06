@@ -369,7 +369,8 @@ final class ImportarLibroMatricula
 
     private function modalidad(?string $nombre): ?int
     {
-        return $nombre ? DB::table('modalidades')->whereRaw('lower(nombre) = ?', [mb_strtolower($nombre)])->value('id') : null;
+        // «Asistencia Administrativa» o «Asist. Admin» en el Excel es «Asist. Admin.»: nunca otra.
+        return Modalidades::buscar($nombre);
     }
 
     /** @return array{0: int, 1: string|null} id del parentesco y, si no está en el catálogo, lo que decía */

@@ -151,6 +151,19 @@ class ActasGradoTest extends TestCase
                 ->where('graduacion.actas.ciclos.libro', null)
                 ->missing('graduacion.actas.inventada'));
 
+        // Escrito a mano en mayúsculas o minúsculas, sale con mayúscula inicial como los demás nombres.
+        $this->actingAs(User::first())->put($url, [
+            'cargo_rector' => 'Rectora', 'cargo_secretario' => 'Secretario Académico',
+            'actas' => ["modalidad-{$modalidad}" => ['primero' => 'MARIANA  acevedo guzmán', 'ultimo' => 'zoe zapata']],
+        ])->assertSessionHasNoErrors();
+        $this->assertSame('Mariana Acevedo Guzmán', json_decode(DB::table('graduaciones')->value('actas'), true)["modalidad-{$modalidad}"]['primero']);
+        // Y los que ya estaban guardados así, también.
+        DB::table('graduaciones')->update(['actas' => json_encode(["modalidad-{$modalidad}" => ['primero' => 'LUZ RIOS', 'ultimo' => null]])]);
+        $this->actingAs(User::first())->get("/actas-grado?anio={$this->anio->anio}")
+            ->assertInertia(fn (Assert $page) => $page
+                ->where("graduacion.actas.modalidad-{$modalidad}.primero", 'Luz Rios')
+                ->where("graduacion.actas.modalidad-{$modalidad}.ultimo", null));
+
         // Guardar otra vez cambia la misma fila: una por año.
         $this->actingAs(User::first())->put($url, ['cargo_rector' => 'Rector', 'cargo_secretario' => 'Secretaria'])->assertSessionHasNoErrors();
         $this->assertSame(1, DB::table('graduaciones')->count());

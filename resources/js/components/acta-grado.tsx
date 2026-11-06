@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode, useLayoutEffect, useRef } from 'react';
+import { type CSSProperties, type ReactNode, type RefObject, useLayoutEffect, useRef } from 'react';
 
 /** Lo que manda App\Support\ActasGrado por cada programa (una modalidad técnica o los ciclos). */
 export type Programa = {
@@ -63,6 +63,24 @@ function fechaEnLetras(fecha: string | null, anio: number) {
 }
 
 /**
+ * Vuelve a medir cuando terminan de cargar las letras de la página. La hoja de estilos
+ * de Google Fonts entra en <Head> después de que la hoja ya se midió (al llegar desde
+ * el menú), así que no basta con document.fonts.ready: se escucha cada carga.
+ */
+function alCargarLetras(medir: () => void) {
+    const fuentesDoc = document.fonts;
+    if (!fuentesDoc) return;
+    let vigente = true;
+    const otraVez = () => vigente && medir();
+    fuentesDoc.ready.then(otraVez);
+    fuentesDoc.addEventListener('loadingdone', otraVez);
+    return () => {
+        vigente = false;
+        fuentesDoc.removeEventListener('loadingdone', otraVez);
+    };
+}
+
+/**
  * Una línea que se achica hasta caber en su ancho: los nombres largos en letra
  * cursiva no deben partirse ni salirse de la hoja.
  */
@@ -95,11 +113,7 @@ function Ajustada({
         };
         ajustar();
         // La letra cursiva llega después: se vuelve a medir con ella.
-        let vigente = true;
-        document.fonts?.ready.then(() => vigente && ajustar());
-        return () => {
-            vigente = false;
-        };
+        return alCargarLetras(ajustar);
     });
     return (
         <p ref={caja} className={`whitespace-nowrap ${className ?? ''}`} style={{ ...style, fontSize: `${tamano}pt` }}>
@@ -195,6 +209,34 @@ function Firmas({ graduacion, logo, tamano }: { graduacion: Graduacion; logo: st
 
 // ------------------------------------------------------------------ acta
 
+/** Lo más que se achica el texto del acta para caber (las especialidades largas, los nombres largos). */
+const ZOOM_MINIMO = 0.8;
+
+/**
+ * Achica el texto del acta (con `zoom`, que sí reacomoda las líneas) hasta que las
+ * firmas y el «Dado en…» quepan dentro de la margen: con una especialidad de dos o
+ * tres líneas (Ebanistería, Electrónica) se salían por abajo, encima del grabado.
+ */
+function useCaber(hoja: RefObject<HTMLDivElement | null>, texto: RefObject<HTMLDivElement | null>) {
+    useLayoutEffect(() => {
+        const ajustar = () => {
+            const caja = hoja.current;
+            const t = texto.current;
+            if (!caja || !t) return;
+            let zoom = 1;
+            t.style.zoom = '1';
+            while (caja.scrollHeight > caja.clientHeight + 1 && zoom > ZOOM_MINIMO) {
+                zoom = Math.round((zoom - 0.01) * 100) / 100;
+                t.style.zoom = String(zoom);
+            }
+        };
+        ajustar();
+        // Las letras (Open Sans, Pinyon Script) llegan después y cambian lo que mide cada
+        // línea: se vuelve a medir cada vez que termina de cargar alguna.
+        return alCargarLetras(ajustar);
+    });
+}
+
 /** El acta de grado de un graduando: hoja carta, con el formato de su programa. */
 export function HojaActa({ programa, graduando, graduacion, institucion, anio }: DatosHoja) {
     const ciclos = programa.tipo === 'ciclos';
@@ -204,6 +246,9 @@ export function HojaActa({ programa, graduando, graduacion, institucion, anio }:
     const { acta, primero, ultimo } = graduacion.actas[programa.clave] ?? {};
     const municipio = institucion?.municipio ?? 'Santiago de Cali';
     const fecha = fechaEnLetras(graduacion.fecha, anio);
+    const caja = useRef<HTMLDivElement>(null);
+    const texto = useRef<HTMLDivElement>(null);
+    useCaber(caja, texto);
 
     return (
         <section
@@ -213,55 +258,65 @@ export function HojaActa({ programa, graduando, graduacion, institucion, anio }:
         >
             <Esquinas tamano="70mm" arriba="19mm" abajo="19mm" lado="17mm" />
 
-            <div className="absolute inset-x-[29mm] top-[33mm] bottom-[31mm] flex flex-col">
-                <h1 className="text-center leading-none tracking-[0.04em]" style={{ fontFamily: fuentes.acta, fontSize: '40pt' }}>
-                    ACTA DE GRADO
-                </h1>
-                <p className="mt-[9mm] text-center leading-[1.2]" style={{ fontSize: '22pt' }}>
-                    INSTITUCIÓN EDUCATIVA
-                    <br />
-                    {nombre.toLocaleUpperCase('es-CO')}
-                </p>
-                {ciclos && <p className="text-center text-[11pt]">Ciclo VI - Jornada Sabatina</p>}
-                <p className="mt-[5mm] text-right text-[10.5pt]">DANE {institucion?.codigo_dane}</p>
-
-                <div className="mt-[2.5mm] space-y-[4mm] text-justify text-[11pt] leading-[1.38] italic">
-                    <p>
-                        En la ciudad de {municipio} {fecha}, se reunieron los suscritos {graduacion.cargo_rector} y {graduacion.cargo_secretario}, con
-                        el fin de formalizar la graduación de los alumnos de último grado del{' '}
-                        {ciclos ? 'Bachillerato Académico por ciclos' : 'Bachillerato Técnico Diurno'} de la <b>{enMayusculas}.</b> {CREADA} y
-                        autorizada por la Secretaría de Educación Municipal de Santiago de Cali, según la{' '}
-                        {ciclos ? 'Resolución Oficial N°. 057 de enero 19 de 2005.' : 'Resolución No. 7957 del 21 de octubre de 2013.'}
+            <div ref={caja} className="absolute inset-x-[29mm] top-[33mm] bottom-[34mm] flex flex-col">
+                <div ref={texto} className="flex flex-col">
+                    <h1 className="text-center leading-none tracking-[0.04em]" style={{ fontFamily: fuentes.acta, fontSize: '40pt' }}>
+                        ACTA DE GRADO
+                    </h1>
+                    <p className="mt-[9mm] text-center leading-[1.2]" style={{ fontSize: '22pt' }}>
+                        INSTITUCIÓN EDUCATIVA
+                        <br />
+                        {nombre.toLocaleUpperCase('es-CO')}
                     </p>
-                    <p>
-                        Comprobada la situación legal y académica de cada uno de los alumnos que cursaron y aprobaron los estudios correspondientes al
-                        Nivel de Educación {ciclos ? 'Media Académica (Art. 29, ley 115 de 1994)' : 'Media Técnica (Art. 32, ley 115 de 1994)'} se
-                        procedió a otorgar el título de:
-                    </p>
-                </div>
+                    {ciclos && <p className="text-center text-[11pt]">Ciclo VI - Jornada Sabatina</p>}
+                    <p className="mt-[5mm] text-right text-[10.5pt]">DANE {institucion?.codigo_dane}</p>
 
-                <div className="mt-[4mm] text-center leading-[1.15]">
-                    <p style={{ fontSize: ciclos ? '30pt' : '27pt' }}>{programa.titulo}</p>
-                    {programa.especialidad && (
-                        <p className="mx-auto max-w-[125mm] text-balance" style={{ fontSize: '17pt' }}>
-                            - {programa.especialidad} -
+                    <div className="mt-[2.5mm] space-y-[4mm] text-justify text-[11pt] leading-[1.38] italic">
+                        <p>
+                            En la ciudad de {municipio} {fecha}, se reunieron los suscritos {graduacion.cargo_rector} y {graduacion.cargo_secretario},
+                            con el fin de formalizar la graduación de los alumnos de último grado del{' '}
+                            {ciclos ? 'Bachillerato Académico por ciclos' : 'Bachillerato Técnico Diurno'} de la <b>{enMayusculas}.</b> {CREADA} y
+                            autorizada por la Secretaría de Educación Municipal de Santiago de Cali, según la{' '}
+                            {ciclos ? 'Resolución Oficial N°. 057 de enero 19 de 2005.' : 'Resolución No. 7957 del 21 de octubre de 2013.'}
                         </p>
-                    )}
+                        <p>
+                            Comprobada la situación legal y académica de cada uno de los alumnos que cursaron y aprobaron los estudios
+                            correspondientes al Nivel de Educación{' '}
+                            {ciclos ? 'Media Académica (Art. 29, ley 115 de 1994)' : 'Media Técnica (Art. 32, ley 115 de 1994)'} se procedió a otorgar
+                            el título de:
+                        </p>
+                    </div>
+
+                    <div className="mt-[4mm] text-center leading-[1.15]">
+                        <p style={{ fontSize: ciclos ? '30pt' : '27pt' }}>{programa.titulo}</p>
+                        {programa.especialidad && (
+                            <p className="mx-auto max-w-[125mm] text-balance" style={{ fontSize: '17pt' }}>
+                                - {programa.especialidad} -
+                            </p>
+                        )}
+                    </div>
+
+                    <p className="mt-[3mm] text-[11pt] italic">Al Graduando:</p>
+                    {/* En negrilla, como los nombres de «comienza con» y «se cierra con». */}
+                    <Ajustada
+                        tamano={56}
+                        minimo={28}
+                        className="mt-[1.5mm] text-center leading-[1.25] font-bold"
+                        style={{ fontFamily: fuentes.nombre }}
+                    >
+                        {graduando.nombre}
+                    </Ajustada>
+                    <p className="text-center text-[10.5pt]">{graduando.documento}</p>
+
+                    <p className="mt-[4mm] text-justify text-[11pt] leading-[1.38] italic">
+                        Es fiel copia tomada del Acta Original General N°. {acta || '______'} que consta de {lista.length}{' '}
+                        {lista.length === 1 ? 'alumno' : 'alumnos'}, que comienza con el nombre de <b>{primero || lista[0]?.nombre}</b> y se cierra
+                        con el nombre de <b>{ultimo || lista.at(-1)?.nombre}.</b>
+                    </p>
                 </div>
 
-                <p className="mt-[3mm] text-[11pt] italic">Al Graduando:</p>
-                <Ajustada tamano={56} minimo={28} className="mt-[1.5mm] text-center leading-[1.25]" style={{ fontFamily: fuentes.nombre }}>
-                    {graduando.nombre}
-                </Ajustada>
-                <p className="text-center text-[10.5pt]">{graduando.documento}</p>
-
-                <p className="mt-[4mm] text-justify text-[11pt] leading-[1.38] italic">
-                    Es fiel copia tomada del Acta Original General N°. {acta || '______'} que consta de {lista.length}{' '}
-                    {lista.length === 1 ? 'alumno' : 'alumnos'}, que comienza con el nombre de <b>{primero || lista[0]?.nombre}</b> y se cierra con el
-                    nombre de <b>{ultimo || lista.at(-1)?.nombre}.</b>
-                </p>
-
-                <div className="mt-auto">
+                {/* pt: las firmas nunca quedan pegadas al texto. */}
+                <div className="mt-auto pt-[9mm]">
                     <Firmas graduacion={graduacion} logo="36mm" tamano={12.5} />
                     <p className="mt-[8mm] text-center text-[11pt] italic">
                         Dado en {municipio} (Valle), {fecha}.

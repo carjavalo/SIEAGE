@@ -56,7 +56,8 @@ class ActaGradoController extends Controller
         // Solo las claves de programa conocidas y los tres campos de cada una.
         $actas = collect($datos['actas'] ?? [])
             ->filter(fn ($v, $k) => $k === ActasGrado::CICLOS || preg_match('/^modalidad-\d+$/', (string) $k))
-            ->map(fn ($v) => array_map(fn ($c) => trim((string) ($v[$c] ?? '')) ?: null, ['acta' => 'acta', 'libro' => 'libro', 'folio' => 'folio', 'primero' => 'primero', 'ultimo' => 'ultimo']));
+            ->map(fn ($v) => array_map(fn ($c) => trim((string) ($v[$c] ?? '')) ?: null, ['acta' => 'acta', 'libro' => 'libro', 'folio' => 'folio', 'primero' => 'primero', 'ultimo' => 'ultimo']))
+            ->map(fn ($v) => self::nombresConMayuscula($v));
 
         DB::table('graduaciones')->updateOrInsert(['anio_lectivo_id' => $anio->id], [
             'fecha' => $datos['fecha'] ?? null,
@@ -91,7 +92,29 @@ class ActaGradoController extends Controller
             'cargo_rector' => $g?->cargo_rector ?? 'Rectora',
             'secretario' => $g ? $g->secretario : self::SECRETARIO,
             'cargo_secretario' => $g?->cargo_secretario ?? 'Secretario Académico',
-            'actas' => (object) ($g?->actas ? json_decode($g->actas, true) : []),
+            // Los guardados antes de que se corrigiera al guardar también salen con mayúscula inicial.
+            'actas' => (object) array_map(
+                fn ($v) => is_array($v) ? self::nombresConMayuscula($v) : $v,
+                $g?->actas ? (json_decode($g->actas, true) ?: []) : [],
+            ),
         ];
+    }
+
+    /**
+     * «comienza con» y «se cierra con» escritos a mano («LUNA ARIAS», «luna arias») salen
+     * como los demás nombres del acta: «Luna Arias» (ver ActasGrado::nombre).
+     *
+     * @param  array<string, mixed>  $acta
+     * @return array<string, mixed>
+     */
+    private static function nombresConMayuscula(array $acta): array
+    {
+        foreach (['primero', 'ultimo'] as $campo) {
+            if (is_string($acta[$campo] ?? null) && $acta[$campo] !== '') {
+                $acta[$campo] = mb_convert_case(preg_replace('/\s+/u', ' ', $acta[$campo]), MB_CASE_TITLE, 'UTF-8');
+            }
+        }
+
+        return $acta;
     }
 }
