@@ -6,24 +6,31 @@ import { LoaderCircle, Pencil } from 'lucide-react';
 import { useState } from 'react';
 import { sileo } from 'sileo';
 
-/** Digitar o corregir a mano la modalidad (media técnica) de la matrícula, desde la ficha. */
+/**
+ * Corregir a mano la modalidad (media técnica) de la matrícula, desde la ficha: se
+ * elige de las que ya existen. Escribirla a mano creaba modalidades repetidas
+ * («Asistencia Administrativa» además de «Asist. Admin.»).
+ */
 export function EditarModalidad({
     estudianteId,
     matriculaId,
     modalidad,
+    opciones,
 }: {
     estudianteId: number;
     matriculaId: number;
     modalidad: string | null;
+    opciones: { id: number; nombre: string }[];
 }) {
     const [abierto, setAbierto] = useState(false);
     const [enviando, setEnviando] = useState(false);
-    const [valor, setValor] = useState(modalidad ?? '');
+    const actual = () => String(opciones.find((o) => o.nombre === modalidad)?.id ?? '');
+    const [valor, setValor] = useState(actual);
 
     const guardar = () => {
         router.put(
             `/estudiantes/${estudianteId}/modalidad`,
-            { matricula_id: matriculaId, modalidad: valor.trim() },
+            { matricula_id: matriculaId, modalidad_id: valor === '' ? null : Number(valor) },
             {
                 preserveScroll: true,
                 onStart: () => setEnviando(true),
@@ -42,7 +49,7 @@ export function EditarModalidad({
             <button
                 type="button"
                 onClick={() => {
-                    setValor(modalidad ?? '');
+                    setValor(actual());
                     setAbierto(true);
                 }}
                 className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#1E3A7B] underline-offset-4 hover:underline"
@@ -56,19 +63,23 @@ export function EditarModalidad({
                     <DialogHeader>
                         <DialogTitle className="text-xl font-semibold">Modalidad</DialogTitle>
                         <DialogDescription className="text-[#56627F]">
-                            Escribe la modalidad (media técnica) de esta matrícula. Déjalo vacío para quitarla.
+                            Elige la modalidad (media técnica) de esta matrícula, o «Sin modalidad» para quitarla.
                         </DialogDescription>
                     </DialogHeader>
-                    <input
-                        type="text"
+                    <select
                         value={valor}
                         onChange={(e) => setValor(e.target.value)}
                         disabled={enviando}
-                        maxLength={40}
-                        placeholder="Ej.: Programación de software"
-                        className="w-full rounded-lg border border-[#D3DDF3] px-4 py-2 text-[14px] focus:ring-2 focus:ring-[#1E3A7B] focus:outline-none"
-                        onKeyDown={(e) => e.key === 'Enter' && !enviando && guardar()}
-                    />
+                        aria-label="Modalidad"
+                        className="w-full rounded-lg border border-[#D3DDF3] bg-white px-4 py-2 text-[14px] focus:ring-2 focus:ring-[#1E3A7B] focus:outline-none"
+                    >
+                        <option value="">Sin modalidad</option>
+                        {opciones.map((o) => (
+                            <option key={o.id} value={o.id}>
+                                {o.nombre}
+                            </option>
+                        ))}
+                    </select>
                     <div className="flex justify-end gap-2">
                         <button type="button" onClick={() => setAbierto(false)} disabled={enviando} className={botonSecundario}>
                             Cancelar

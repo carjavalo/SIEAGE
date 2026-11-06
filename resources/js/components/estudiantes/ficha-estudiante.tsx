@@ -162,7 +162,7 @@ function Contenido({ ficha, ...resto }: Omit<Props, 'ficha' | 'abierta' | 'panel
                         </p>
                         {editable && (
                             <div className="mt-2">
-                                <EditarModalidad estudianteId={e.id} matriculaId={m.id} modalidad={m.modalidad} />
+                                <EditarModalidad estudianteId={e.id} matriculaId={m.id} modalidad={m.modalidad} opciones={ficha.modalidades ?? []} />
                             </div>
                         )}
                         {ficha.boletin && (

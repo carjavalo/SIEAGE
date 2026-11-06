@@ -533,9 +533,11 @@ class DatosEstudianteController extends Controller
     }
 
     /**
-     * Digitar o corregir a mano la modalidad (media técnica) de una matrícula desde
-     * la ficha. Se escribe el nombre; si no existe esa modalidad, se crea. Vacío la
-     * quita. Queda en el historial de la ficha (cambios_ficha).
+     * Corregir a mano la modalidad (media técnica) de una matrícula desde la ficha: se
+     * elige una de las que ya existen (vacío la quita). Antes se escribía el nombre y,
+     * si no era idéntico, se creaba otra modalidad («Asistencia Administrativa» al lado
+     * de «Asist. Admin.»), que salía como otra pestaña en Actas de grado e informes.
+     * Queda en el historial de la ficha (cambios_ficha).
      */
     public function modalidad(Request $request, int $estudiante): RedirectResponse
     {
@@ -543,8 +545,9 @@ class DatosEstudianteController extends Controller
 
         $datos = $request->validate([
             'matricula_id' => ['required', 'integer'],
-            'modalidad' => ['nullable', 'string', 'max:40'],
-        ], ['modalidad.max' => 'Máximo :max caracteres.']);
+            // `present`: una página vieja que manda el nombre escrito no la borra sin querer.
+            'modalidad_id' => ['present', 'nullable', 'integer', Rule::exists('modalidades', 'id')],
+        ], ['modalidad_id.exists' => 'Elige una de las modalidades de la lista.', 'modalidad_id.present' => 'Recarga la página y elige la modalidad de la lista.']);
 
         $matricula = DB::table('matriculas as m')
             ->leftJoin('modalidades as mo', 'mo.id', '=', 'm.modalidad_id')
@@ -553,11 +556,8 @@ class DatosEstudianteController extends Controller
             ->tap(fn ($q) => Alcance::filtrar($q, $request->user(), 'm.sede_id', 'm.grado_id'))
             ->first(['m.id', 'm.modalidad_id', 'mo.nombre as modalidad']) ?? abort(404);
 
-        $nombre = trim((string) ($datos['modalidad'] ?? ''));
-        $modalidadId = $nombre === ''
-            ? null
-            : (int) (DB::table('modalidades')->whereRaw('lower(nombre) = ?', [mb_strtolower($nombre)])->value('id')
-                ?: DB::table('modalidades')->insertGetId(['nombre' => $nombre, 'activa' => true]));
+        $modalidadId = isset($datos['modalidad_id']) ? (int) $datos['modalidad_id'] : null;
+        $nombre = $modalidadId ? (string) DB::table('modalidades')->where('id', $modalidadId)->value('nombre') : '';
 
         if ((int) $matricula->modalidad_id === (int) $modalidadId) {
             return back()->with('success', 'No había nada que cambiar.');

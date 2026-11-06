@@ -147,6 +147,8 @@ export type FichaDetalle = {
     actual: Matricula | null;
     /** Está en transición este año: tiene boletín para escribir e imprimir. */
     boletin: boolean;
+    /** Las modalidades que se pueden elegir al corregirla. */
+    modalidades?: { id: number; nombre: string }[];
     /** Matrícula del año siguiente (planeado), si ya fue promovido. */
     promocion: {
         anio: number;

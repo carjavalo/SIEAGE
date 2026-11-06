@@ -301,12 +301,30 @@ class DatosEstudianteTest extends TestCase
         $m = DB::table('matriculas')->where('condicion', 'nuevo')->where('estado', 'activo')->orderBy('id')->first();
         DB::table('matriculas')->where('id', $m->id)->update(['modalidad_id' => null]);
 
+        $electricidad = (int) DB::table('modalidades')->where('nombre', 'Electricidad')->value('id');
+        $antes = DB::table('modalidades')->count();
+
         $this->actingAs($this->secretaria)
-            ->put("/estudiantes/{$m->estudiante_id}/modalidad", ['matricula_id' => $m->id, 'modalidad' => 'Sistemas'])
+            ->put("/estudiantes/{$m->estudiante_id}/modalidad", ['matricula_id' => $m->id, 'modalidad_id' => $electricidad])
             ->assertSessionHasNoErrors()
             ->assertRedirect();
 
-        $this->assertSame('Sistemas', DB::table('modalidades')->where('id', DB::table('matriculas')->where('id', $m->id)->value('modalidad_id'))->value('nombre'));
+        $this->assertSame($electricidad, (int) DB::table('matriculas')->where('id', $m->id)->value('modalidad_id'));
         $this->assertDatabaseHas('cambios_ficha', ['estudiante_id' => $m->estudiante_id, 'accion' => 'modalidad_editada']);
+
+        // Ya no se crean modalidades escribiendo: un id que no existe se rechaza y no aparece ninguna nueva.
+        $this->actingAs($this->secretaria)
+            ->put("/estudiantes/{$m->estudiante_id}/modalidad", ['matricula_id' => $m->id, 'modalidad_id' => 999])
+            ->assertSessionHasErrors('modalidad_id');
+        $this->actingAs($this->secretaria)
+            ->put("/estudiantes/{$m->estudiante_id}/modalidad", ['matricula_id' => $m->id, 'modalidad' => 'Asistencia Administrativa'])
+            ->assertSessionHasErrors('modalidad_id');
+        $this->assertSame($antes, DB::table('modalidades')->count());
+
+        // Vacío la quita.
+        $this->actingAs($this->secretaria)
+            ->put("/estudiantes/{$m->estudiante_id}/modalidad", ['matricula_id' => $m->id, 'modalidad_id' => null])
+            ->assertSessionHasNoErrors();
+        $this->assertNull(DB::table('matriculas')->where('id', $m->id)->value('modalidad_id'));
     }
 }

@@ -319,6 +319,8 @@ class EstudianteController extends Controller
                 && $actual->grupo_id !== null && Alcance::puedeVer(request()->user(), $actual->sede_id, $actual->grado_id, $actual->grupo_id)
                 && DB::table('anios_lectivos')->where('anio', $actual->anio)->value('estado') === 'activo',
             'documentos' => $actual ? self::documentos($actual->id, (int) $actual->grado_numero, $alumno) : null,
+            // Para corregir la modalidad: se elige de estas (no se escriben nuevas).
+            'modalidades' => DB::table('modalidades')->where('activa', true)->orderBy('nombre')->get(['id', 'nombre']),
             // Alerta de edad para el grado de la matrícula (tabla de edades de la institución).
             'edad' => $actual ? Edades::alerta($alumno->fecha_nacimiento, (int) $actual->grado_numero, (int) $actual->anio) : null,
             'novedades' => $novedades,
