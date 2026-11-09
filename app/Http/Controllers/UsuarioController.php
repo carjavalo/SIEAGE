@@ -35,8 +35,6 @@ class UsuarioController extends Controller
         'unique' => 'Ya hay otro usuario con este valor.',
         'exists' => 'Elige uno de los roles.',
         'confirmed' => 'Las claves no coinciden.',
-        'password.letters' => 'La clave debe tener al menos una letra.',
-        'password.numbers' => 'La clave debe tener al menos un número.',
     ];
 
     public function index(Request $request): Response

@@ -24,7 +24,7 @@ import { type FormEventHandler, type ReactNode, useEffect, useLayoutEffect, useM
 import { sileo } from 'sileo';
 
 type GrupoLista = { id: number; codigo: string; jornada: string; sede_id: number; sede: string; sede_codigo: string; activos: number };
-type Periodo = { id: number; numero: number; etiqueta: string };
+type Periodo = { id: number; numero: number; etiqueta: string; calificando: boolean };
 type Usuario = { id: number; name: string; rol: string | null };
 
 type Props = {
@@ -37,6 +37,7 @@ type Props = {
     ver: number | null;
     maximo: number;
     puedeConfigurar: boolean;
+    puedeFijarPeriodo: boolean;
     puedeCrearFirmantes: boolean;
     usuarios: Usuario[];
 };
@@ -96,6 +97,7 @@ function Editor({
     ver,
     maximo,
     puedeConfigurar,
+    puedeFijarPeriodo,
     puedeCrearFirmantes,
     usuarios,
 }: Props & { grupo: GrupoBoletin; periodoActual: Periodo }) {
@@ -413,7 +415,7 @@ function Editor({
                                     aria-checked={p.id === periodoActual.id}
                                     // Corto («P1», «P2»…) para que quepan aunque haya muchos; el nombre completo, al pasar el mouse y para el lector.
                                     title={tituloPeriodo(p)}
-                                    aria-label={tituloPeriodo(p)}
+                                    aria-label={p.calificando ? `${tituloPeriodo(p)}, se está calificando` : tituloPeriodo(p)}
                                     onClick={() =>
                                         p.id !== periodoActual.id &&
                                         void conTodoGuardado(() => router.get('/boletines', { grupo: grupo.id, periodo: p.id }))
@@ -424,9 +426,19 @@ function Editor({
                                     )}
                                 >
                                     P{p.numero}
+                                    {/* El que se está calificando lleva un punto verde. */}
+                                    {p.calificando && (
+                                        <span aria-hidden className="ml-1 inline-block size-1.5 rounded-full bg-[#3BA67A] align-middle" />
+                                    )}
                                 </button>
                             ))}
                         </div>
+                        <PeriodoACalificar
+                            periodos={periodos}
+                            actual={periodoActual}
+                            puedeFijar={puedeFijarPeriodo}
+                            antes={(luego) => void conTodoGuardado(luego)}
+                        />
                         <div>
                             <p className="flex items-baseline justify-between text-[13px] text-[#56627F]">
                                 <span>
@@ -984,6 +996,76 @@ function HojaEditable({
                 </div>
             </div>
         </HojaBoletin>
+    );
+}
+
+/**
+ * El periodo que se está calificando (el punto verde): todos abren Boletines en él.
+ * Quien configura los boletines lo cambia desde el periodo que esté viendo.
+ */
+function PeriodoACalificar({
+    periodos,
+    actual,
+    puedeFijar,
+    antes,
+}: {
+    periodos: Periodo[];
+    actual: Periodo;
+    puedeFijar: boolean;
+    antes: (luego: () => void) => void;
+}) {
+    const [fijando, setFijando] = useState(false);
+    const calificando = periodos.find((p) => p.calificando) ?? null;
+
+    if (actual.calificando) {
+        return (
+            <p className="flex items-center gap-1.5 text-[13px] text-[#1C6B4A]">
+                <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-[#3BA67A]" />
+                Se está calificando este periodo.
+            </p>
+        );
+    }
+
+    if (!puedeFijar) {
+        return calificando ? (
+            <p className="text-[13px] text-[#56627F]">
+                Se está calificando el <b className="font-semibold text-[#16223F]">P{calificando.numero}</b>; este es otro periodo.
+            </p>
+        ) : null;
+    }
+
+    const fijar = () =>
+        antes(() =>
+            router.put(
+                `/boletines/periodos/${actual.id}/calificar`,
+                {},
+                {
+                    // Sin volver a montar el editor: sigue en el mismo estudiante; solo se mueve el punto.
+                    preserveState: true,
+                    preserveScroll: true,
+                    onStart: () => setFijando(true),
+                    onFinish: () => setFijando(false),
+                    onSuccess: () =>
+                        sileo.success({
+                            title: `Se califica el P${actual.numero}`,
+                            description: 'Desde ahora todos abren Boletines en este periodo.',
+                        }),
+                },
+            ),
+        );
+
+    return (
+        <button
+            type="button"
+            onClick={fijar}
+            disabled={fijando}
+            title="Todos abren Boletines en el periodo que se está calificando"
+            className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-white disabled:cursor-default disabled:opacity-60"
+        >
+            {fijando ? <LoaderCircle className="size-3.5 animate-spin" /> : <span aria-hidden className="size-1.5 rounded-full bg-[#3BA67A]" />}
+            Calificar el P{actual.numero}
+            {calificando && <span className="font-normal text-[#56627F]">(ahora: P{calificando.numero})</span>}
+        </button>
     );
 }
 

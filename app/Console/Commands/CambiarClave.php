@@ -25,9 +25,9 @@ class CambiarClave extends Command
             return self::FAILURE;
         }
 
-        $clave = (string) $this->secret('Nueva clave (mínimo 10 caracteres, con letras y números; no se ve al escribir)');
-        if (mb_strlen($clave) < 10 || mb_strlen($clave) > 72 || ! preg_match('/\pL/u', $clave) || ! preg_match('/\d/', $clave)) {
-            $this->error('La clave debe tener entre 10 y 72 caracteres, con letras y números.');
+        $clave = (string) $this->secret('Nueva clave (mínimo 3 caracteres; no se ve al escribir)');
+        if (mb_strlen($clave) < 3 || mb_strlen($clave) > 72) {
+            $this->error('La clave debe tener entre 3 y 72 caracteres.');
 
             return self::FAILURE;
         }

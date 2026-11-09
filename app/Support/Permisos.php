@@ -31,7 +31,7 @@ final class Permisos
         ],
         'Notas y boletines' => [
             'escribir-boletines' => ['Poner notas de transición', 'Escribir la valoración de cada niño en su boletín, copiarla a otros e imprimir los boletines.'],
-            'configurar-boletines' => ['Firmas y jornada', 'Quién firma el boletín y cómo sale la jornada.'],
+            'configurar-boletines' => ['Firmas, jornada y periodo', 'Quién firma el boletín y cómo sale la jornada. Con todas las sedes, también qué periodo se está calificando.'],
         ],
         'Sedes y grupos' => [
             'todas-las-sedes' => ['Ver todas las sedes', 'Estudiantes, inscritos y grupos de todas las sedes. Apagado, cada persona ve solo las que tiene marcadas en Usuarios.'],

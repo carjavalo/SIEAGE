@@ -257,6 +257,42 @@ class BoletinesTest extends TestCase
         $this->actingAs($coordinadora)->put("/boletines/grupos/{$this->grupos['1-1']}", $datos)->assertNotFound();
     }
 
+    public function test_el_periodo_a_calificar_lo_fija_el_administrador_y_todos_abren_en_el()
+    {
+        $docente = $this->usuario('docente', [$this->sedeA]);
+        $deUnaSede = $this->usuario('coordinacion', [$this->sedeA]);
+        $admin = $this->usuario('administrador');
+        $periodo2 = (int) DB::table('periodos')->where('anio_lectivo_id', $this->anio)->where('numero', 2)->value('id');
+        $abre = fn (User $u) => $this->actingAs($u)->get("/boletines?grupo={$this->grupos['0-1']}");
+
+        // Sin ninguno fijado (y sin fechas), abre en el primero.
+        $abre($docente)->assertInertia(fn (Assert $page) => $page->where('periodo', $this->periodo1)->where('puedeFijarPeriodo', false)->etc());
+
+        // Vale para todas las sedes: ni el docente ni la coordinación de una sede lo cambian; el administrador sí.
+        $this->actingAs($docente)->put("/boletines/periodos/{$periodo2}/calificar")->assertForbidden();
+        $this->actingAs($deUnaSede)->put("/boletines/periodos/{$periodo2}/calificar")->assertForbidden();
+        $abre($deUnaSede)->assertInertia(fn (Assert $page) => $page->where('puedeFijarPeriodo', false)->etc());
+        $this->actingAs($admin)->put("/boletines/periodos/{$periodo2}/calificar")->assertRedirect()->assertSessionHas('success');
+
+        // Desde ahí todos abren en el P2, con el punto en ese periodo; se puede seguir abriendo el P1.
+        $abre($docente)->assertInertia(fn (Assert $page) => $page
+            ->where('periodo', $periodo2)
+            ->where('periodos', fn ($p) => collect($p)->where('calificando', true)->pluck('numero')->all() === [2])
+            ->etc());
+        $this->actingAs($docente)->get("/boletines?grupo={$this->grupos['0-1']}&periodo={$this->periodo1}")
+            ->assertInertia(fn (Assert $page) => $page->where('periodo', $this->periodo1)->etc());
+        $abre($admin)->assertInertia(fn (Assert $page) => $page->where('periodo', $periodo2)->where('puedeFijarPeriodo', true)->etc());
+
+        // Queda uno solo marcado al cambiarlo.
+        $this->actingAs($admin)->put("/boletines/periodos/{$this->periodo1}/calificar")->assertRedirect();
+        $this->assertSame([$this->periodo1], DB::table('periodos')->where('calificando', true)->pluck('id')->map(fn ($id) => (int) $id)->all());
+
+        // Un periodo sin boletín (el 3, sin porcentaje) o que no existe, no.
+        $this->actingAs($admin)->put("/boletines/periodos/{$this->periodo3}/calificar")->assertNotFound();
+        $this->actingAs($admin)->put('/boletines/periodos/9999/calificar')->assertNotFound();
+        $this->assertFalse((bool) DB::table('periodos')->where('id', $this->periodo3)->value('calificando'));
+    }
+
     public function test_firmantes_solo_de_la_sede_y_solo_en_el_año_en_curso()
     {
         $coordinadora = $this->usuario('coordinacion', [$this->sedeA]);

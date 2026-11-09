@@ -55,13 +55,14 @@ class BoletinController extends Controller
         return Inertia::render('boletines/index', [
             'anio' => $anio->anio,
             'grupos' => $grupos,
-            'periodos' => $periodos->map(fn ($p) => ['id' => $p->id, 'numero' => $p->numero, 'etiqueta' => $p->etiqueta]),
+            'periodos' => $periodos->map(fn ($p) => ['id' => $p->id, 'numero' => $p->numero, 'etiqueta' => $p->etiqueta, 'calificando' => $p->calificando]),
             'periodo' => $periodo?->id,
             'grupo' => $grupo ? Boletines::datosGrupo($grupo->id) : null,
             'estudiantes' => $grupo && $periodo ? Boletines::estudiantes($grupo->id, $periodo->id) : [],
             'ver' => $ver,
             'maximo' => self::MAXIMO,
             'puedeConfigurar' => $configura,
+            'puedeFijarPeriodo' => self::puedeFijarPeriodo($user),
             // Crear ahí mismo a quien firma (es crear un usuario): solo administradores.
             'puedeCrearFirmantes' => $configura && $user->can('gestionar-usuarios'),
             // Para elegir quién firma: quienes trabajan en la sede del grupo (los docentes primero).
@@ -161,6 +162,36 @@ class BoletinController extends Controller
         }
 
         return response()->json(['copiados' => (object) $copiados, 'omitidos' => (object) $omitidos]);
+    }
+
+    /**
+     * Fija el periodo que se está calificando en el año en curso: desde ahí todos
+     * abren Boletines en ese periodo. Queda uno solo marcado. Los demás periodos se
+     * siguen pudiendo abrir y escribir, solo dejan de ser los que salen de primeros.
+     */
+    public function calificar(Request $request, int $periodo): RedirectResponse
+    {
+        abort_unless(self::puedeFijarPeriodo($request->user()), 403);
+        $anio = Boletines::anio();
+        abort_unless($anio, 404);
+        $p = Boletines::periodos($anio->id)->firstWhere('id', $periodo);
+        abort_unless($p, 404);
+
+        DB::transaction(function () use ($anio, $p) {
+            DB::table('periodos')->where('anio_lectivo_id', $anio->id)->where('id', '!=', $p->id)->update(['calificando' => false]);
+            DB::table('periodos')->where('id', $p->id)->update(['calificando' => true]);
+        });
+
+        return back()->with('success', 'Se está calificando el '.mb_strtolower($p->etiqueta).': todos lo abren al entrar a Boletines.');
+    }
+
+    /**
+     * El periodo que se califica vale para todas las sedes: lo fija quien configura
+     * los boletines y trabaja en todas (el administrador), no la coordinación de una sede.
+     */
+    private static function puedeFijarPeriodo(User $user): bool
+    {
+        return $user->can('configurar-boletines') && Alcance::todas($user);
     }
 
     /** Quién firma (director(a) del grupo y coordinador(a) de la sede) y cómo se escribe la jornada. Solo el año en curso. */

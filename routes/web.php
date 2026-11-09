@@ -76,6 +76,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('boletines/copiar', [BoletinController::class, 'copiar'])->name('boletines.copiar');
         Route::put('boletines/{matricula}/{periodo}', [BoletinController::class, 'guardar'])->whereNumber(['matricula', 'periodo'])->name('boletines.guardar');
         // Quién firma y la jornada del grupo; crear ahí mismo a alguien que firme es crear un usuario.
+        Route::put('boletines/periodos/{periodo}/calificar', [BoletinController::class, 'calificar'])->whereNumber('periodo')->middleware('can:configurar-boletines')->name('boletines.calificar');
         Route::put('boletines/grupos/{grupo}', [BoletinController::class, 'configurar'])->whereNumber('grupo')->middleware('can:configurar-boletines')->name('boletines.grupo');
         Route::post('boletines/grupos/{grupo}/firmantes', [BoletinController::class, 'crearFirmante'])->whereNumber('grupo')->middleware(['can:configurar-boletines', 'can:gestionar-usuarios'])->name('boletines.firmantes');
     });

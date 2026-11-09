@@ -50,11 +50,11 @@ final class Boletines
      * Los periodos del año que llevan boletín: los que tienen porcentaje. Si
      * ninguno lo tiene (un año sin configurar), todos.
      *
-     * @return Collection<int, object{id: int, numero: int, porcentaje: ?int, etiqueta: string}>
+     * @return Collection<int, object{id: int, numero: int, porcentaje: ?int, etiqueta: string, calificando: bool}>
      */
     public static function periodos(int $anioId): Collection
     {
-        $todos = DB::table('periodos')->where('anio_lectivo_id', $anioId)->orderBy('numero')->get(['id', 'numero', 'porcentaje', 'fecha_inicio', 'fecha_fin']);
+        $todos = DB::table('periodos')->where('anio_lectivo_id', $anioId)->orderBy('numero')->get(['id', 'numero', 'porcentaje', 'calificando', 'fecha_inicio', 'fecha_fin']);
         $conPorcentaje = $todos->whereNotNull('porcentaje')->values();
 
         return ($conPorcentaje->isEmpty() ? $todos : $conPorcentaje)->map(fn ($p) => (object) [
@@ -62,17 +62,22 @@ final class Boletines
             'numero' => (int) $p->numero,
             'porcentaje' => $p->porcentaje === null ? null : (int) $p->porcentaje,
             'etiqueta' => self::etiquetaPeriodo((int) $p->numero, $p->porcentaje === null ? null : (int) $p->porcentaje),
+            'calificando' => (bool) $p->calificando,
             'fecha_inicio' => $p->fecha_inicio,
             'fecha_fin' => $p->fecha_fin,
         ]);
     }
 
-    /** El periodo que va (por fechas) o, si no hay fechas, el primero. */
+    /**
+     * El periodo con que abre Boletines: el que se está calificando (lo fija quien
+     * configura los boletines); si no hay, el que va por fechas; si tampoco, el primero.
+     */
     public static function periodoActual(Collection $periodos): ?object
     {
         $hoy = now()->toDateString();
 
-        return $periodos->first(fn ($p) => $p->fecha_inicio && $p->fecha_fin && $p->fecha_inicio <= $hoy && $hoy <= $p->fecha_fin)
+        return $periodos->firstWhere('calificando', true)
+            ?? $periodos->first(fn ($p) => $p->fecha_inicio && $p->fecha_fin && $p->fecha_inicio <= $hoy && $hoy <= $p->fecha_fin)
             ?? $periodos->first();
     }
 

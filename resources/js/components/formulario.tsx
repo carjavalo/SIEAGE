@@ -97,7 +97,7 @@ export function CampoSecreto({ className, ...props }: Omit<ComponentProps<'input
 /** Sin letras que se confunden al dictarlas o copiarlas a mano (0/O, 1/l/I). */
 export function claveAleatoria(largo = 12) {
     const letras = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
-    // Con letras y números, como exige el servidor.
+    // Con letras y números, para que no salga una clave fácil de adivinar.
     for (;;) {
         const azar = crypto.getRandomValues(new Uint32Array(largo));
         const clave = Array.from(azar, (n) => letras[n % letras.length]).join('');
