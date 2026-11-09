@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Support\Alcance;
 use App\Support\Boletines;
 use App\Support\CambiosFicha;
+use App\Support\Ciclos;
 use App\Support\Constancias;
 use App\Support\Documentos;
 use App\Support\Edades;
@@ -66,11 +67,25 @@ class EstudianteController extends Controller
             'grupos' => (int) ($resumenPorGrado[$g->id]->grupos ?? 0),
         ]);
 
+        // Jornada sabatina (?jornada=sabatina): los ciclos de todos los grados juntos, en una
+        // pestaña aparte de la cabecera. Sus estudiantes siguen también en su grado equivalente.
+        $esSabatina = fn ($q) => $q->whereRaw('coalesce(m.jornada, g.jornada) = ?', [Ciclos::JORNADA]);
+        $resumenSabatina = DB::table('matriculas as m')
+            ->leftJoin('grupos as g', 'g.id', '=', 'm.grupo_id')
+            ->join('grados as gr', 'gr.id', '=', 'm.grado_id')
+            ->where('m.anio_lectivo_id', $anio?->id)
+            ->tap($esSabatina)
+            ->tap(fn ($q) => $enSede($q, 'm.sede_id', 'm.grado_id'))
+            ->selectRaw("sum(m.estado = 'activo') as activos, count(distinct m.grupo_id) as grupos, sum(m.estado in ('activo', 'graduado') and gr.numero = 11) as graduandos")
+            ->first();
+        $sabatina = $request->query('jornada') === 'sabatina';
+
         // El grado pedido; si no hay (o no existe en la sede elegida), el primero con estudiantes.
+        // En la jornada sabatina no hay grado elegido: se ven todos los ciclos.
         $pedido = $grados->firstWhere('id', (int) $request->query('grado'));
-        $gradoId = $pedido && (! $sede || $pedido['grupos'] > 0 || $pedido['activos'] > 0)
+        $gradoId = $sabatina ? null : ($pedido && (! $sede || $pedido['grupos'] > 0 || $pedido['activos'] > 0)
             ? $pedido['id']
-            : ($grados->firstWhere('activos', '>', 0)['id'] ?? $pedido['id'] ?? null);
+            : ($grados->firstWhere('activos', '>', 0)['id'] ?? $pedido['id'] ?? null));
 
         $totales = DB::table('matriculas')
             ->where('anio_lectivo_id', $anio?->id)
@@ -83,7 +98,9 @@ class EstudianteController extends Controller
             ")
             ->first();
 
-        $grupos = Alcance::soloGruposVisibles(Grupos::conOcupacion($anio?->id, $gradoId, $sede ? (Alcance::puedeVer($request->user(), $sede->id, $gradoId) ? $sede->id : []) : Alcance::sedesDelGrado($request->user(), $gradoId)), $request->user());
+        $grupos = Alcance::soloGruposVisibles($sabatina
+            ? Grupos::sabatinos($anio?->id, fn ($q) => $enSede($q, 'g.sede_id', 'g.grado_id'))
+            : Grupos::conOcupacion($anio?->id, $gradoId, $sede ? (Alcance::puedeVer($request->user(), $sede->id, $gradoId) ? $sede->id : []) : Alcance::sedesDelGrado($request->user(), $gradoId)), $request->user());
 
         // Si ya fue promovido: el grupo que tiene en el año siguiente.
         $siguienteId = DB::table('anios_lectivos')->where('anio', ($anio?->anio ?? 0) + 1)->value('id');
@@ -91,6 +108,7 @@ class EstudianteController extends Controller
         $estudiantes = DB::table('matriculas as m')
             ->join('estudiantes as e', 'e.id', '=', 'm.estudiante_id')
             ->join('sedes as s', 's.id', '=', 'm.sede_id')
+            ->join('grados as gr', 'gr.id', '=', 'm.grado_id')
             ->leftJoin('grupos as g', 'g.id', '=', 'm.grupo_id')
             ->leftJoin('modalidades as mo', 'mo.id', '=', 'm.modalidad_id')
             ->leftJoin('estudiante_acudiente as ea', function ($join) {
@@ -102,7 +120,7 @@ class EstudianteController extends Controller
             })
             ->leftJoin('grupos as gsig', 'gsig.id', '=', 'sig.grupo_id')
             ->where('m.anio_lectivo_id', $anio?->id)
-            ->where('m.grado_id', $gradoId)
+            ->when($sabatina, $esSabatina, fn ($q) => $q->where('m.grado_id', $gradoId))
             ->tap(fn ($q) => $enSede($q, 'm.sede_id', 'm.grado_id'))
             ->whereNull('e.deleted_at')
             ->orderBy('e.nombre_completo')
@@ -111,12 +129,14 @@ class EstudianteController extends Controller
                 'm.grupo_id', 'g.codigo as grupo', 's.nombre as sede', 's.codigo as sede_codigo', 'm.jornada', 'mo.nombre as modalidad',
                 'm.condicion', 'm.estado', 'a.nombre_completo as acudiente',
                 DB::raw('coalesce(a.telefono_celular, a.telefono_fijo) as telefono'),
-                'gsig.codigo as promovido_a', 'e.fecha_nacimiento',
+                'gsig.codigo as promovido_a', 'e.fecha_nacimiento', 'gr.numero as grado_numero',
             ]);
-        // La alerta de edad según la tabla de la institución (null si la edad es la adecuada).
+        // La alerta de edad según la tabla de la institución (null si la edad es la adecuada),
+        // con el grado de cada uno (en la jornada sabatina hay de varios).
         $numeroGrado = $gradoId ? (int) DB::table('grados')->where('id', $gradoId)->value('numero') : null;
         foreach ($estudiantes as $e) {
-            $e->edad = $numeroGrado !== null && $anio ? Edades::alerta($e->fecha_nacimiento, $numeroGrado, (int) $anio->anio) : null;
+            $e->edad = $anio ? Edades::alerta($e->fecha_nacimiento, (int) $e->grado_numero, (int) $anio->anio) : null;
+            $e->grado_numero = (int) $e->grado_numero;
             unset($e->fecha_nacimiento);
         }
 
@@ -143,6 +163,13 @@ class EstudianteController extends Controller
             'sede' => $sede?->codigo,
             'grados' => $grados,
             'gradoId' => $gradoId,
+            // La pestaña de la jornada sabatina: si está elegida y sus cifras (graduandos: los del Ciclo VI).
+            'sabatina' => [
+                'elegida' => $sabatina,
+                'activos' => (int) ($resumenSabatina->activos ?? 0),
+                'grupos' => (int) ($resumenSabatina->grupos ?? 0),
+                'graduandos' => (int) ($resumenSabatina->graduandos ?? 0),
+            ],
             'totales' => array_map('intval', (array) $totales),
             'grupos' => $grupos,
             // Grupos del grado siguiente (año siguiente) para promover un grupo completo a uno elegido.

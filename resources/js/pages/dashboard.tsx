@@ -32,11 +32,11 @@ const FORMATOS: { tipo: Tipo; titulo: string; icono: typeof BookOpen; descripcio
     },
     {
         tipo: 'ciclos',
-        titulo: 'Ciclos (sabatinos)',
+        titulo: 'Sabatinos (ciclos)',
         icono: CalendarDays,
         descripcion: 'El libro de los ciclos de la jornada sabatina, con una hoja por ciclo («CICLO III 2026»…), como «SABATINOS-2026.xlsx».',
         ejemplo: 'SABATINOS-2026.xlsx',
-        carga: 'Cada ciclo queda en su grado equivalente (III → Séptimo, IV → Noveno, V → Décimo, VI → Undécimo), en jornada Sabatina.',
+        carga: 'Cada ciclo queda en su grado equivalente (III → Séptimo, IV → Noveno, V → Décimo, VI → Undécimo), en jornada Sabatina. Se consultan en la pestaña «Sabatina» de Estudiantes.',
     },
 ];
 
@@ -343,7 +343,13 @@ function ResumenDelLibro({ r }: { r: ResumenLibro }) {
                 { n: r.historicas, texto: 'matrículas de años anteriores (de las columnas «GRUPO…»)' },
             ]}
             errores={r.errores.map((e) => ({ clave: `${e.hoja}-${e.fila}`, texto: `${e.hoja} · fila ${e.fila} · ${e.nombre}: ${e.error}` }))}
-            enlace={r.matriculas > 0 && r.anio ? { href: `/estudiantes?anio=${r.anio}`, texto: 'Ver en Estudiantes' } : null}
+            enlace={
+                r.matriculas > 0 && r.anio
+                    ? r.tipo === 'ciclos'
+                        ? { href: `/estudiantes?anio=${r.anio}&jornada=sabatina`, texto: 'Ver en Sabatina' }
+                        : { href: `/estudiantes?anio=${r.anio}`, texto: 'Ver en Estudiantes' }
+                    : null
+            }
         />
     );
 }

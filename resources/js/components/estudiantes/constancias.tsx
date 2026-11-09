@@ -20,12 +20,15 @@ export function BotonConstancias({
     grupo,
     sede,
     sedes,
+    sabatina = false,
 }: {
     anio: number;
     grado: Grado;
     grupo?: Grupo;
     sede: string | null;
     sedes: SedeFiltro[];
+    /** En la pestaña de la jornada sabatina, «todo el grado» son todos los ciclos. */
+    sabatina?: boolean;
 }) {
     // Para un usuario de sede, "toda la institución" son sus sedes (el servidor ya limita la lista).
     const todoElColegio = usePage<SharedData>().props.auth.todasLasSedes !== false;
@@ -50,10 +53,10 @@ export function BotonConstancias({
             : []),
         {
             clave: 'grado',
-            titulo: `Todo ${grado.nombre}`,
-            detalle: laSede ? `Sede ${laSede.nombre}` : 'Todas las sedes',
+            titulo: sabatina ? 'Toda la jornada sabatina' : `Todo ${grado.nombre}`,
+            detalle: `${sabatina ? 'Todos los ciclos · ' : ''}${laSede ? `Sede ${laSede.nombre}` : 'Todas las sedes'}`,
             n: grado.activos,
-            href: ruta({ grado: grado.id, sede: laSede?.codigo }),
+            href: sabatina ? ruta({ jornada: 'sabatina', sede: laSede?.codigo }) : ruta({ grado: grado.id, sede: laSede?.codigo }),
         },
         ...(laSede
             ? [

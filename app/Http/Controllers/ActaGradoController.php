@@ -25,13 +25,19 @@ class ActaGradoController extends Controller
     public function index(Request $request): Response
     {
         $anio = $this->anio($request->query('anio'));
+        // Desde la pestaña de la jornada sabatina (?programa=ciclos) abre en las actas del
+        // Ciclo VI y «Volver» regresa a esa pestaña.
+        $ciclos = $request->query('programa') === ActasGrado::CICLOS;
 
         return Inertia::render('actas-grado/index', [
             'anio' => (int) $anio->anio,
             ...ActasGrado::del($anio->id),
+            'programa' => is_string($request->query('programa')) ? $request->query('programa') : null,
             'graduacion' => $this->graduacion($anio->id),
             'institucion' => DB::table('instituciones')->first(['nombre', 'codigo_dane', 'municipio']),
-            'volver' => '/estudiantes?'.http_build_query(['anio' => $anio->anio, 'grado' => DB::table('grados')->where('numero', 11)->value('id')]),
+            'volver' => '/estudiantes?'.http_build_query($ciclos
+                ? ['anio' => $anio->anio, 'jornada' => 'sabatina']
+                : ['anio' => $anio->anio, 'grado' => DB::table('grados')->where('numero', 11)->value('id')]),
         ]);
     }
 

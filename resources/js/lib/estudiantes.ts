@@ -5,6 +5,19 @@ export type SedeFiltro = { codigo: string; nombre: string; activos: number };
 
 export type Grado = { id: number; numero: number; nombre: string; nivel: string; activos: number; grupos: number };
 
+/** La pestaña de la jornada sabatina (los ciclos de todos los grados): si está elegida y sus cifras. */
+export type Sabatina = { elegida: boolean; activos: number; grupos: number; /** Los del Ciclo VI (undécimo). */ graduandos: number };
+
+/** En la pestaña sabatina no hay grado: la lista y los botones la ven como uno más, con este nombre. */
+export const gradoSabatina = (s: Sabatina): Grado => ({
+    id: -1,
+    numero: -1,
+    nombre: 'Jornada sabatina',
+    nivel: 'sabatina',
+    activos: s.activos,
+    grupos: s.grupos,
+});
+
 /** activos y nuevos llegan como texto desde MySQL (son SUM): se convierten al recibirlos. */
 export type Grupo = {
     id: number;
@@ -41,6 +54,8 @@ export type Estudiante = {
     promovido_a: string | null;
     /** Alerta de edad para el grado (null si la edad es la adecuada). */
     edad: AlertaEdad | null;
+    /** Su grado (en la jornada sabatina, el equivalente de su ciclo). */
+    grado_numero: number;
 };
 
 /** Tabla de edades del colegio (App\Support\Edades): fuera de la edad adecuada, cómo está. */

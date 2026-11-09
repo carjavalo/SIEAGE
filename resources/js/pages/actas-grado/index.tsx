@@ -16,6 +16,8 @@ type Props = {
     graduacion: Graduacion;
     institucion: Institucion;
     volver: string;
+    /** El programa con que abre (?programa=ciclos desde la pestaña de la jornada sabatina). */
+    programa: string | null;
 };
 
 const TODOS = 0;
@@ -32,8 +34,8 @@ const segmento = (activo: boolean) =>
  * «Imprimir» (ver @page acta y diploma en app.css). Los datos del grado (fecha,
  * firmas, acta, libro y folio) se llenan una vez por año.
  */
-export default function ActasGrado({ anio, programas, sinModalidad, graduacion, institucion, volver }: Props) {
-    const [clave, setClave] = useState(programas[0]?.clave ?? '');
+export default function ActasGrado({ anio, programas, sinModalidad, graduacion, institucion, volver, programa: pedido }: Props) {
+    const [clave, setClave] = useState((programas.find((p) => p.clave === pedido) ?? programas[0])?.clave ?? '');
     const [documento, setDocumento] = useState<Documento>('acta');
     const [elegido, setElegido] = useState(TODOS);
     const [editando, setEditando] = useState(false);

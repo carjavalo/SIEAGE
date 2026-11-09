@@ -111,7 +111,9 @@ export function TableroGrupos({ grupos, estudiantes, grupoId, onElegir, anio }: 
                                         {porJornada}
                                     </span>
                                 ) : (
-                                    <span className="shrink-0 text-[#56627F]">jornada de la {jornadas[0].toLowerCase()}</span>
+                                    <span className="shrink-0 text-[#56627F]">
+                                        {jornadas[0] === 'Sabatina' ? 'jornada sabatina' : `jornada de la ${jornadas[0].toLowerCase()}`}
+                                    </span>
                                 )}
                                 <Punto />
                                 <span className="text-[#56627F]">{grupos.length} grupos</span>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\Alcance;
+use App\Support\Ciclos;
 use App\Support\Constancias;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -38,7 +39,8 @@ class ConstanciaController extends Controller
 
     /**
      * Varias a la vez, de los estudiantes activos del año: ?grupo=ID, ?grado=ID (con ?sede=
-     * opcional), ?sede=CODIGO o nada (toda la institución). Salen ordenadas por sede, grado,
+     * opcional), ?jornada=sabatina (todos los ciclos, con ?sede= opcional), ?sede=CODIGO o
+     * nada (toda la institución). Salen ordenadas por sede, grado,
      * grupo y nombre, como se archivan.
      */
     public function lote(Request $request): Response
@@ -52,6 +54,7 @@ class ConstanciaController extends Controller
         $grupo = $request->filled('grupo')
             ? DB::table('grupos as g')->join('sedes as s', 's.id', '=', 'g.sede_id')->where('g.id', (int) $request->query('grupo'))->where('g.anio_lectivo_id', $anio->id)->first(['g.id', 'g.codigo', 's.nombre as sede'])
             : null;
+        $sabatina = ! $grupo && ! $grado && $request->query('jornada') === 'sabatina';
         abort_if(($request->filled('sede') && ! $sede) || ($request->filled('grado') && ! $grado) || ($request->filled('grupo') && ! $grupo), 404);
         if ($sede) {
             Alcance::exigirSede($request->user(), $sede->id);
@@ -67,6 +70,7 @@ class ConstanciaController extends Controller
             ->whereNull('e.deleted_at')
             ->when($grupo, fn ($q) => $q->where('m.grupo_id', $grupo->id))
             ->when(! $grupo && $grado, fn ($q) => $q->where('m.grado_id', $grado->id))
+            ->when($sabatina, fn ($q) => $q->whereRaw('coalesce(m.jornada, g.jornada) = ?', [Ciclos::JORNADA]))
             ->when(! $grupo && $sede, fn ($q) => $q->where('m.sede_id', $sede->id))
             // Sin sede pedida: todas las que puede ver (un grupo de otra sede no trae a nadie).
             ->tap(fn ($q) => Alcance::filtrar($q, $request->user(), 'm.sede_id', 'm.grado_id'))
@@ -84,10 +88,12 @@ class ConstanciaController extends Controller
             (bool) $grupo => "Grupo {$grupo->codigo} · {$grupo->sede}",
             $grado && $sede => "{$grado->nombre} · {$sede->nombre}",
             (bool) $grado => "{$grado->nombre} · todas las sedes",
+            $sabatina && $sede => "Jornada sabatina · {$sede->nombre}",
+            $sabatina => 'Jornada sabatina · todas las sedes',
             (bool) $sede => "Sede {$sede->nombre}",
             default => 'Toda la institución',
         };
-        $volver = '/estudiantes?'.http_build_query(array_filter(['anio' => $anio->anio, 'sede' => $sede?->codigo, 'grado' => $grado?->id]));
+        $volver = '/estudiantes?'.http_build_query(array_filter(['anio' => $anio->anio, 'sede' => $sede?->codigo, 'grado' => $grado?->id, 'jornada' => $sabatina ? 'sabatina' : null]));
 
         return $this->pagina($ids, "{$titulo} · {$anio->anio}", $volver);
     }

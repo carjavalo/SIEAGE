@@ -136,4 +136,49 @@ class EstudiantesTest extends TestCase
         $docente = User::factory()->create(['rol_id' => DB::table('roles')->where('nombre', 'docente')->value('id')]);
         $this->actingAs($docente)->put('/grupos/cupos', ['cupos' => [$a => 20]])->assertForbidden();
     }
+
+    public function test_la_pestana_sabatina_junta_los_ciclos_y_lleva_a_sus_actas()
+    {
+        $this->seed(DatosInicialesSeeder::class);
+        $anio = DB::table('anios_lectivos')->where('anio', 2026)->first();
+        // Un grupo sabatino en Séptimo (Ciclo III) y otro en Undécimo (Ciclo VI), con un estudiante cada uno.
+        $ciclos = [];
+        foreach ([7 => 'III', 11 => 'VI'] as $numero => $romano) {
+            $base = DB::table('matriculas as m')->join('grados as gr', 'gr.id', '=', 'm.grado_id')
+                ->where('m.anio_lectivo_id', $anio->id)->where('gr.numero', $numero)->where('m.estado', 'activo')->first(['m.id', 'm.grado_id', 'm.sede_id']);
+            $grupo = DB::table('grupos')->insertGetId([
+                'anio_lectivo_id' => $anio->id, 'grado_id' => $base->grado_id, 'sede_id' => $base->sede_id,
+                'numero' => 9, 'codigo' => "Ciclo {$romano}", 'jornada' => 'Sabatina', 'cupos_proyectados' => 30,
+            ]);
+            DB::table('matriculas')->where('id', $base->id)->update(['grupo_id' => $grupo, 'jornada' => 'Sabatina']);
+            $ciclos[] = $base->id;
+        }
+
+        $this->actingAs(User::first())
+            ->get('/estudiantes?anio=2026&jornada=sabatina')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('gradoId', null)
+                ->where('sabatina.elegida', true)
+                ->where('sabatina.activos', 2)
+                ->where('sabatina.graduandos', 1)
+                ->has('grupos', 2)
+                ->where('grupos.0.codigo', 'Ciclo III')
+                ->where('grupos.1.codigo', 'Ciclo VI')
+                ->has('estudiantes', 2));
+
+        // En un grado se ve la pestaña con su cifra, sin estar elegida.
+        $this->actingAs(User::first())->get('/estudiantes?anio=2026')
+            ->assertInertia(fn (Assert $page) => $page->where('sabatina.elegida', false)->where('sabatina.activos', 2));
+
+        // Constancias de toda la jornada sabatina.
+        $this->actingAs(User::first())->get('/constancias?anio=2026&jornada=sabatina')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('titulo', 'Jornada sabatina · todas las sedes · 2026')->has('constancias', 2));
+
+        // Las actas abren en el Ciclo VI y «Volver» regresa a la pestaña.
+        $this->actingAs(User::first())->get('/actas-grado?anio=2026&programa=ciclos')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('programa', 'ciclos')->where('volver', '/estudiantes?anio=2026&jornada=sabatina'));
+    }
 }

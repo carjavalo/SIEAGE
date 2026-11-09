@@ -20,9 +20,11 @@ import {
     type Grupo,
     type GrupoDestino,
     type Resultado,
+    type Sabatina,
     type SedeFiltro,
     cumpleEstado,
     cumpleTexto,
+    gradoSabatina,
     palabras,
 } from '@/lib/estudiantes';
 import { puede } from '@/lib/permisos';
@@ -39,6 +41,7 @@ type Props = {
     todasLasSedes: boolean;
     grados: Grado[];
     gradoId: number | null;
+    sabatina: Sabatina;
     totales: { activos: number; nuevos: number; antiguos: number; retirados: number };
     grupos: Grupo[];
     gruposDestino: GrupoDestino[];
@@ -61,6 +64,7 @@ export default function Estudiantes({
     todasLasSedes,
     grados,
     gradoId,
+    sabatina,
     totales,
     grupos: gruposServidor,
     gruposDestino,
@@ -78,6 +82,8 @@ export default function Estudiantes({
     const { destino, navegando } = useNavegando();
     const gradoDestino = Number(destino?.get('grado')) || gradoId;
     const anioDestino = Number(destino?.get('anio')) || anio;
+    // La pestaña de la jornada sabatina (?jornada=sabatina): los ciclos de todos los grados juntos.
+    const enSabatina = navegando ? destino?.get('jornada') === 'sabatina' : sabatina.elegida;
 
     // activos, nuevos y cupos llegan como texto (son SUM en MySQL). Orden: por sede y luego por código.
     const grupos = useMemo(
@@ -90,14 +96,15 @@ export default function Estudiantes({
                 ),
         [gruposServidor],
     );
-    const grado = grados.find((g) => g.id === (navegando ? gradoDestino : gradoId));
+    const grado = enSabatina ? gradoSabatina(sabatina) : grados.find((g) => g.id === (navegando ? gradoDestino : gradoId));
     const grupo = grupos.find((g) => g.id === grupoId);
     // Promover: solo desde el año en curso y con permiso.
     const { auth } = usePage<SharedData>().props;
     const anioEnCurso = anios.find((a) => a.estado === 'activo')?.anio ?? null;
-    const promueve = puedePromover(auth) && anio === anioEnCurso;
+    // En la sabatina no: se promueve (y se deshace) desde el grado de cada ciclo, que pasa al ciclo siguiente.
+    const promueve = puedePromover(auth) && anio === anioEnCurso && !sabatina.elegida;
     // Deshacer promoción: desde el año en curso (grado de origen) o desde el año siguiente (grado destino).
-    const deshace = puedePromover(auth) && anioEnCurso !== null && (anio === anioEnCurso || anio === anioEnCurso + 1);
+    const deshace = puedePromover(auth) && anioEnCurso !== null && (anio === anioEnCurso || anio === anioEnCurso + 1) && !sabatina.elegida;
     const siguienteDe = (g?: Grado) => (g ? grados.find((x) => x.numero === g.numero + 1) : undefined);
     const porPromover = useMemo(() => estudiantes.filter((e) => e.estado === 'activo' && !e.promovido_a).length, [estudiantes]);
 
@@ -129,7 +136,7 @@ export default function Estudiantes({
         visibles: ids,
         detalleId: detalle?.estudiante.id ?? null,
         inicial: inicial?.id ?? null,
-        datosRecarga: { anio, grado: gradoId ?? undefined },
+        datosRecarga: sabatina.elegida ? { anio, jornada: 'sabatina' } : { anio, grado: gradoId ?? undefined },
         campoFiltro,
         filtro,
         limpiarFiltro: () => setFiltro(''),
@@ -140,9 +147,11 @@ export default function Estudiantes({
     const irAResultado = (r: Resultado) => {
         // Sin matrícula en este año: no está en ningún grado, se abre su ficha completa.
         if (r.grado_id === null) return router.visit(`/estudiantes/${r.id}`);
+        // En la sabatina, si es de un ciclo (está en la lista) se abre aquí; si no, se va a su grado.
+        const enLista = sabatina.elegida && estudiantes.some((x) => x.id === r.id);
         // Si está en otra sede que la filtrada, se quita el filtro para poder mostrarlo.
         const otraSede = !!sede && r.sede_codigo !== sede;
-        if (r.grado_id !== gradoId || otraSede)
+        if ((!enLista && r.grado_id !== gradoId) || otraSede)
             return router.get('/estudiantes', { anio, grado: r.grado_id, ver: r.id, ...(sede && !otraSede ? { sede } : {}) });
         const e = estudiantes.find((x) => x.id === r.id);
         if (!e) return;
@@ -162,6 +171,7 @@ export default function Estudiantes({
                 sede={sede}
                 grados={grados}
                 gradoId={gradoDestino}
+                sabatina={{ ...sabatina, elegida: enSabatina }}
                 totales={totales}
                 busqueda={busqueda}
                 entrada={campoBusqueda}
@@ -229,10 +239,17 @@ export default function Estudiantes({
                                         <span className={nombreBarra}>Informe</span>
                                     </Link>
                                 )}
-                                {puede(auth, 'constancias') && <BotonConstancias anio={anio} grado={grado} grupo={grupo} sede={sede} sedes={sedes} />}
-                                {/* Undécimo: las actas de grado y los diplomas, cada uno con el formato de su modalidad. */}
-                                {grado.numero === 11 && puede(auth, 'actas-grado') && (
-                                    <Link href={`/actas-grado?anio=${anio}`} title="Actas de grado" className={botonBarra}>
+                                {puede(auth, 'constancias') && (
+                                    <BotonConstancias anio={anio} grado={grado} grupo={grupo} sede={sede} sedes={sedes} sabatina={sabatina.elegida} />
+                                )}
+                                {/* Undécimo: las actas de grado y los diplomas, cada uno con el formato de su modalidad.
+                                    En la sabatina, las del Ciclo VI (bachillerato académico por ciclos). */}
+                                {(sabatina.elegida ? sabatina.graduandos > 0 : grado.numero === 11) && puede(auth, 'actas-grado') && (
+                                    <Link
+                                        href={`/actas-grado?anio=${anio}${sabatina.elegida ? '&programa=ciclos' : ''}`}
+                                        title={sabatina.elegida ? 'Actas de grado del Ciclo VI' : 'Actas de grado'}
+                                        className={botonBarra}
+                                    >
                                         <GraduationCap className="size-4" />
                                         <span className={nombreBarra}>Actas de grado</span>
                                     </Link>

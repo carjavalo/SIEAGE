@@ -1,7 +1,7 @@
 import { Desplegable } from '@/components/desplegable';
 import { ResultadosEsqueleto } from '@/components/esqueleto';
 import { Marca, Resaltado, iniciales } from '@/components/estudiantes/etiquetas';
-import { type Grado, type Resultado, type SedeFiltro, gradoCorto, numero, palabras } from '@/lib/estudiantes';
+import { type Grado, type Resultado, type Sabatina, type SedeFiltro, gradoCorto, numero, palabras } from '@/lib/estudiantes';
 import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
 import { Search, X } from 'lucide-react';
@@ -17,6 +17,8 @@ type Props = {
     todasLasSedes: boolean;
     grados: Grado[];
     gradoId: number | null;
+    /** La pestaña de la jornada sabatina, al final de los grados. */
+    sabatina: Sabatina;
     totales: { activos: number; nuevos: number; retirados: number };
     busqueda?: Resultado[];
     entrada: RefObject<HTMLInputElement | null>;
@@ -26,13 +28,21 @@ type Props = {
 const alto = '[@media(min-height:860px)]';
 
 /** Primera franja: título con el año, grados en segmentos y búsqueda en toda la institución. */
-export function Cabecera({ anios, anio, sedes, sede, todasLasSedes, grados, gradoId, totales, busqueda, entrada, onElegir }: Props) {
+export function Cabecera({ anios, anio, sedes, sede, todasLasSedes, grados, gradoId, sabatina, totales, busqueda, entrada, onElegir }: Props) {
     // Con una sola sede asignada no hay nada que elegir: se muestra su nombre.
     const unaSola = !todasLasSedes && sedes.length === 1;
-    const ir = (datos: { anio?: number; grado?: number; sede?: string | null }) => {
+    // Cambiar de año o de sede deja la pestaña en que se está (un grado o la sabatina); elegir un grado sale de la sabatina.
+    const ir = (datos: { anio?: number; grado?: number; sede?: string | null; sabatina?: boolean }) => {
         const s = datos.sede !== undefined ? datos.sede : sede;
-        router.get('/estudiantes', { anio: datos.anio ?? anio, grado: datos.grado ?? gradoId ?? undefined, ...(s ? { sede: s } : {}) });
+        const enSabatina = datos.sabatina ?? (datos.grado === undefined && sabatina.elegida);
+        router.get('/estudiantes', {
+            anio: datos.anio ?? anio,
+            ...(enSabatina ? { jornada: 'sabatina' } : { grado: datos.grado ?? gradoId ?? undefined }),
+            ...(s ? { sede: s } : {}),
+        });
     };
+    // La pestaña sabatina aparece si el año tiene ciclos (o si ya se está en ella).
+    const conSabatina = sabatina.elegida || sabatina.activos > 0 || sabatina.grupos > 0;
 
     return (
         <section className="relative flex shrink-0 flex-wrap items-center gap-x-6 gap-y-3 xl:flex-nowrap">
@@ -120,7 +130,7 @@ export function Cabecera({ anios, anio, sedes, sede, todasLasSedes, grados, grad
                 className={`order-last flex h-11 w-full min-w-0 items-stretch gap-0.5 overflow-x-auto rounded-[16px] bg-[#D3DDF3]/45 p-1 ring-1 ring-white/70 [scrollbar-width:none] xl:order-none xl:w-auto xl:flex-1 ${alto}:h-[52px] ${alto}:rounded-[18px]`}
             >
                 {grados.map((g, i) => {
-                    const actual = g.id === gradoId;
+                    const actual = !sabatina.elegida && g.id === gradoId;
                     // Con una sede elegida, los grados que no tiene se ven apagados.
                     const vacio = !!sede && g.activos === 0 && g.grupos === 0;
                     return (
@@ -148,6 +158,28 @@ export function Cabecera({ anios, anio, sedes, sede, todasLasSedes, grados, grad
                         </Fragment>
                     );
                 })}
+                {conSabatina && (
+                    <>
+                        <span aria-hidden className="mx-0.5 h-6 w-px shrink-0 self-center bg-[#B7C6EA]" />
+                        <button
+                            type="button"
+                            onClick={() => !sabatina.elegida && ir({ sabatina: true })}
+                            aria-current={sabatina.elegida ? 'page' : undefined}
+                            title={`Jornada sabatina (ciclos) · ${sabatina.activos} activos · ${sabatina.grupos} grupos`}
+                            className={cn(
+                                `flex min-w-[78px] flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[12px] leading-none transition duration-200 focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none ${alto}:rounded-[14px]`,
+                                sabatina.elegida
+                                    ? 'bg-white text-[#1E3A7B] shadow-[0_1px_3px_rgba(22,34,63,0.14)] ring-1 ring-[#C4D2F1]'
+                                    : 'text-[#16223F] hover:bg-white/60',
+                            )}
+                        >
+                            <span className={`text-[15px] font-semibold tracking-[-0.01em] ${alto}:text-[17px]`}>Sabatina</span>
+                            <span className={cn('text-[13px] tabular-nums', sabatina.elegida ? 'text-[#4863B8]' : 'text-[#56627F]')}>
+                                {sabatina.activos}
+                            </span>
+                        </button>
+                    </>
+                )}
             </nav>
 
             <BusquedaGlobal grados={grados} busqueda={busqueda} entrada={entrada} onElegir={onElegir} />
