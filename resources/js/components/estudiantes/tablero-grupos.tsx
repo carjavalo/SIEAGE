@@ -9,6 +9,8 @@ type Props = {
     grupoId: number | null;
     onElegir: (id: number | null) => void;
     anio: number;
+    /** Lo que se dice cuando no hay grupos (por defecto, «Sin grupos registrados en …»). */
+    vacio?: ReactNode;
 };
 
 const alto = '[@media(min-height:860px)]';
@@ -27,7 +29,7 @@ const Cifra = ({ children }: { children: ReactNode }) => <b className="font-semi
 const suma = (lista: Grupo[], clave: 'activos' | 'cupos' | 'nuevos') => lista.reduce((s, g) => s + g[clave], 0);
 
 /** Segunda franja: los grupos del grado como tarjetas; pulsar una filtra la lista. */
-export function TableroGrupos({ grupos, estudiantes, grupoId, onElegir, anio }: Props) {
+export function TableroGrupos({ grupos, estudiantes, grupoId, onElegir, anio, vacio }: Props) {
     const tablero = useRef<HTMLElement>(null);
 
     // Si las tarjetas no caben, se desplazan en horizontal con un desvanecido al borde.
@@ -45,7 +47,7 @@ export function TableroGrupos({ grupos, estudiantes, grupoId, onElegir, anio }: 
         return (
             <section ref={tablero} aria-label="Grupos del grado" className={`relative mt-1.5 shrink-0 ${alto}:mt-4`}>
                 <p className={cn(rotuloBase, 'text-[#56627F]')}>
-                    Sin grupos registrados en {anio}
+                    {vacio ?? `Sin grupos registrados en ${anio}`}
                     <Regla />
                 </p>
             </section>

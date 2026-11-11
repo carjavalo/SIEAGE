@@ -62,7 +62,10 @@ export default function ImportarDatos() {
     const { flash } = usePage<SharedData>().props;
     const [arrastrando, setArrastrando] = useState(false);
     const [errorLocal, setErrorLocal] = useState<string | null>(null);
-    const form = useForm<{ archivo: File | null; tipo: Tipo }>({ archivo: null, tipo: flash.importacion?.tipo ?? 'matricula' });
+    // ?tipo=ciclos (desde la pestaña Sabatina de Estudiantes) abre en esa pestaña.
+    const pedido = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('tipo');
+    const tipoInicial = FORMATOS.find((f) => f.tipo === pedido)?.tipo ?? 'matricula';
+    const form = useForm<{ archivo: File | null; tipo: Tipo }>({ archivo: null, tipo: flash.importacion?.tipo ?? tipoInicial });
     const formato = FORMATOS.find((f) => f.tipo === form.data.tipo)!;
 
     const seleccionar = (archivo: File | undefined) => {

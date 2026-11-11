@@ -41,9 +41,6 @@ export function Cabecera({ anios, anio, sedes, sede, todasLasSedes, grados, grad
             ...(s ? { sede: s } : {}),
         });
     };
-    // La pestaña sabatina aparece si el año tiene ciclos (o si ya se está en ella).
-    const conSabatina = sabatina.elegida || sabatina.activos > 0 || sabatina.grupos > 0;
-
     return (
         <section className="relative flex shrink-0 flex-wrap items-center gap-x-6 gap-y-3 xl:flex-nowrap">
             <div className="shrink-0">
@@ -158,28 +155,23 @@ export function Cabecera({ anios, anio, sedes, sede, todasLasSedes, grados, grad
                         </Fragment>
                     );
                 })}
-                {conSabatina && (
-                    <>
-                        <span aria-hidden className="mx-0.5 h-6 w-px shrink-0 self-center bg-[#B7C6EA]" />
-                        <button
-                            type="button"
-                            onClick={() => !sabatina.elegida && ir({ sabatina: true })}
-                            aria-current={sabatina.elegida ? 'page' : undefined}
-                            title={`Jornada sabatina (ciclos) · ${sabatina.activos} activos · ${sabatina.grupos} grupos`}
-                            className={cn(
-                                `flex min-w-[78px] flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[12px] leading-none transition duration-200 focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none ${alto}:rounded-[14px]`,
-                                sabatina.elegida
-                                    ? 'bg-white text-[#1E3A7B] shadow-[0_1px_3px_rgba(22,34,63,0.14)] ring-1 ring-[#C4D2F1]'
-                                    : 'text-[#16223F] hover:bg-white/60',
-                            )}
-                        >
-                            <span className={`text-[15px] font-semibold tracking-[-0.01em] ${alto}:text-[17px]`}>Sabatina</span>
-                            <span className={cn('text-[13px] tabular-nums', sabatina.elegida ? 'text-[#4863B8]' : 'text-[#56627F]')}>
-                                {sabatina.activos}
-                            </span>
-                        </button>
-                    </>
-                )}
+                {/* Siempre, aunque el año aún no tenga ciclos: ahí mismo se dice cómo cargarlos. */}
+                <span aria-hidden className="mx-0.5 h-6 w-px shrink-0 self-center bg-[#B7C6EA]" />
+                <button
+                    type="button"
+                    onClick={() => !sabatina.elegida && ir({ sabatina: true })}
+                    aria-current={sabatina.elegida ? 'page' : undefined}
+                    title={`Jornada sabatina (ciclos) · ${sabatina.activos} activos · ${sabatina.grupos} grupos`}
+                    className={cn(
+                        `flex min-w-[78px] flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[12px] leading-none transition duration-200 focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none ${alto}:rounded-[14px]`,
+                        sabatina.elegida
+                            ? 'bg-white text-[#1E3A7B] shadow-[0_1px_3px_rgba(22,34,63,0.14)] ring-1 ring-[#C4D2F1]'
+                            : 'text-[#16223F] hover:bg-white/60',
+                    )}
+                >
+                    <span className={`text-[15px] font-semibold tracking-[-0.01em] ${alto}:text-[17px]`}>Sabatina</span>
+                    <span className={cn('text-[13px] tabular-nums', sabatina.elegida ? 'text-[#4863B8]' : 'text-[#56627F]')}>{sabatina.activos}</span>
+                </button>
             </nav>
 
             <BusquedaGlobal grados={grados} busqueda={busqueda} entrada={entrada} onElegir={onElegir} />

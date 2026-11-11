@@ -186,6 +186,20 @@ export default function Estudiantes({
                     estudiantes={estudiantes}
                     grupoId={grupoId}
                     anio={anio}
+                    vacio={
+                        enSabatina && (
+                            <span className="whitespace-normal">
+                                Aún no hay estudiantes de la jornada sabatina en {anio}.{' '}
+                                {puede(auth, 'importar-datos') ? (
+                                    <Link href="/dashboard?tipo=ciclos" className="font-semibold text-[#1E3A7B] underline-offset-2 hover:underline">
+                                        Cárgalos en Importar datos → Sabatinos (ciclos)
+                                    </Link>
+                                ) : (
+                                    'Se cargan en Importar datos → Sabatinos (ciclos).'
+                                )}
+                            </span>
+                        )
+                    }
                     onElegir={(id) => {
                         setGrupoId(id);
                         ficha.alInicio();
