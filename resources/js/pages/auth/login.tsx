@@ -37,20 +37,26 @@ const modulos = [
 ];
 
 /** Entrada escalonada: cada bloque aparece un poco después del anterior. */
-const aparecer = 'animate-in fade-in slide-in-from-bottom-3 fill-mode-both duration-700 ease-out motion-reduce:animate-none';
+const aparecer = 'animate-in fade-in slide-in-from-bottom-3 fill-mode-both duration-500 ease-out motion-reduce:animate-none';
 const tras = (ms: number): CSSProperties => ({ animationDelay: `${ms}ms` });
 
 // 16 px: con menos, el iPhone acerca la pantalla al tocar el campo.
 const campo =
-    'h-[52px] w-full rounded-[14px] border-[1.5px] border-borde-campo bg-white px-4 text-base text-[#16223F] outline-none transition placeholder:text-[#6B7690] hover:border-[#56627F] focus:border-foco focus:ring-4 focus:ring-[#DCE5F8]';
+    'h-[52px] w-full rounded-[14px] border-[1.5px] border-borde-campo bg-white px-4 text-base text-[#16223F] outline-none transition-[border-color,box-shadow] placeholder:text-[#6B7690] hover:border-[#56627F] focus:border-foco focus:ring-4 focus:ring-[#DCE5F8]';
 /** El foco del teclado en botones y enlaces: un contorno del azul de la marca, separado del control. */
 const foco = 'focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco';
 /** Usuario y clave cuando no coinciden: no se sabe cuál de los dos está mal, así que se marcan los dos. */
 const campoConError =
     'border-[#B42318] hover:border-[#B42318] focus:border-[#B42318] focus:ring-0 focus:outline-solid focus:outline-2 focus:outline-offset-2 focus:outline-[#B42318]';
 
+/** Los dos íconos de mostrar/ocultar clave, superpuestos: uno entra mientras el otro sale. */
+const icono =
+    'absolute inset-0 size-[18px] transition-[opacity,scale,filter] duration-200 ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:transition-none';
+const iconoDentro = 'scale-100 opacity-100 blur-0';
+const iconoFuera = 'scale-25 opacity-0 blur-[4px]';
+
 /** Un error del ingreso, arriba del formulario. */
-const aviso = 'flex items-start gap-2.5 rounded-[14px] bg-[#FDECEC] px-4 py-3 text-sm leading-snug text-[#7A1F17]';
+const aviso = 'flex items-start gap-2.5 rounded-[14px] bg-[#FDECEC] px-4 py-3 text-sm leading-snug text-pretty text-[#7A1F17]';
 
 /** 272 s → «4:32». */
 const reloj = (segundos: number) => `${Math.floor(segundos / 60)}:${String(segundos % 60).padStart(2, '0')}`;
@@ -194,7 +200,11 @@ export default function Login({ status, acceso }: { status?: string; acceso?: Ac
                 <section className="flex items-center justify-center px-2 py-10 sm:px-12 lg:py-4">
                     <div className="flex w-full max-w-[400px] flex-col gap-7">
                         <div className={cn('flex items-center gap-3 lg:hidden', aparecer)}>
-                            <img src="/sieage-logo.webp" alt="" className="h-14 w-auto rounded-lg object-contain shadow-sm" />
+                            <img
+                                src="/sieage-logo.webp"
+                                alt=""
+                                className="h-14 w-auto rounded-lg object-contain shadow-sm outline-1 -outline-offset-1 outline-black/10"
+                            />
                             <div className="leading-tight">
                                 <p className="text-xl font-semibold tracking-tight">SIEAGE</p>
                                 <p className="text-[13px] text-[#56627F]">Sistema de gestión académica</p>
@@ -208,8 +218,8 @@ export default function Login({ status, acceso }: { status?: string; acceso?: Ac
                                     <UserPlus className="size-4" />
                                     Padres y acudientes
                                 </p>
-                                <h1 className="text-[32px] leading-tight font-bold tracking-[-0.02em]">Inscribe a tu hijo o hija</h1>
-                                <p className="text-base text-[#56627F]">
+                                <h1 className="text-[32px] leading-tight font-bold tracking-[-0.02em] text-balance">Inscribe a tu hijo o hija</h1>
+                                <p className="text-base text-pretty text-[#56627F]">
                                     Llena el formulario de inscripción. No necesitas usuario ni clave · 5 minutos.
                                 </p>
                             </div>
@@ -228,7 +238,7 @@ export default function Login({ status, acceso }: { status?: string; acceso?: Ac
                                         href={route('inscripcion.create')}
                                         prefetch
                                         className={cn(
-                                            'flex h-14 flex-1 items-center justify-center gap-2 rounded-[16px] bg-[#1E3A7B] text-base font-semibold whitespace-nowrap text-white transition-all duration-200 hover:bg-[#172E63] active:scale-[0.98]',
+                                            'flex h-14 flex-1 items-center justify-center gap-2 rounded-[16px] bg-[#1E3A7B] text-base font-semibold whitespace-nowrap text-white transition-[background-color,scale] duration-200 hover:bg-[#172E63] active:scale-[0.96]',
                                             foco,
                                         )}
                                     >
@@ -242,7 +252,7 @@ export default function Login({ status, acceso }: { status?: string; acceso?: Ac
                                         type="button"
                                         title="Mira en un minuto cómo es la inscripción"
                                         className={cn(
-                                            'flex h-14 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[16px] bg-white pr-4 pl-2.5 text-[15px] font-semibold whitespace-nowrap text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition-all duration-200 hover:bg-[#F5F7FC] active:scale-[0.98] max-[429px]:basis-full',
+                                            'flex h-14 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[16px] bg-white pr-4 pl-2.5 text-[15px] font-semibold whitespace-nowrap text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition-[background-color,scale] duration-200 hover:bg-[#F5F7FC] active:scale-[0.96] max-[429px]:basis-full',
                                             foco,
                                         )}
                                     >
@@ -410,13 +420,16 @@ export default function Login({ status, acceso }: { status?: string; acceso?: Ac
                                                         onClick={() => setVerClave((v) => !v)}
                                                         aria-label={verClave ? 'Ocultar clave' : 'Mostrar clave'}
                                                         className={cn(
-                                                            'absolute right-1 flex size-11 items-center justify-center rounded-[10px] text-[#56627F] transition hover:bg-[#EEF2FB]',
+                                                            'absolute right-1 flex size-11 items-center justify-center rounded-[10px] text-[#56627F] transition-colors hover:bg-[#EEF2FB]',
                                                             // Dentro del campo: el contorno va pegado al botón para no salirse del borde.
                                                             foco,
                                                             'focus-visible:outline-offset-0',
                                                         )}
                                                     >
-                                                        {verClave ? <EyeOff className="size-[18px]" /> : <Eye className="size-[18px]" />}
+                                                        <span className="relative size-[18px]">
+                                                            <Eye className={cn(icono, verClave ? iconoFuera : iconoDentro)} />
+                                                            <EyeOff className={cn(icono, verClave ? iconoDentro : iconoFuera)} />
+                                                        </span>
                                                     </button>
                                                 </div>
                                                 {errors.password && (
@@ -438,8 +451,8 @@ export default function Login({ status, acceso }: { status?: string; acceso?: Ac
                                                 </p>
                                             </div>
 
-                                            {/* 28 px de alto para el dedo, sin mover lo de alrededor (-my-1). */}
-                                            <label className="-my-1 flex w-fit cursor-pointer items-center gap-2.5 py-1 text-sm text-[#3E4A68]">
+                                            {/* 40 px de alto para el dedo, sin mover lo de alrededor (-my-2.5). */}
+                                            <label className="-my-2.5 flex w-fit cursor-pointer items-center gap-2.5 py-2.5 text-sm text-[#3E4A68]">
                                                 <input
                                                     type="checkbox"
                                                     checked={data.remember}
@@ -457,7 +470,7 @@ export default function Login({ status, acceso }: { status?: string; acceso?: Ac
                                                 aria-disabled={processing || undefined}
                                                 aria-busy={processing || undefined}
                                                 className={cn(
-                                                    'flex h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-[#1E3A7B] text-base font-semibold text-white transition-all duration-200 hover:bg-[#172E63] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#56627F] disabled:active:scale-100 aria-disabled:opacity-80',
+                                                    'flex h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-[#1E3A7B] text-base font-semibold text-white transition-[background-color,scale] duration-200 hover:bg-[#172E63] active:scale-[0.96] disabled:cursor-not-allowed disabled:bg-[#56627F] disabled:active:scale-100 aria-disabled:opacity-80',
                                                     foco,
                                                 )}
                                             >
