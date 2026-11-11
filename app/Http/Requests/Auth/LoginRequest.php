@@ -60,8 +60,17 @@ class LoginRequest extends FormRequest
                 RateLimiter::hit($llave, $segundos);
             }
 
+            // Si este fallo agotó los intentos, la pausa empieza ya. Si quedan pocos, se avisa antes
+            // para que la pausa no llegue de sorpresa.
+            $this->ensureIsNotRateLimited();
+            $quedan = min(array_map(fn ($llave, $limite) => RateLimiter::remaining($llave, $limite[0]), array_keys($this->limites()), $this->limites()));
+            if ($quedan <= 2) {
+                $this->session()->flash('acceso', ['restantes' => $quedan]);
+            }
+
+            // En `acceso` y no en `usuario`: no se dice cuál de los dos falló.
             throw ValidationException::withMessages([
-                'usuario' => 'Usuario o clave incorrectos.',
+                'acceso' => 'Usuario o clave incorrectos.',
             ]);
         }
 
@@ -81,15 +90,23 @@ class LoginRequest extends FormRequest
      */
     public function ensureIsNotRateLimited(): void
     {
+        $espera = 0;
         foreach ($this->limites() as $llave => [$intentos]) {
             if (RateLimiter::tooManyAttempts($llave, $intentos)) {
-                event(new Lockout($this));
-
-                throw ValidationException::withMessages([
-                    'usuario' => 'Demasiados intentos. Espera '.ceil(RateLimiter::availableIn($llave) / 60).' min y vuelve a intentarlo.',
-                ]);
+                $espera = max($espera, RateLimiter::availableIn($llave));
             }
         }
+        if ($espera === 0) {
+            return;
+        }
+
+        event(new Lockout($this));
+        // Los segundos que faltan, para la cuenta regresiva de la pantalla.
+        $this->session()->flash('acceso', ['espera' => $espera]);
+
+        throw ValidationException::withMessages([
+            'acceso' => 'Hubo varios intentos fallidos. Por seguridad, el ingreso quedó en pausa unos minutos.',
+        ]);
     }
 
     /**

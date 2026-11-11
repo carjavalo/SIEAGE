@@ -9,6 +9,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -33,5 +35,13 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // El login que quedó abierto desde el día anterior ya no tiene sesión válida (419): en vez
+        // de la página de error de Laravel en una ventana, vuelve al login con un aviso.
+        $exceptions->respond(function (Response $response, Throwable $e, Request $request) {
+            if ($response->getStatusCode() === 419 && $request->is('login')) {
+                return redirect('/login')->with('status', 'La página llevaba mucho tiempo abierta. Escribe de nuevo tu clave e ingresa.');
+            }
+
+            return $response;
+        });
     })->create();

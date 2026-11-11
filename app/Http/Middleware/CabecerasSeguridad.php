@@ -40,8 +40,11 @@ class CabecerasSeguridad
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
-        $response->headers->set('Cross-Origin-Opener-Policy', 'same-origin');
         $response->headers->set('X-Permitted-Cross-Domain-Policies', 'none');
+        // El navegador solo la acepta en https o localhost: por http (la red local) la ignora y avisa en la consola.
+        if ($request->secure() || in_array($request->getHost(), ['localhost', '127.0.0.1'], true)) {
+            $response->headers->set('Cross-Origin-Opener-Policy', 'same-origin');
+        }
 
         // El navegador ya no vuelve a intentar por http (180 días). Solo se manda por https, como pide la norma.
         if ($request->secure() && $this->exigeHttps($request)) {

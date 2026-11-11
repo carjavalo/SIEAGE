@@ -15,6 +15,11 @@
     --color-background: var(--background);
     --color-foreground: var(--foreground);
     --color-border: var(--border);
+
+    /* El contorno del foco del teclado y el borde de los campos: con 3:1 o más sobre blanco
+       (WCAG 1.4.11). Los anillos claros (#DCE5F8, #B7C6EA) y el borde #D3DDF3 casi no se veían. */
+    --color-foco: #1e3a7b;
+    --color-borde-campo: #7f8db0;
 }
 
 /*
@@ -102,9 +107,10 @@
 }
 
 /* Animación propia del login: la mano que señala «Inscribir estudiante»
-   (`animate-senalar`); quien tenga activado "reducir movimiento" no la ve. */
+   (`animate-senalar`). Señala tres veces y se queda quieta: lo que se mueve sin fin
+   distrae a quien lee (WCAG 2.2.2). Con "reducir movimiento" no se mueve. */
 @theme {
-    --animate-senalar: senalar 1.6s ease-in-out infinite;
+    --animate-senalar: senalar 1.6s ease-in-out 3;
 
     @keyframes senalar {
         0%,

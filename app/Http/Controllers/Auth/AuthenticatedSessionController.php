@@ -21,6 +21,8 @@ class AuthenticatedSessionController extends Controller
     {
         return Inertia::render('auth/login', [
             'status' => $request->session()->get('status'),
+            // Tras un intento fallido: cuántos quedan antes de la pausa, o cuántos segundos dura.
+            'acceso' => $request->session()->get('acceso'),
         ])->withViewData(['meta' => [
             'descripcion' => 'Acceso al sistema de gestión académica de la I.E. Alfonso López Pumarejo.',
             'indexar' => false,

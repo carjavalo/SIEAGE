@@ -34,7 +34,7 @@ class SeguridadTest extends TestCase
         }
 
         // Ya bloqueado, ni la clave correcta entra.
-        $this->post('/login', ['usuario' => $user->usuario, 'password' => 'password'])->assertSessionHasErrors('usuario');
+        $this->post('/login', ['usuario' => $user->usuario, 'password' => 'password'])->assertSessionHasErrors('acceso');
         $this->assertGuest();
     }
 
@@ -46,7 +46,7 @@ class SeguridadTest extends TestCase
             $this->post('/login', ['usuario' => 'nadie'.$i, 'password' => 'mala-clave']);
         }
 
-        $this->post('/login', ['usuario' => $user->usuario, 'password' => 'password'])->assertSessionHasErrors('usuario');
+        $this->post('/login', ['usuario' => $user->usuario, 'password' => 'password'])->assertSessionHasErrors('acceso');
         $this->assertGuest();
     }
 
@@ -56,9 +56,38 @@ class SeguridadTest extends TestCase
         $inactivo = User::factory()->create(['activo' => false]);
         $mensaje = 'Usuario o clave incorrectos.';
 
-        $this->post('/login', ['usuario' => $user->usuario, 'password' => 'mala-clave'])->assertSessionHasErrors(['usuario' => $mensaje]);
-        $this->post('/login', ['usuario' => 'no-existe', 'password' => 'mala-clave'])->assertSessionHasErrors(['usuario' => $mensaje]);
-        $this->post('/login', ['usuario' => $inactivo->usuario, 'password' => 'password'])->assertSessionHasErrors(['usuario' => $mensaje]);
+        $this->post('/login', ['usuario' => $user->usuario, 'password' => 'mala-clave'])->assertSessionHasErrors(['acceso' => $mensaje]);
+        $this->post('/login', ['usuario' => 'no-existe', 'password' => 'mala-clave'])->assertSessionHasErrors(['acceso' => $mensaje]);
+        $this->post('/login', ['usuario' => $inactivo->usuario, 'password' => 'password'])->assertSessionHasErrors(['acceso' => $mensaje]);
+    }
+
+    public function test_el_login_avisa_cuantos_intentos_quedan_y_cuanto_dura_la_pausa()
+    {
+        $user = User::factory()->create();
+        $intentar = fn () => $this->from('/login')->post('/login', ['usuario' => $user->usuario, 'password' => 'mala-clave']);
+
+        // Los dos primeros fallos no dicen nada de intentos: no hace falta asustar a nadie.
+        $intentar()->assertSessionMissing('acceso');
+        $intentar()->assertSessionMissing('acceso');
+        $intentar()->assertSessionHas('acceso', ['restantes' => 2]);
+        $intentar()->assertSessionHas('acceso', ['restantes' => 1]);
+
+        // El quinto ya pausa, sin esperar a un sexto intento; la pantalla recibe los segundos para la cuenta regresiva.
+        $intentar()->assertSessionHasErrors('acceso')->assertSessionHas('acceso.espera');
+        $this->assertGreaterThan(240, session('acceso.espera'));
+        $this->assertLessThanOrEqual(300, session('acceso.espera'));
+
+        $this->get('/login')->assertInertia(fn ($page) => $page->component('auth/login')->has('acceso.espera'));
+    }
+
+    public function test_un_login_vencido_vuelve_con_un_aviso_y_no_con_la_pagina_de_error()
+    {
+        // Lo mismo que pasa cuando el token de la página ya no sirve (sesión vencida).
+        Route::post('login', fn () => abort(419));
+
+        $this->from('/login')->post('/login', ['usuario' => 'alguien', 'password' => 'clave'])
+            ->assertRedirect('/login')
+            ->assertSessionHas('status');
     }
 
     public function test_un_usuario_desactivado_con_sesion_abierta_queda_afuera()
