@@ -72,6 +72,34 @@ final class Boletines
     }
 
     /**
+     * Quién fija el periodo que se califica: vale para todas las sedes, así que es quien
+     * configura los boletines y trabaja en todas (el administrador). No el docente ni la
+     * coordinación de una sede, aunque tengan «Firmas y jornada».
+     */
+    public static function puedeFijarPeriodo(User $user): bool
+    {
+        return $user->can('configurar-boletines') && Alcance::todas($user);
+    }
+
+    /**
+     * Los periodos que ve el usuario. Quien fija el periodo ve todos; los demás (docentes,
+     * coordinación de una sede) solo el que se está calificando, si hay uno fijado. Sin
+     * ninguno fijado, todos.
+     *
+     * @return Collection<int, object{id: int, numero: int, porcentaje: ?int, etiqueta: string, calificando: bool}>
+     */
+    public static function periodosPara(User $user, int $anioId): Collection
+    {
+        $periodos = self::periodos($anioId);
+        if (self::puedeFijarPeriodo($user)) {
+            return $periodos;
+        }
+        $calificando = $periodos->where('calificando', true)->values();
+
+        return $calificando->isEmpty() ? $periodos : $calificando;
+    }
+
+    /**
      * El periodo con que abre Boletines: el que se está calificando (lo fija quien
      * configura los boletines); si no hay, el que va por fechas; si tampoco, el primero.
      */

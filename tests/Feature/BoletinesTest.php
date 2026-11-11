@@ -256,7 +256,7 @@ class BoletinesTest extends TestCase
         $this->actingAs($coordinadora)->put("/boletines/grupos/{$this->grupos['1-1']}", $datos)->assertNotFound();
     }
 
-    public function test_el_periodo_a_calificar_lo_fija_el_administrador_y_todos_abren_en_el()
+    public function test_el_periodo_a_calificar_lo_fija_el_administrador_y_el_docente_solo_ve_ese()
     {
         $docente = $this->usuario('docente', [$this->sedeA]);
         $deUnaSede = $this->usuario('coordinacion', [$this->sedeA]);
@@ -273,14 +273,31 @@ class BoletinesTest extends TestCase
         $abre($deUnaSede)->assertInertia(fn (Assert $page) => $page->where('puedeFijarPeriodo', false)->etc());
         $this->actingAs($admin)->put("/boletines/periodos/{$periodo2}/calificar")->assertRedirect()->assertSessionHas('success');
 
-        // Desde ahí todos abren en el P2, con el punto en ese periodo; se puede seguir abriendo el P1.
+        // Desde ahí todos abren en el P2. El docente solo ve ese periodo: ni el P1 aparece.
         $abre($docente)->assertInertia(fn (Assert $page) => $page
             ->where('periodo', $periodo2)
-            ->where('periodos', fn ($p) => collect($p)->where('calificando', true)->pluck('numero')->all() === [2])
+            ->where('periodos', fn ($p) => collect($p)->pluck('numero')->all() === [2] && $p[0]['calificando'] === true)
             ->etc());
+        // Un enlace viejo al P1 lo lleva al P2; tampoco escribe, copia ni imprime en el P1.
         $this->actingAs($docente)->get("/boletines?grupo={$this->grupos['0-1']}&periodo={$this->periodo1}")
+            ->assertRedirect("/boletines?grupo={$this->grupos['0-1']}");
+        $m = $this->mat['Ejemplo Dos Luis'];
+        $this->actingAs($docente)->putJson("/boletines/{$m}/{$this->periodo1}", ['texto' => 'x'])->assertNotFound();
+        $this->actingAs($docente)->putJson("/boletines/{$m}/{$periodo2}", ['texto' => 'Bien en el P2.'])->assertOk();
+        $this->actingAs($docente)->postJson('/boletines/copiar', ['periodo' => $this->periodo1, 'texto' => 'x', 'para' => [['matricula' => $m, 'version' => null]]])
+            ->assertNotFound();
+        $this->actingAs($docente)->get("/boletines/imprimir?grupo={$this->grupos['0-1']}&periodo={$this->periodo1}")->assertNotFound();
+        $this->assertSame(0, DB::table('boletines')->where('periodo_id', $this->periodo1)->count());
+
+        // Aunque tenga «Firmas y jornada» (en producción el docente lo tiene), solo ve el P2;
+        // igual la coordinación de una sede. El administrador sigue viendo los dos.
+        DB::table('rol_permiso')->insertOrIgnore(['rol_id' => $docente->rol_id, 'permiso' => 'configurar-boletines']);
+        foreach ([$docente, $deUnaSede] as $u) {
+            $abre($u)->assertInertia(fn (Assert $page) => $page->where('periodo', $periodo2)->has('periodos', 1)->etc());
+        }
+        $abre($admin)->assertInertia(fn (Assert $page) => $page->where('periodo', $periodo2)->has('periodos', 2)->where('puedeFijarPeriodo', true)->etc());
+        $this->actingAs($admin)->get("/boletines?grupo={$this->grupos['0-1']}&periodo={$this->periodo1}")
             ->assertInertia(fn (Assert $page) => $page->where('periodo', $this->periodo1)->etc());
-        $abre($admin)->assertInertia(fn (Assert $page) => $page->where('periodo', $periodo2)->where('puedeFijarPeriodo', true)->etc());
 
         // Queda uno solo marcado al cambiarlo.
         $this->actingAs($admin)->put("/boletines/periodos/{$this->periodo1}/calificar")->assertRedirect();

@@ -1000,8 +1000,8 @@ function HojaEditable({
 }
 
 /**
- * El periodo que se está calificando (el punto verde): todos abren Boletines en él.
- * Quien configura los boletines lo cambia desde el periodo que esté viendo.
+ * El periodo que se está calificando (el punto verde): todos abren Boletines en él y los
+ * docentes solo ven ese. Quien configura los boletines lo cambia desde el periodo que esté viendo.
  */
 function PeriodoACalificar({
     periodos,
@@ -1048,7 +1048,7 @@ function PeriodoACalificar({
                     onSuccess: () =>
                         sileo.success({
                             title: `Se califica el P${actual.numero}`,
-                            description: 'Desde ahora todos abren Boletines en este periodo.',
+                            description: 'Desde ahora los docentes solo ven este periodo.',
                         }),
                 },
             ),
@@ -1059,7 +1059,7 @@ function PeriodoACalificar({
             type="button"
             onClick={fijar}
             disabled={fijando}
-            title="Todos abren Boletines en el periodo que se está calificando"
+            title="Los docentes solo ven el periodo que se está calificando"
             className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-white disabled:cursor-default disabled:opacity-60"
         >
             {fijando ? <LoaderCircle className="size-3.5 animate-spin" /> : <span aria-hidden className="size-1.5 rounded-full bg-[#3BA67A]" />}

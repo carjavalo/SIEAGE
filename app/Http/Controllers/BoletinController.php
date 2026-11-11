@@ -28,14 +28,15 @@ class BoletinController extends Controller
     /** Lo más largo que se acepta: unas dos hojas. */
     private const MAXIMO = 12000;
 
-    public function index(Request $request): Response
+    public function index(Request $request): Response|RedirectResponse
     {
         $user = $request->user();
         $anio = Boletines::anio();
         abort_unless($anio, 404);
 
         $grupos = Boletines::grupos($user, $anio->id);
-        $periodos = Boletines::periodos($anio->id);
+        // El docente solo ve el periodo que se está calificando (ver Boletines::periodosPara).
+        $periodos = Boletines::periodosPara($user, $anio->id);
 
         // ?ver=ESTUDIANTE (desde su ficha): su grupo de transición de este año.
         $ver = $request->integer('ver') ?: null;
@@ -48,7 +49,12 @@ class BoletinController extends Controller
         abort_if($grupoId && ! $grupo, 404);
 
         $periodo = $request->filled('periodo') ? $periodos->firstWhere('id', $request->integer('periodo')) : Boletines::periodoActual($periodos);
-        abort_if($request->filled('periodo') && ! $periodo, 404);
+        if ($request->filled('periodo') && ! $periodo) {
+            // Un periodo que ya no se califica (un enlace o una pestaña de antes): al que sí.
+            abort_unless(Boletines::periodos($anio->id)->contains('id', $request->integer('periodo')), 404);
+
+            return redirect('/boletines?'.http_build_query(array_filter(['grupo' => $grupo?->id, 'ver' => $ver])));
+        }
 
         $configura = $grupo && $user->can('configurar-boletines');
 
@@ -62,7 +68,7 @@ class BoletinController extends Controller
             'ver' => $ver,
             'maximo' => self::MAXIMO,
             'puedeConfigurar' => $configura,
-            'puedeFijarPeriodo' => self::puedeFijarPeriodo($user),
+            'puedeFijarPeriodo' => Boletines::puedeFijarPeriodo($user),
             // Crear ahí mismo a quien firma (es crear un usuario): solo administradores.
             'puedeCrearFirmantes' => $configura && $user->can('gestionar-usuarios'),
             // Para elegir quién firma: quienes trabajan en la sede del grupo (los docentes primero).
@@ -79,7 +85,7 @@ class BoletinController extends Controller
     public function guardar(Request $request, int $matricula, int $periodo, bool $reintento = false): JsonResponse
     {
         $m = $this->matricula($request->user(), $matricula);
-        abort_unless(DB::table('periodos')->where('id', $periodo)->where('anio_lectivo_id', $m->anio_lectivo_id)->exists(), 404);
+        abort_unless(Boletines::periodosPara($request->user(), $m->anio_lectivo_id)->contains('id', $periodo), 404);
 
         $datos = $request->validate([
             'texto' => ['present', 'nullable', 'string', 'max:'.self::MAXIMO],
@@ -136,8 +142,7 @@ class BoletinController extends Controller
         // Primero que pueda escribir en todos; después se escribe.
         $user = $request->user();
         $anios = collect($datos['para'])->map(fn ($p) => $this->matricula($user, (int) $p['matricula'])->anio_lectivo_id)->unique();
-        $anioPeriodo = DB::table('periodos')->where('id', $datos['periodo'])->value('anio_lectivo_id');
-        abort_unless($anioPeriodo && $anios->count() === 1 && (int) $anios->first() === (int) $anioPeriodo, 404);
+        abort_unless($anios->count() === 1 && Boletines::periodosPara($user, (int) $anios->first())->contains('id', (int) $datos['periodo']), 404);
 
         $periodo = (int) $datos['periodo'];
         $ahora = now();
@@ -166,12 +171,12 @@ class BoletinController extends Controller
 
     /**
      * Fija el periodo que se está calificando en el año en curso: desde ahí todos
-     * abren Boletines en ese periodo. Queda uno solo marcado. Los demás periodos se
-     * siguen pudiendo abrir y escribir, solo dejan de ser los que salen de primeros.
+     * abren Boletines en ese periodo y los docentes solo ven ese. Queda uno solo
+     * marcado. Quien configura los boletines sigue viendo y escribiendo los demás.
      */
     public function calificar(Request $request, int $periodo): RedirectResponse
     {
-        abort_unless(self::puedeFijarPeriodo($request->user()), 403);
+        abort_unless(Boletines::puedeFijarPeriodo($request->user()), 403);
         $anio = Boletines::anio();
         abort_unless($anio, 404);
         $p = Boletines::periodos($anio->id)->firstWhere('id', $periodo);
@@ -182,16 +187,7 @@ class BoletinController extends Controller
             DB::table('periodos')->where('id', $p->id)->update(['calificando' => true]);
         });
 
-        return back()->with('success', 'Se está calificando el '.mb_strtolower($p->etiqueta).': todos lo abren al entrar a Boletines.');
-    }
-
-    /**
-     * El periodo que se califica vale para todas las sedes: lo fija quien configura
-     * los boletines y trabaja en todas (el administrador), no la coordinación de una sede.
-     */
-    private static function puedeFijarPeriodo(User $user): bool
-    {
-        return $user->can('configurar-boletines') && Alcance::todas($user);
+        return back()->with('success', 'Se está calificando el '.mb_strtolower($p->etiqueta).': los docentes solo ven ese periodo.');
     }
 
     /** Quién firma como director(a) del grupo y cómo se escribe la jornada (el rector(a) es fijo: Boletines::RECTORA). Solo el año en curso. */
@@ -283,7 +279,7 @@ class BoletinController extends Controller
         abort_unless($anio, 404);
 
         $grupo = Boletines::grupos($user, $anio->id)->firstWhere('id', $request->integer('grupo'));
-        $periodo = Boletines::periodos($anio->id)->firstWhere('id', $request->integer('periodo'));
+        $periodo = Boletines::periodosPara($user, $anio->id)->firstWhere('id', $request->integer('periodo'));
         abort_unless($grupo && $periodo, 404);
 
         $estudiantes = Boletines::estudiantes($grupo->id, $periodo->id);
