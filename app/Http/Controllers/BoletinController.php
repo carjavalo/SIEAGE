@@ -194,7 +194,7 @@ class BoletinController extends Controller
         return $user->can('configurar-boletines') && Alcance::todas($user);
     }
 
-    /** Quién firma (director(a) del grupo y coordinador(a) de la sede) y cómo se escribe la jornada. Solo el año en curso. */
+    /** Quién firma como director(a) del grupo y cómo se escribe la jornada (el rector(a) es fijo: Boletines::RECTORA). Solo el año en curso. */
     public function configurar(Request $request, int $grupo): RedirectResponse
     {
         $g = $this->grupo($request->user(), $grupo);
@@ -204,7 +204,6 @@ class BoletinController extends Controller
         $datos = $request->validate([
             // Si no llega, se deja como está (p. ej. un director(a) que ya estaba y no tiene usuario).
             'director_id' => ['sometimes', 'nullable', 'integer', $firmante],
-            'coordinador_id' => ['sometimes', 'nullable', 'integer', $firmante],
             'jornada_boletin' => ['nullable', 'string', 'max:60'],
         ], ['exists' => 'Elige a alguien de la lista.', 'max' => 'Es demasiado largo: máximo :max caracteres.']);
 
@@ -215,18 +214,15 @@ class BoletinController extends Controller
                 'jornada_boletin' => trim((string) ($datos['jornada_boletin'] ?? '')) ?: null,
                 'updated_at' => now(),
             ]);
-            if (array_key_exists('coordinador_id', $datos)) {
-                DB::table('sedes')->where('id', $g->sede_id)->update(['coordinador_id' => $datos['coordinador_id'] ?: null, 'updated_at' => now()]);
-            }
         });
 
-        return back()->with('success', 'Firmas y jornada guardadas.');
+        return back()->with('success', 'Director(a) y jornada guardados.');
     }
 
     /**
      * Crea a quien firma desde «Firmas y jornada», con el nombre tal como sale en el
-     * boletín: queda activo en la sede del grupo (docente si dirige el grupo,
-     * coordinación si coordina), con un usuario sacado del nombre y una clave
+     * boletín: queda activo en la sede del grupo como docente que dirige el grupo,
+     * con un usuario sacado del nombre y una clave
      * aleatoria que nadie conoce; si va a entrar, el administrador se la pone en Usuarios.
      */
     public function crearFirmante(Request $request, int $grupo): JsonResponse
@@ -238,7 +234,7 @@ class BoletinController extends Controller
         $datos = $request->validate([
             // Nombres y apellidos: al menos dos palabras, solo letras.
             'nombre' => ['required', 'string', 'max:120', "regex:/^[\pL.'-]+( [\pL.'-]+)+$/u"],
-            'para' => ['required', Rule::in(['director', 'coordinador'])],
+            'para' => ['required', Rule::in(['director'])],
         ], [
             'required' => 'Escribe el nombre completo.',
             'max' => 'Es demasiado largo: máximo :max caracteres.',
@@ -250,7 +246,7 @@ class BoletinController extends Controller
             throw ValidationException::withMessages(['nombre' => "Ya existe: es el usuario «{$igual}». Si no sale en la lista, revisa en Usuarios que esté activo y en esta sede."]);
         }
 
-        $rol = Rol::where('nombre', $datos['para'] === 'director' ? 'docente' : 'coordinacion')->first();
+        $rol = Rol::where('nombre', 'docente')->first();
         if (! $rol) {
             throw ValidationException::withMessages(['nombre' => 'Ya no existe el rol con que se crea: créalo en Usuarios con el rol que corresponda.']);
         }
@@ -264,13 +260,11 @@ class BoletinController extends Controller
             ]);
             DB::table('sede_user')->insert(['user_id' => $u->id, 'sede_id' => $g->sede_id, 'created_at' => now()]);
             // Si es el director(a) que el grupo ya tenía sin usuario, ese docente queda con este usuario (no se repite).
-            if ($datos['para'] === 'director') {
-                DB::table('docentes')
-                    ->where('id', DB::table('grupos')->where('id', $g->id)->value('director_id'))
-                    ->whereNull('user_id')
-                    ->whereRaw('LOWER(nombre_completo) = ?', [mb_strtolower($datos['nombre'])])
-                    ->update(['user_id' => $u->id, 'updated_at' => now()]);
-            }
+            DB::table('docentes')
+                ->where('id', DB::table('grupos')->where('id', $g->id)->value('director_id'))
+                ->whereNull('user_id')
+                ->whereRaw('LOWER(nombre_completo) = ?', [mb_strtolower($datos['nombre'])])
+                ->update(['user_id' => $u->id, 'updated_at' => now()]);
 
             return $u;
         });

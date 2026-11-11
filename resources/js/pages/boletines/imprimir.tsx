@@ -15,7 +15,7 @@ export default function ImprimirBoletines({ titulo, volver, periodo, grupo, estu
     const n = estudiantes.length;
     const hojas = useMemo(() => estudiantes.reduce((s, e) => s + paginar(e.nombres_apellidos, e.texto).paginas.length, 0), [estudiantes]);
     const periodoCorto = periodo.charAt(0) + periodo.slice(1).toLowerCase();
-    const faltan = [!grupo.director && 'el director(a) del grupo', !grupo.coordinador && 'el coordinador(a)'].filter((f): f is string => !!f);
+    const faltan = [!grupo.director && 'el director(a) del grupo'].filter((f): f is string => !!f);
 
     return (
         <>

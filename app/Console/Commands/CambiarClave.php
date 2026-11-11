@@ -25,9 +25,9 @@ class CambiarClave extends Command
             return self::FAILURE;
         }
 
-        $clave = (string) $this->secret('Nueva clave (mínimo 3 caracteres; no se ve al escribir)');
-        if (mb_strlen($clave) < 3 || mb_strlen($clave) > 72) {
-            $this->error('La clave debe tener entre 3 y 72 caracteres.');
+        $clave = (string) $this->secret('Nueva clave (no se ve al escribir)');
+        if ($clave === '' || mb_strlen($clave) > 72) {
+            $this->error('Escribe una clave (hasta 72 caracteres).');
 
             return self::FAILURE;
         }

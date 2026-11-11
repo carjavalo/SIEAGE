@@ -39,9 +39,9 @@ class AppServiceProvider extends ServiceProvider
             Gate::define($permiso, fn (User $user) => Permisos::tiene($user, $permiso));
         }
 
-        // Las claves nuevas: desde 3 caracteres, sin exigir letras ni números (sirve la cédula).
-        // El tope de 72 es el de bcrypt: lo que pase de ahí no cuenta.
-        Password::defaults(fn () => Password::min(3)->max(72));
+        // Las claves nuevas: sin reglas, sirve cualquiera que no esté vacía (dos letras, la cédula…).
+        // Solo el tope de 72, que es lo que bcrypt alcanza a leer: lo que pase de ahí no contaría.
+        Password::defaults(fn () => Password::min(1)->max(72));
 
         // El formulario público: 30/min por IP, porque en una jornada de inscripción en la sala
         // de sistemas todos los equipos salen por la misma IP (6/min bloqueaba familias

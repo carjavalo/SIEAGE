@@ -235,18 +235,17 @@ class BoletinesTest extends TestCase
         $coordinadora = $this->usuario('coordinacion', [$this->sedeA]);
         $coordinadora->update(['name' => 'Carmen Prueba Ruiz']);
         $grupo = $this->grupos['0-1'];
-        $datos = ['director_id' => $directora->id, 'coordinador_id' => $coordinadora->id, 'jornada_boletin' => 'Unica de 6:45AM a 12:00PM'];
+        $datos = ['director_id' => $directora->id, 'jornada_boletin' => 'Unica de 6:45AM a 12:00PM'];
 
         $this->actingAs($directora)->put("/boletines/grupos/{$grupo}", $datos)->assertForbidden();
         $this->actingAs($coordinadora)->put("/boletines/grupos/{$grupo}", $datos)->assertRedirect();
 
-        // El director queda como docente del grupo (también sale en Estudiantes) y el coordinador en la sede.
+        // El director queda como docente del grupo (también sale en Estudiantes).
         $this->assertSame($directora->id, (int) DB::table('docentes')->where('id', DB::table('grupos')->where('id', $grupo)->value('director_id'))->value('user_id'));
-        $this->assertSame($coordinadora->id, (int) DB::table('sedes')->where('id', $this->sedeA)->value('coordinador_id'));
 
         $g = Boletines::datosGrupo($grupo);
         $this->assertSame('ANA LUCÍA PRUEBA GÓMEZ', $g->director);
-        $this->assertSame('CARMEN PRUEBA RUIZ', $g->coordinador);
+        $this->assertSame('BETTY RODRIGUEZ CHAVEZ', $g->coordinador);
         $this->assertSame('UNICA DE 6:45AM A 12:00PM', $g->jornada);
 
         // Otra vez el mismo director: no se duplica el docente.
@@ -293,6 +292,19 @@ class BoletinesTest extends TestCase
         $this->assertFalse((bool) DB::table('periodos')->where('id', $this->periodo3)->value('calificando'));
     }
 
+    public function test_el_rector_es_el_mismo_en_todos_los_boletines()
+    {
+        // Aunque la sede tenga otro coordinador(a) guardado de antes, sale la rectora en todas las sedes.
+        $otra = $this->usuario('coordinacion', [$this->sedeA]);
+        DB::table('sedes')->where('id', $this->sedeA)->update(['coordinador_id' => $otra->id]);
+        foreach ([$this->grupos['0-1'], $this->grupos['0-1-LF']] as $grupo) {
+            $this->assertSame('BETTY RODRIGUEZ CHAVEZ', Boletines::datosGrupo($grupo)->coordinador);
+        }
+        $this->actingAs($this->usuario('administrador'))
+            ->get("/boletines/imprimir?grupo={$this->grupos['0-1']}&periodo={$this->periodo1}&estudiante={$this->mat['Ejemplo Dos Luis']}")
+            ->assertInertia(fn (Assert $page) => $page->where('grupo.coordinador', 'BETTY RODRIGUEZ CHAVEZ')->etc());
+    }
+
     public function test_firmantes_solo_de_la_sede_y_solo_en_el_año_en_curso()
     {
         $coordinadora = $this->usuario('coordinacion', [$this->sedeA]);
@@ -309,7 +321,7 @@ class BoletinesTest extends TestCase
             ->etc());
 
         $this->actingAs($coordinadora)->put("/boletines/grupos/{$grupo}", ['director_id' => $deOtra->id])->assertSessionHasErrors('director_id');
-        $this->actingAs($coordinadora)->put("/boletines/grupos/{$grupo}", ['coordinador_id' => $inactivo->id])->assertSessionHasErrors('coordinador_id');
+        $this->actingAs($coordinadora)->put("/boletines/grupos/{$grupo}", ['director_id' => $inactivo->id])->assertSessionHasErrors('director_id');
         $this->actingAs($coordinadora)->put("/boletines/grupos/{$grupo}", ['director_id' => $deLaSede->id])->assertSessionHasNoErrors();
 
         // Un grupo de transición de un año cerrado no se toca.
@@ -463,8 +475,9 @@ class BoletinesTest extends TestCase
             ->where('usuarios', fn ($u) => collect($u)->pluck('id')->contains($nueva->id))
             ->etc());
 
-        // Coordinación, con un usuario que no se repite.
-        $crear('Andrés Pérez Lara', 'coordinador')->assertCreated()->assertJsonPath('usuario', 'aperez2')->assertJsonPath('rol', 'Coordinación');
+        // Otro con el mismo usuario base: no se repite. El rector(a) es fijo: no se crea.
+        $crear('Andrés Pérez Lara')->assertCreated()->assertJsonPath('usuario', 'aperez2')->assertJsonPath('rol', 'Docente');
+        $crear('Carmen Pérez Ruiz', 'coordinador')->assertJsonValidationErrors('para');
 
         // El mismo nombre otra vez, un solo nombre o con números: no.
         $crear('ana lucía pérez gómez')->assertJsonValidationErrors(['nombre' => 'aperez']);
@@ -485,13 +498,13 @@ class BoletinesTest extends TestCase
             ->where('grupo.director', 'ROSA ELENA PRUEBA DÍAZ')->where('grupo.director_id', null)->etc());
 
         // Guardar sin elegir otro director: se queda.
-        $this->actingAs($admin)->put("/boletines/grupos/{$grupo}", ['coordinador_id' => null, 'jornada_boletin' => 'Única'])->assertSessionHasNoErrors();
+        $this->actingAs($admin)->put("/boletines/grupos/{$grupo}", ['jornada_boletin' => 'Única'])->assertSessionHasNoErrors();
         $this->assertSame($docente, (int) DB::table('grupos')->where('id', $grupo)->value('director_id'));
 
         // Crearle el usuario con su mismo nombre: el docente queda con ese usuario, sin repetirse.
         $id = $this->actingAs($admin)->postJson("/boletines/grupos/{$grupo}/firmantes", ['nombre' => 'Rosa Elena Prueba Díaz', 'para' => 'director'])->assertCreated()->json('id');
         $this->assertSame($id, (int) DB::table('docentes')->where('id', $docente)->value('user_id'));
-        $this->actingAs($admin)->put("/boletines/grupos/{$grupo}", ['director_id' => $id, 'coordinador_id' => null])->assertSessionHasNoErrors();
+        $this->actingAs($admin)->put("/boletines/grupos/{$grupo}", ['director_id' => $id])->assertSessionHasNoErrors();
         $this->assertDatabaseCount('docentes', 1);
         $this->assertSame($id, Boletines::datosGrupo($grupo)->director_id);
     }

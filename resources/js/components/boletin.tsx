@@ -22,8 +22,8 @@ export type GrupoBoletin = {
     jornada_grupo: string;
     director: string | null;
     director_id: number | null;
-    coordinador: string | null;
-    coordinador_id: number | null;
+    /** El rector(a): el mismo en todos los boletines (Boletines::RECTORA). */
+    coordinador: string;
     sede_id: number;
 };
 
@@ -287,7 +287,7 @@ function Firmas({ grupo }: { grupo: GrupoBoletin }) {
             <div style={{ display: 'flex', paddingBottom: pt(16.75) }}>
                 <div style={{ width: pt(376.5), paddingTop: pt(21.8), color: '#333333', fontSize: pt(11.6) }}>
                     <p style={{ fontWeight: 700 }}>Rector(a) o coordinador(a) titular o designado(a)</p>
-                    <p>{grupo.coordinador ?? ' '}</p>
+                    <p>{grupo.coordinador}</p>
                 </div>
                 <div style={{ width: pt(168.6), paddingTop: pt(11), color: '#111111', fontSize: pt(10.2) }}>
                     <p

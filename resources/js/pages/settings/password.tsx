@@ -42,8 +42,7 @@ export default function Clave() {
                     <div className="min-w-0">
                         <p className="text-[20px] leading-7 font-semibold tracking-[-0.015em]">Cambiar mi clave</p>
                         <p className="mt-0.5 text-[14px] text-[#56627F]">
-                            Usa al menos 3 caracteres; puede ser, por ejemplo, tu número de cédula. Se cierra tu sesión en los demás equipos; aquí
-                            sigue abierta.
+                            Sirve cualquiera, por ejemplo tu número de cédula. Se cierra tu sesión en los demás equipos; aquí sigue abierta.
                         </p>
                     </div>
                 </div>

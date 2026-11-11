@@ -361,7 +361,7 @@ function FormularioUsuario({
                                 valor={form.data.password}
                                 onCambio={(v) => form.setData('password', v)}
                                 error={form.errors.password}
-                                ayuda="Mínimo 3 caracteres; puede ser, por ejemplo, su número de cédula. Entrégasela; podrá cambiarla en su perfil."
+                                ayuda="Sirve cualquiera, por ejemplo su número de cédula. Entrégasela; podrá cambiarla en su perfil."
                             />
                         </Bloque>
                     ) : (

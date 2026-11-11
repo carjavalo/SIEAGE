@@ -99,17 +99,17 @@ class SeguridadTest extends TestCase
         $this->assertNull($docente->fresh()->remember_token);
     }
 
-    public function test_las_claves_nuevas_piden_desde_tres_caracteres_sin_mas_reglas()
+    public function test_las_claves_nuevas_no_tienen_reglas()
     {
         $admin = User::factory()->create(['rol_id' => $this->rol('administrador')]);
         $docente = User::factory()->create(['rol_id' => $this->rol('docente')]);
 
         // Muy corta o más larga de lo que bcrypt alcanza a leer (72), no.
-        foreach (['ab', str_repeat('x', 73)] as $mala) {
+        foreach (['', str_repeat('x', 73)] as $mala) {
             $this->actingAs($admin)->put("/usuarios/{$docente->id}/clave", ['password' => $mala])->assertSessionHasErrors('password');
         }
-        // Solo letras, solo números (la cédula) o tres caracteres, sí.
-        foreach (['abc', 'solo-letras', '1144123456'] as $buena) {
+        // Cualquier otra sí: dos caracteres, uno solo, solo letras o solo números (la cédula).
+        foreach (['ab', '7', 'solo-letras', '1144123456'] as $buena) {
             $this->actingAs($admin)->put("/usuarios/{$docente->id}/clave", ['password' => $buena])->assertSessionHasNoErrors();
         }
     }

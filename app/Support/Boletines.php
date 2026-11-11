@@ -16,6 +16,9 @@ final class Boletines
     /** El grado que tiene boletines de texto. */
     public const GRADO = 0;
 
+    /** Quien firma como «Rector(a) o coordinador(a)»: la misma en todos los boletines, de todas las sedes. */
+    public const RECTORA = 'BETTY RODRIGUEZ CHAVEZ';
+
     private const ORDINALES = [1 => 'PRIMER', 2 => 'SEGUNDO', 3 => 'TERCER', 4 => 'CUARTO', 5 => 'QUINTO', 6 => 'SEXTO'];
 
     /**
@@ -116,12 +119,10 @@ final class Boletines
             ->join('sedes as s', 's.id', '=', 'g.sede_id')
             ->join('anios_lectivos as al', 'al.id', '=', 'g.anio_lectivo_id')
             ->leftJoin('docentes as d', 'd.id', '=', 'g.director_id')
-            ->leftJoin('users as c', 'c.id', '=', 's.coordinador_id')
             ->where('g.id', $grupoId)
             ->first([
                 'g.id', 'g.codigo', 'g.jornada', 'g.jornada_boletin', 'g.sede_id', 'al.anio',
                 's.nombre as sede', 's.direccion', 'd.user_id as director_id', 'd.nombre_completo as director',
-                's.coordinador_id', 'c.name as coordinador',
             ]);
         if (! $g) {
             return null;
@@ -141,8 +142,7 @@ final class Boletines
             'jornada_grupo' => $g->jornada,
             'director' => $g->director ? mb_strtoupper(trim($g->director)) : null,
             'director_id' => $g->director_id === null ? null : (int) $g->director_id,
-            'coordinador' => $g->coordinador ? mb_strtoupper(trim($g->coordinador)) : null,
-            'coordinador_id' => $g->coordinador_id === null ? null : (int) $g->coordinador_id,
+            'coordinador' => self::RECTORA,
         ];
     }
 

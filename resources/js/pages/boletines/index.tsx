@@ -378,8 +378,8 @@ function Editor({
 
     const texto = elegido !== null ? (textos.current[elegido] ?? '') : '';
     const guardado = elegido !== null ? guardados[elegido] : undefined;
-    // Quién falta en las firmas («Falta el coordinador(a).», «Faltan el director(a) del grupo y el coordinador(a).»).
-    const faltan = [!grupo.director && 'el director(a) del grupo', !grupo.coordinador && 'el coordinador(a)'].filter((f): f is string => !!f);
+    // Quién falta en las firmas: solo el director(a) del grupo (el rector(a) es fijo).
+    const faltan = [!grupo.director && 'el director(a) del grupo'].filter((f): f is string => !!f);
     const faltanFirmas = faltan.length > 0;
 
     return (
@@ -1069,7 +1069,7 @@ function PeriodoACalificar({
     );
 }
 
-/** «Firmas y jornada»: director(a) del grupo, coordinador(a) de la sede y cómo se escribe la jornada. */
+/** «Firmas y jornada»: director(a) del grupo y cómo se escribe la jornada; el rector(a) es fijo. */
 function BotonFirmas({ grupo, usuarios, puedeCrear }: { grupo: GrupoBoletin; usuarios: Usuario[]; puedeCrear: boolean }) {
     const [abierto, setAbierto] = useState(false);
     return (
@@ -1107,9 +1107,8 @@ function FormularioFirmas({
 }) {
     // Un director(a) que ya estaba como docente pero sin usuario: se muestra (SIN_USUARIO) y se deja igual al guardar.
     const sinUsuario = grupo.director && grupo.director_id === null ? aTitulo(grupo.director) : null;
-    const form = useForm<{ director_id: number | null; coordinador_id: number | null; jornada_boletin: string }>({
+    const form = useForm<{ director_id: number | null; jornada_boletin: string }>({
         director_id: grupo.director_id ?? (sinUsuario ? SIN_USUARIO : null),
-        coordinador_id: grupo.coordinador_id,
         jornada_boletin: grupo.jornada_boletin ?? '',
     });
     // Los que se crean aquí mismo entran a la lista sin recargar la página.
@@ -1125,9 +1124,9 @@ function FormularioFirmas({
     const opcionesDirector = sinUsuario
         ? [opciones[0], { valor: SIN_USUARIO, etiqueta: sinUsuario, detalle: 'Sin usuario' }, ...opciones.slice(1)]
         : opciones;
-    const creado = (campo: 'director_id' | 'coordinador_id') => (u: Usuario) => {
+    const creado = (u: Usuario) => {
         setNuevos((l) => [...l, u]);
-        form.setData(campo, u.id);
+        form.setData('director_id', u.id);
     };
 
     const enviar: FormEventHandler = (e) => {
@@ -1136,12 +1135,11 @@ function FormularioFirmas({
             ...d,
             // Sin director_id: el que ya estaba (sin usuario) se queda.
             ...(director_id === SIN_USUARIO ? {} : { director_id: director_id || null }),
-            coordinador_id: d.coordinador_id || null,
         }));
         form.put(`/boletines/grupos/${grupo.id}`, {
             preserveScroll: true,
             onSuccess: () => {
-                sileo.success({ title: 'Firmas y jornada guardadas', description: `Salen en todos los boletines del grupo ${grupo.codigo}.` });
+                sileo.success({ title: 'Director(a) y jornada guardados', description: `Salen en todos los boletines del grupo ${grupo.codigo}.` });
                 onListo();
             },
         });
@@ -1168,25 +1166,12 @@ function FormularioFirmas({
                             claseBoton={cn(claseLista, 'flex items-center')}
                         />
                     </Campo>
-                    {puedeCrear && <CrearFirmante grupo={grupo} para="director" sugerido={sinUsuario} onCreado={creado('director_id')} />}
+                    {puedeCrear && <CrearFirmante grupo={grupo} para="director" sugerido={sinUsuario} onCreado={creado} />}
                 </div>
-                <div className="space-y-2">
-                    <Campo
-                        id="coordinador"
-                        etiqueta="Rector(a) o coordinador(a)"
-                        ayuda={`Es el mismo para todos los grupos de la sede ${aTitulo(grupo.sede)}.`}
-                        error={form.errors.coordinador_id}
-                    >
-                        <Desplegable
-                            id="coordinador"
-                            etiqueta="Rector(a) o coordinador(a)"
-                            valor={form.data.coordinador_id ?? 0}
-                            opciones={opciones}
-                            onCambio={(v) => form.setData('coordinador_id', v || null)}
-                            claseBoton={cn(claseLista, 'flex items-center')}
-                        />
-                    </Campo>
-                    {puedeCrear && <CrearFirmante grupo={grupo} para="coordinador" onCreado={creado('coordinador_id')} />}
+                <div>
+                    <p className="text-[14px] font-semibold">Rector(a) o coordinador(a)</p>
+                    <p className="mt-1 rounded-[12px] bg-[#F2F5FA] px-3.5 py-2.5 text-[14px] font-medium">{grupo.coordinador}</p>
+                    <p className="mt-1 text-[13px] text-[#56627F]">Es la misma en todos los boletines de todas las sedes.</p>
                 </div>
                 <Campo
                     id="jornada"
@@ -1229,7 +1214,7 @@ function CrearFirmante({
     onCreado,
 }: {
     grupo: GrupoBoletin;
-    para: 'director' | 'coordinador';
+    para: 'director';
     /** El director(a) que está sin usuario: el nombre ya escrito. */
     sugerido?: string | null;
     onCreado: (u: Usuario) => void;

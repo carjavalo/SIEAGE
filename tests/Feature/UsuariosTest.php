@@ -65,10 +65,10 @@ class UsuariosTest extends TestCase
         $this->assertAuthenticatedAs($nuevo);
     }
 
-    public function test_la_clave_puede_ser_corta_y_solo_numeros()
+    public function test_la_clave_no_tiene_reglas()
     {
         $admin = $this->admin();
-        // Desde 3 caracteres y sin exigir letras ni números: sirve la cédula.
+        // Sin reglas: sirve la cédula o dos caracteres.
         $this->actingAs($admin)->post('/usuarios', [
             'name' => 'Rosa Prueba', 'usuario' => 'rprueba', 'email' => '', 'rol_id' => $this->rol('docente'),
             'todas_las_sedes' => true, 'password' => '1234567890',
@@ -78,8 +78,11 @@ class UsuariosTest extends TestCase
 
         $this->actingAs($admin)->put("/usuarios/{$rosa->id}/clave", ['password' => 'abc'])->assertSessionHasNoErrors();
         $this->assertTrue(Hash::check('abc', $rosa->fresh()->password));
-        $this->actingAs($admin)->put("/usuarios/{$rosa->id}/clave", ['password' => '12'])->assertSessionHasErrors('password');
-        $this->assertTrue(Hash::check('abc', $rosa->fresh()->password));
+        $this->actingAs($admin)->put("/usuarios/{$rosa->id}/clave", ['password' => '12'])->assertSessionHasNoErrors();
+        $this->assertTrue(Hash::check('12', $rosa->fresh()->password));
+        // Vacía, no.
+        $this->actingAs($admin)->put("/usuarios/{$rosa->id}/clave", ['password' => ''])->assertSessionHasErrors('password');
+        $this->assertTrue(Hash::check('12', $rosa->fresh()->password));
     }
 
     public function test_valida_usuario_repetido_y_formato()
@@ -89,7 +92,7 @@ class UsuariosTest extends TestCase
 
         $this->actingAs($admin)->post('/usuarios', [...$datos, 'usuario' => $admin->usuario])->assertSessionHasErrors('usuario');
         $this->actingAs($admin)->post('/usuarios', [...$datos, 'usuario' => 'ana maria!'])->assertSessionHasErrors('usuario');
-        $this->actingAs($admin)->post('/usuarios', [...$datos, 'usuario' => 'ana', 'password' => 'ab'])->assertSessionHasErrors('password');
+        $this->actingAs($admin)->post('/usuarios', [...$datos, 'usuario' => 'ana', 'password' => ''])->assertSessionHasErrors('password');
         $this->assertDatabaseCount('users', 1);
     }
 
