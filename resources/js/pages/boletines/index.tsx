@@ -421,7 +421,7 @@ function Editor({
                                         void conTodoGuardado(() => router.get('/boletines', { grupo: grupo.id, periodo: p.id }))
                                     }
                                     className={cn(
-                                        'h-8 min-w-0 flex-1 cursor-pointer rounded-full px-1.5 text-[13px] font-semibold whitespace-nowrap tabular-nums transition focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none',
+                                        'focus-visible:outline-foco h-8 min-w-0 flex-1 cursor-pointer rounded-full px-1.5 text-[13px] font-semibold whitespace-nowrap tabular-nums transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid',
                                         p.id === periodoActual.id ? 'bg-[#1E3A7B] text-white' : 'text-[#56627F] hover:text-[#16223F]',
                                     )}
                                 >
@@ -472,7 +472,7 @@ function Editor({
                                         aria-current={activo ? 'true' : undefined}
                                         className={cn(
                                             // relative: el «, sin escribir» oculto queda dentro del botón (si no, alarga la página).
-                                            'relative flex w-full cursor-pointer items-center gap-2.5 rounded-[14px] px-3 py-2 text-left text-[14px] transition focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none',
+                                            'focus-visible:outline-foco relative flex w-full cursor-pointer items-center gap-2.5 rounded-[14px] px-3 py-2 text-left text-[14px] transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid',
                                             activo
                                                 ? 'bg-white font-semibold text-[#1E3A7B] shadow-[0_1px_2px_rgba(22,34,63,0.08)]'
                                                 : 'text-[#3E4A68] hover:bg-white/60',
@@ -559,7 +559,7 @@ function Editor({
                                     onClick={() => setCopiarAbierto(true)}
                                     disabled={!texto || estudiantes.length < 2}
                                     title={texto ? 'Poner este mismo texto en otros estudiantes del grupo' : 'Primero escribe el texto'}
-                                    className="flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent"
+                                    className="focus-visible:outline-foco flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent"
                                 >
                                     <Copy className="size-4" />
                                     Copiar a otros
@@ -567,7 +567,7 @@ function Editor({
                                 <button
                                     type="button"
                                     onClick={() => imprimir(true)}
-                                    className="flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none"
+                                    className="focus-visible:outline-foco flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid"
                                 >
                                     <Printer className="size-4" />
                                     Imprimir este
@@ -685,7 +685,7 @@ function DialogoCopiar({
         if (listo) onListo();
     };
     const atajo =
-        'h-8 cursor-pointer rounded-full px-3 text-[13px] font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none';
+        'h-8 cursor-pointer rounded-full px-3 text-[13px] font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco';
 
     return (
         <>
@@ -739,7 +739,7 @@ function DialogoCopiar({
                                 <span
                                     aria-hidden
                                     className={cn(
-                                        'flex size-5 shrink-0 items-center justify-center rounded-[6px] transition peer-focus-visible:ring-4 peer-focus-visible:ring-[#DCE5F8]',
+                                        'peer-focus-visible:outline-foco flex size-5 shrink-0 items-center justify-center rounded-[6px] transition peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-solid',
                                         marcado ? 'bg-[#1E3A7B] text-white' : 'border-[1.5px] border-[#B7C6EA] bg-white',
                                     )}
                                 >
@@ -1272,7 +1272,7 @@ function CrearFirmante({
                         setAbierto(true);
                         setListo(null);
                     }}
-                    className="flex cursor-pointer items-center gap-1.5 rounded-full text-[13px] font-semibold text-[#1E3A7B] hover:underline focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none"
+                    className="focus-visible:outline-foco flex cursor-pointer items-center gap-1.5 rounded-full text-[13px] font-semibold text-[#1E3A7B] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid"
                 >
                     <UserPlus className="size-4" />
                     {sugerido && !listo ? `Crear el usuario de ${sugerido}` : '¿No está en la lista? Crearlo aquí'}

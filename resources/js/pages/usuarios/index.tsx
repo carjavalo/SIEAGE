@@ -123,7 +123,7 @@ export default function Usuarios({ usuarios, roles, sedes }: { usuarios: Usuario
                                 }}
                                 aria-pressed={actual}
                                 className={cn(
-                                    `flex min-w-fit flex-1 cursor-pointer snap-start items-center justify-center gap-2 rounded-[12px] px-3 transition duration-200 focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none ${alto}:rounded-[14px]`,
+                                    `focus-visible:outline-foco flex min-w-fit flex-1 cursor-pointer snap-start items-center justify-center gap-2 rounded-[12px] px-3 transition duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid ${alto}:rounded-[14px]`,
                                     actual
                                         ? 'bg-white text-[#1E3A7B] shadow-[0_1px_3px_rgba(22,34,63,0.14)] ring-1 ring-[#C4D2F1]'
                                         : 'text-[#16223F] hover:bg-white/60',
@@ -151,7 +151,7 @@ export default function Usuarios({ usuarios, roles, sedes }: { usuarios: Usuario
                             onChange={(e) => setFiltro(e.target.value)}
                             placeholder="Buscar nombre o usuario"
                             aria-label="Buscar usuario por nombre, usuario o correo"
-                            className={`h-10 w-full rounded-[14px] border-[1.5px] border-[#D3DDF3] bg-white pl-10 text-[15px] ${filtro ? 'pr-10' : 'pr-3 sm:pr-10'} text-[#16223F] shadow-[0_1px_2px_rgba(22,34,63,0.05)] transition outline-none placeholder:text-[#6B7690] hover:border-[#B7C6EA] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] [&::-webkit-search-cancel-button]:hidden ${alto}:h-11`}
+                            className={`border-borde-campo h-10 w-full rounded-[14px] border-[1.5px] bg-white pl-10 text-[15px] ${filtro ? 'pr-10' : 'pr-3 sm:pr-10'} focus:border-foco text-[#16223F] shadow-[0_1px_2px_rgba(22,34,63,0.05)] transition outline-none placeholder:text-[#6B7690] hover:border-[#56627F] focus:ring-4 focus:ring-[#DCE5F8] [&::-webkit-search-cancel-button]:hidden ${alto}:h-11`}
                         />
                         {filtro ? (
                             <button
@@ -176,7 +176,7 @@ export default function Usuarios({ usuarios, roles, sedes }: { usuarios: Usuario
                             href="/usuarios/roles"
                             aria-label="Roles y permisos"
                             title="Roles y permisos"
-                            className={`flex h-10 shrink-0 items-center gap-2 rounded-full px-3 text-[15px] font-semibold whitespace-nowrap text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none 2xl:px-4 ${alto}:h-11`}
+                            className={`focus-visible:outline-foco flex h-10 shrink-0 items-center gap-2 rounded-full px-3 text-[15px] font-semibold whitespace-nowrap text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid 2xl:px-4 ${alto}:h-11`}
                         >
                             <ShieldCheck aria-hidden className="size-[18px]" />
                             <span className="hidden 2xl:inline">Roles y permisos</span>
@@ -291,7 +291,7 @@ export default function Usuarios({ usuarios, roles, sedes }: { usuarios: Usuario
                                                 aria-selected={elegida}
                                                 onClick={() => setAbierto(u.id)}
                                                 onKeyDown={(e) => e.key === 'Enter' && setAbierto(u.id)}
-                                                className="group cursor-pointer outline-none"
+                                                className="group focus-visible:outline-foco cursor-pointer outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid"
                                             >
                                                 <td
                                                     className={cn(

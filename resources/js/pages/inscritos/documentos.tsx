@@ -78,7 +78,7 @@ export default function Documentos({ solicitud: s, padres, documentos, matricula
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <Link
                         href={`/inscritos/${s.id}`}
-                        className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white/75 pr-3 pl-2 text-[14px] font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-white focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none"
+                        className="focus-visible:outline-foco inline-flex h-8 items-center gap-1.5 rounded-full bg-white/75 pr-3 pl-2 text-[14px] font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid"
                     >
                         <ArrowLeft className="size-4" />
                         Madre y padre
@@ -111,7 +111,7 @@ export default function Documentos({ solicitud: s, padres, documentos, matricula
                             type="button"
                             onClick={marcarTodos}
                             disabled={faltan === 0}
-                            className="-ml-3.5 h-9 shrink-0 cursor-pointer rounded-full px-3.5 text-[14px] font-semibold text-[#1E3A7B] transition hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none disabled:cursor-default disabled:text-[#5E6983] disabled:hover:bg-transparent sm:ml-0"
+                            className="focus-visible:outline-foco -ml-3.5 h-9 shrink-0 cursor-pointer rounded-full px-3.5 text-[14px] font-semibold text-[#1E3A7B] transition hover:bg-[#EEF2FB] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid disabled:cursor-default disabled:text-[#5E6983] disabled:hover:bg-transparent sm:ml-0"
                         >
                             Trajo todo
                         </button>

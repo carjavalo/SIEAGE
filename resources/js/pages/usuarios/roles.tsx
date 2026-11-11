@@ -32,7 +32,7 @@ type Props = {
 
 const alto = '[@media(min-height:860px)]';
 const boton =
-    'flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none';
+    'flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco';
 
 /**
  * Roles y permisos: a la izquierda los roles, a la derecha qué puede hacer el
@@ -82,7 +82,7 @@ export default function Roles({ roles, areas, requiere, elegido, puedeUsuarios }
                 <button
                     type="button"
                     onClick={() => setNuevo(0)}
-                    className="ml-auto flex h-10 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-[#1E3A7B] px-5 text-[15px] font-semibold text-white transition hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none"
+                    className="focus-visible:outline-foco ml-auto flex h-10 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-[#1E3A7B] px-5 text-[15px] font-semibold text-white transition hover:bg-[#172E63] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid"
                 >
                     <Plus className="size-[18px]" />
                     Nuevo rol
@@ -101,7 +101,7 @@ export default function Roles({ roles, areas, requiere, elegido, puedeUsuarios }
                                         onClick={() => elegir(r.id)}
                                         aria-current={actual ? 'true' : undefined}
                                         className={cn(
-                                            'flex w-full cursor-pointer items-start gap-3 rounded-[18px] px-4 py-3 text-left transition focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none',
+                                            'focus-visible:outline-foco flex w-full cursor-pointer items-start gap-3 rounded-[18px] px-4 py-3 text-left transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid',
                                             actual ? 'bg-white shadow-[0_1px_3px_rgba(22,34,63,0.12)] ring-1 ring-[#C4D2F1]' : 'hover:bg-white/60',
                                         )}
                                     >
@@ -282,7 +282,7 @@ function EditorRol({
                                         <button
                                             type="button"
                                             onClick={() => cambiar(claves, prendidos < claves.length)}
-                                            className="ml-auto cursor-pointer rounded-full px-2.5 py-1 text-[13px] font-semibold text-[#1E3A7B] transition hover:bg-[#EEF2FB] focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none"
+                                            className="focus-visible:outline-foco ml-auto cursor-pointer rounded-full px-2.5 py-1 text-[13px] font-semibold text-[#1E3A7B] transition hover:bg-[#EEF2FB] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid"
                                         >
                                             {prendidos < claves.length ? 'Todos' : 'Ninguno'}
                                         </button>
@@ -362,7 +362,7 @@ function Interruptor({
             />
             <span
                 aria-hidden
-                className="relative h-6 w-11 shrink-0 rounded-full bg-[#D3DDF3] transition peer-checked:bg-[#1E3A7B] peer-focus-visible:ring-4 peer-focus-visible:ring-[#DCE5F8] peer-disabled:opacity-60 after:absolute after:top-0.5 after:left-0.5 after:size-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-5"
+                className="peer-focus-visible:outline-foco relative h-6 w-11 shrink-0 rounded-full bg-[#D3DDF3] transition peer-checked:bg-[#1E3A7B] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-solid peer-disabled:opacity-60 after:absolute after:top-0.5 after:left-0.5 after:size-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-5"
             />
         </label>
     );

@@ -8,9 +8,11 @@ import { type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, us
  */
 
 const CAMPO =
-    'h-[52px] w-full rounded-[14px] border-[1.5px] bg-white px-4 text-[15px] text-[#16223F] outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-[#6B7690] focus:ring-4';
-const CAMPO_NORMAL = 'border-[#D3DDF3] hover:border-[#B9C8EC] focus:border-[#6E8BD6] focus:ring-[#DCE5F8]';
-const CAMPO_ERROR = 'border-[#F0B4AB] focus:border-[#E0897D] focus:ring-[#FDECEA]';
+    'h-[52px] w-full rounded-[14px] border-[1.5px] bg-white px-4 text-base text-[#16223F] outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-[#6B7690] focus:ring-4';
+const CAMPO_NORMAL = 'border-borde-campo hover:border-[#56627F] focus:border-foco focus:ring-[#DCE5F8]';
+// Con error, el foco se nota con un contorno rojo afuera (el halo claro no se distinguía).
+const CAMPO_ERROR =
+    'border-[#F0B4AB] focus:border-[#B42318] focus:ring-0 focus:outline-solid focus:outline-2 focus:outline-offset-2 focus:outline-[#B42318]';
 
 export function claseCampo(error?: string) {
     return cn(CAMPO, error ? CAMPO_ERROR : CAMPO_NORMAL);
@@ -206,7 +208,7 @@ export function Opciones({ id, etiqueta, opciones, valor, onCambio, error, ayuda
                             key={opcion.valor}
                             className={cn(
                                 'relative flex min-h-[52px] cursor-pointer items-center gap-3 rounded-[14px] border-[1.5px] bg-white px-4 py-3 text-[15px] leading-snug transition-all duration-200 select-none active:scale-[0.98] motion-reduce:transition-none',
-                                'has-[:focus-visible]:border-[#6E8BD6] has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-[#DCE5F8]',
+                                'has-[:focus-visible]:outline-foco has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-solid',
                                 elegida
                                     ? 'border-[#1E3A7B] bg-[#EEF2FB] font-medium text-[#172E63]'
                                     : error
@@ -400,7 +402,7 @@ export function BotonPrincipal({ cargando, children, className, disabled, ...res
         <button
             disabled={disabled || cargando}
             className={cn(
-                'flex h-14 items-center justify-center gap-2 rounded-[18px] bg-[#1E3A7B] px-7 text-base font-semibold text-white transition-all duration-200 hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#6E8BD6] focus-visible:outline-none active:scale-[0.98] disabled:pointer-events-none disabled:opacity-70',
+                'focus-visible:outline-foco flex h-14 items-center justify-center gap-2 rounded-[18px] bg-[#1E3A7B] px-7 text-base font-semibold text-white transition-all duration-200 hover:bg-[#172E63] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid active:scale-[0.98] disabled:pointer-events-none disabled:opacity-70',
                 className,
             )}
             {...resto}
@@ -415,7 +417,7 @@ export function BotonSecundario({ children, className, ...resto }: ButtonHTMLAtt
     return (
         <button
             className={cn(
-                'flex h-14 items-center justify-center gap-2 rounded-[18px] px-5 text-base font-medium text-[#3E4A68] transition-colors duration-200 hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none disabled:opacity-50',
+                'focus-visible:outline-foco flex h-14 items-center justify-center gap-2 rounded-[18px] px-5 text-base font-medium text-[#3E4A68] transition-colors duration-200 hover:bg-[#EEF2FB] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid disabled:opacity-50',
                 className,
             )}
             {...resto}

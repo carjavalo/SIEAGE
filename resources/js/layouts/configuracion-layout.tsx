@@ -31,7 +31,7 @@ export default function ConfiguracionLayout({ titulo, children }: { titulo: stri
                                 href={href}
                                 aria-current={actual ? 'page' : undefined}
                                 className={cn(
-                                    'flex flex-1 items-center justify-center gap-2 rounded-[12px] px-5 text-[15px] font-semibold tracking-[-0.01em] transition duration-200 focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none sm:flex-none',
+                                    'focus-visible:outline-foco flex flex-1 items-center justify-center gap-2 rounded-[12px] px-5 text-[15px] font-semibold tracking-[-0.01em] transition duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid sm:flex-none',
                                     actual
                                         ? 'bg-white text-[#1E3A7B] shadow-[0_1px_3px_rgba(22,34,63,0.14)] ring-1 ring-[#C4D2F1]'
                                         : 'text-[#16223F] hover:bg-white/60',

@@ -76,7 +76,7 @@ function inicial(rol: (typeof ROLES)[number], s: Solicitud, guardado?: PadreGuar
 const tarjeta = 'rounded-[28px] bg-[#F2F5FA]';
 
 const campoClase =
-    'h-11 w-full rounded-[12px] border-[1.5px] border-[#D3DDF3] bg-white px-3.5 text-[15px] text-[#16223F] outline-none transition placeholder:text-[#6B7690] hover:border-[#B7C6EA] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] disabled:cursor-default disabled:border-[#E3E9F6] disabled:bg-[#F5F7FC] disabled:text-[#3E4A68] aria-invalid:border-[#E0897D]';
+    'h-11 w-full rounded-[12px] border-[1.5px] border-borde-campo bg-white px-3.5 text-[15px] text-[#16223F] outline-none transition placeholder:text-[#6B7690] hover:border-[#56627F] focus:border-foco focus:ring-4 focus:ring-[#DCE5F8] disabled:cursor-default disabled:border-[#E3E9F6] disabled:bg-[#F5F7FC] disabled:text-[#3E4A68] aria-invalid:border-[#E0897D]';
 
 function Campo({
     id,
@@ -183,7 +183,7 @@ export default function Inscrito({ solicitud: s, padres, documentos, matricula }
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <Link
                         href="/inscritos"
-                        className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white/75 pr-3 pl-2 text-[14px] font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-white focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none"
+                        className="focus-visible:outline-foco inline-flex h-8 items-center gap-1.5 rounded-full bg-white/75 pr-3 pl-2 text-[14px] font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid"
                     >
                         <ArrowLeft className="size-4" />
                         Inscritos
@@ -245,7 +245,7 @@ export default function Inscrito({ solicitud: s, padres, documentos, matricula }
                                                 <span
                                                     aria-hidden
                                                     className={cn(
-                                                        'flex size-5 shrink-0 items-center justify-center rounded-[6px] transition peer-focus-visible:ring-4 peer-focus-visible:ring-[#DCE5F8]',
+                                                        'peer-focus-visible:outline-foco flex size-5 shrink-0 items-center justify-center rounded-[6px] transition peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-solid',
                                                         juntos ? 'bg-[#1E3A7B] text-white' : 'border-[1.5px] border-[#B7C6EA] bg-white',
                                                     )}
                                                 >
@@ -290,7 +290,7 @@ export default function Inscrito({ solicitud: s, padres, documentos, matricula }
                                                                 })
                                                             }
                                                             className={cn(
-                                                                'flex h-[30px] cursor-pointer items-center rounded-[9px] px-2.5 text-sm font-medium whitespace-nowrap transition focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none',
+                                                                'focus-visible:outline-foco flex h-[30px] cursor-pointer items-center rounded-[9px] px-2.5 text-sm font-medium whitespace-nowrap transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid',
                                                                 d.situacion === valor
                                                                     ? 'bg-white text-[#1E3A7B] shadow-[0_1px_3px_rgba(22,34,63,0.12)]'
                                                                     : 'text-[#56627F] hover:text-[#16223F]',
@@ -322,7 +322,7 @@ export default function Inscrito({ solicitud: s, padres, documentos, matricula }
                                                         <span
                                                             aria-hidden
                                                             className={cn(
-                                                                'flex size-5 shrink-0 items-center justify-center rounded-[6px] transition peer-focus-visible:ring-4 peer-focus-visible:ring-[#DCE5F8]',
+                                                                'peer-focus-visible:outline-foco flex size-5 shrink-0 items-center justify-center rounded-[6px] transition peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-solid',
                                                                 d.es_acudiente
                                                                     ? 'bg-[#1E3A7B] text-white'
                                                                     : 'border-[1.5px] border-[#B7C6EA] bg-white',
@@ -444,7 +444,7 @@ export default function Inscrito({ solicitud: s, padres, documentos, matricula }
                                 <button
                                     type="submit"
                                     disabled={form.processing}
-                                    className="flex h-11 cursor-pointer items-center gap-2 rounded-[13px] bg-[#1E3A7B] px-5 text-[15px] font-semibold text-white transition hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.99] disabled:cursor-default disabled:opacity-70"
+                                    className="focus-visible:outline-foco flex h-11 cursor-pointer items-center gap-2 rounded-[13px] bg-[#1E3A7B] px-5 text-[15px] font-semibold text-white transition hover:bg-[#172E63] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid active:scale-[0.99] disabled:cursor-default disabled:opacity-70"
                                 >
                                     {form.processing && <LoaderCircle className="size-4 animate-spin" />}
                                     {pendiente

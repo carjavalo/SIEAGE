@@ -84,7 +84,7 @@ export function DocumentosEstudiante({ estudianteId, documentos: d, editable }: 
                             onClick={guardar}
                             disabled={!form.isDirty || form.processing}
                             className={cn(
-                                'flex h-9 shrink-0 cursor-pointer items-center gap-2 rounded-full px-4 text-[14px] font-semibold transition focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none',
+                                'focus-visible:outline-foco flex h-9 shrink-0 cursor-pointer items-center gap-2 rounded-full px-4 text-[14px] font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid',
                                 form.isDirty ? 'bg-[#1E3A7B] text-white hover:bg-[#172E63]' : 'cursor-default bg-[#EEF2FB] text-[#8C97B3]',
                             )}
                         >

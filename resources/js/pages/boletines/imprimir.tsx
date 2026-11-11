@@ -28,7 +28,7 @@ export default function ImprimirBoletines({ titulo, volver, periodo, grupo, estu
                         <Link
                             href={volver}
                             aria-label="Volver"
-                            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full pr-3.5 pl-2.5 text-[14px] font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none"
+                            className="focus-visible:outline-foco inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full pr-3.5 pl-2.5 text-[14px] font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid"
                         >
                             <ArrowLeft className="size-4" />
                             <span className="hidden sm:inline">Volver</span>

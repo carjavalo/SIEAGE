@@ -90,7 +90,7 @@ export default function Inscritos({ estado, conteos, inscritos, detalle }: Props
                             target="_blank"
                             rel="noreferrer"
                             title="Abrir el formulario público de inscripción"
-                            className={`flex h-[26px] items-center gap-1.5 rounded-full bg-white/75 px-2.5 text-[14px] font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-white focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none ${alto}:h-8`}
+                            className={`focus-visible:outline-foco flex h-[26px] items-center gap-1.5 rounded-full bg-white/75 px-2.5 text-[14px] font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid ${alto}:h-8`}
                         >
                             Formulario
                             <ExternalLink className="size-3.5" />
@@ -136,7 +136,7 @@ export default function Inscritos({ estado, conteos, inscritos, detalle }: Props
                                 data={{ estado: p.clave }}
                                 aria-current={actual ? 'page' : undefined}
                                 className={cn(
-                                    `flex flex-1 items-center justify-center gap-2 rounded-[12px] transition duration-200 focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none ${alto}:rounded-[14px]`,
+                                    `focus-visible:outline-foco flex flex-1 items-center justify-center gap-2 rounded-[12px] transition duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid ${alto}:rounded-[14px]`,
                                     actual
                                         ? 'bg-white text-[#1E3A7B] shadow-[0_1px_3px_rgba(22,34,63,0.14)] ring-1 ring-[#C4D2F1]'
                                         : 'text-[#16223F] hover:bg-white/60',
@@ -164,7 +164,7 @@ export default function Inscritos({ estado, conteos, inscritos, detalle }: Props
                         aria-label="Buscar inscrito por nombre, documento o acudiente"
                         aria-describedby="inscritos-cuenta"
                         className={cn(
-                            `h-10 w-full rounded-[14px] border-[1.5px] border-[#D3DDF3] bg-white pl-10 text-[15px] text-[#16223F] shadow-[0_1px_2px_rgba(22,34,63,0.05)] transition outline-none placeholder:text-[#6B7690] hover:border-[#B7C6EA] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] [&::-webkit-search-cancel-button]:hidden ${alto}:h-11`,
+                            `border-borde-campo focus:border-foco h-10 w-full rounded-[14px] border-[1.5px] bg-white pl-10 text-[15px] text-[#16223F] shadow-[0_1px_2px_rgba(22,34,63,0.05)] transition outline-none placeholder:text-[#6B7690] hover:border-[#56627F] focus:ring-4 focus:ring-[#DCE5F8] [&::-webkit-search-cancel-button]:hidden ${alto}:h-11`,
                             buscadas.length ? 'pr-[92px]' : 'pr-10',
                         )}
                     />

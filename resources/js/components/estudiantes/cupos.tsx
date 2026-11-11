@@ -14,7 +14,7 @@ import { sileo } from 'sileo';
 export const puedeEditarCupos = (auth: SharedData['auth']) => !!auth.puedeEditarCupos;
 
 const campo =
-    'h-10 w-20 rounded-[10px] border-[1.5px] border-[#D3DDF3] bg-white px-3 text-center text-[15px] font-semibold text-[#16223F] tabular-nums outline-none transition focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] aria-invalid:border-[#E0897D]';
+    'h-10 w-20 rounded-[10px] border-[1.5px] border-borde-campo bg-white px-3 text-center text-[15px] font-semibold text-[#16223F] tabular-nums outline-none transition focus:border-foco focus:ring-4 focus:ring-[#DCE5F8] aria-invalid:border-[#E0897D]';
 
 /**
  * Botón "Cupos" de la lista: abre la tabla de grupos del grado a la vista, cada

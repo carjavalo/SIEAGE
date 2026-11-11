@@ -14,7 +14,7 @@ type Props = {
 };
 
 const alto = '[@media(min-height:860px)]';
-export const tarjetaBase = `group/t relative flex min-w-[150px] flex-1 basis-0 snap-start cursor-pointer flex-col rounded-[18px] px-3.5 pt-2 pb-2 text-left transition duration-200 @container focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:ring-offset-2 focus-visible:outline-none ${alto}:rounded-[20px] ${alto}:px-4 ${alto}:pt-2.5 ${alto}:pb-3`;
+export const tarjetaBase = `group/t relative flex min-w-[150px] flex-1 basis-0 snap-start cursor-pointer flex-col rounded-[18px] px-3.5 pt-2 pb-2 text-left transition duration-200 @container focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco ${alto}:rounded-[20px] ${alto}:px-4 ${alto}:pt-2.5 ${alto}:pb-3`;
 export const tonoElegido = 'bg-[#1E3A7B] text-white';
 export const tonoNormal = 'bg-[#F2F5FA] text-[#16223F] hover:bg-[#E8EEF8]';
 export const rotuloBase = 'flex h-[18px] min-w-0 items-center gap-2 text-[13px] leading-[18px] whitespace-nowrap';

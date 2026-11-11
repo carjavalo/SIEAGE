@@ -34,7 +34,7 @@ export function Documento({
                 <span
                     aria-hidden
                     className={cn(
-                        'flex size-7 shrink-0 items-center justify-center rounded-[9px] transition duration-200 peer-focus-visible:ring-4 peer-focus-visible:ring-[#B7C6EA]',
+                        'peer-focus-visible:outline-foco flex size-7 shrink-0 items-center justify-center rounded-[9px] transition duration-200 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-solid',
                         entregado
                             ? 'bg-[#1E3A7B] text-white'
                             : noAplica
@@ -62,7 +62,7 @@ export function Documento({
                     aria-pressed={noAplica}
                     onClick={() => onCambio(noAplica ? undefined : 'no_aplica')}
                     className={cn(
-                        'h-8 shrink-0 cursor-pointer rounded-full px-3 text-[13px] font-medium transition focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none',
+                        'focus-visible:outline-foco h-8 shrink-0 cursor-pointer rounded-full px-3 text-[13px] font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid',
                         noAplica ? 'bg-[#1E3A7B] text-white hover:bg-[#172E63]' : 'text-[#56627F] ring-1 ring-[#D3DDF3] ring-inset hover:bg-white',
                     )}
                 >

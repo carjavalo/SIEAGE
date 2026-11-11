@@ -13,14 +13,14 @@ function Volver({ compacto }: { compacto?: boolean }) {
         <Link
             href={route('login')}
             aria-label="Volver al inicio de sesión"
-            className="flex size-10 shrink-0 items-center justify-center rounded-full text-[#1E3A7B] transition-colors hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none"
+            className="focus-visible:outline-foco flex size-10 shrink-0 items-center justify-center rounded-full text-[#1E3A7B] transition-colors hover:bg-[#EEF2FB] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid"
         >
             <ArrowLeft className="size-5" />
         </Link>
     ) : (
         <Link
             href={route('login')}
-            className="group inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/80 px-3.5 py-2 text-sm font-medium text-[#1E3A7B] shadow-[0_1px_2px_rgba(22,34,63,0.06)] transition-all hover:bg-white focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none"
+            className="group focus-visible:outline-foco inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/80 px-3.5 py-2 text-sm font-medium text-[#1E3A7B] shadow-[0_1px_2px_rgba(22,34,63,0.06)] transition-all hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid"
         >
             <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" />
             Volver
@@ -93,7 +93,7 @@ export function PanelLateral({ anio, actual, alcanzado, onIr }: ProgresoProps) {
                                     disabled={!puedeIr}
                                     onClick={() => onIr(i)}
                                     aria-current={esActual ? 'step' : undefined}
-                                    className="group flex w-full items-center gap-4 rounded-2xl text-left focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none disabled:cursor-default"
+                                    className="group focus-visible:outline-foco flex w-full items-center gap-4 rounded-2xl text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid disabled:cursor-default"
                                 >
                                     <span
                                         className={cn(

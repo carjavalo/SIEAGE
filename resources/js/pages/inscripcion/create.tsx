@@ -970,7 +970,7 @@ function Bienvenida({ anio, titulo, onComenzar }: ConTitulo & { anio: number; on
                 <AyudaInscripcion alComenzar={onComenzar}>
                     <button
                         type="button"
-                        className="flex h-14 cursor-pointer items-center justify-center gap-2.5 rounded-[18px] bg-[#EEF2FB] pr-6 pl-4 text-base font-semibold text-[#1E3A7B] transition-all duration-200 hover:bg-[#DCE5F8] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.98]"
+                        className="focus-visible:outline-foco flex h-14 cursor-pointer items-center justify-center gap-2.5 rounded-[18px] bg-[#EEF2FB] pr-6 pl-4 text-base font-semibold text-[#1E3A7B] transition-all duration-200 hover:bg-[#DCE5F8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid active:scale-[0.98]"
                     >
                         <span className="flex size-8 items-center justify-center rounded-full bg-[#1E3A7B] text-white">
                             <Play className="size-3.5 translate-x-px fill-current" />
@@ -1154,7 +1154,7 @@ function Revision({
                             <button
                                 type="button"
                                 onClick={() => onEditar(paso)}
-                                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-[#1E3A7B] transition-colors hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none"
+                                className="focus-visible:outline-foco flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-[#1E3A7B] transition-colors hover:bg-[#EEF2FB] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid"
                             >
                                 <Pencil className="size-3.5" />
                                 Editar

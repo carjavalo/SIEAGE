@@ -44,9 +44,10 @@ const tras = (ms: number): CSSProperties => ({ animationDelay: `${ms}ms` });
 const campo =
     'h-[52px] w-full rounded-[14px] border-[1.5px] border-borde-campo bg-white px-4 text-base text-[#16223F] outline-none transition placeholder:text-[#6B7690] hover:border-[#56627F] focus:border-foco focus:ring-4 focus:ring-[#DCE5F8]';
 /** El foco del teclado en botones y enlaces: un contorno del azul de la marca, separado del control. */
-const foco = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco';
+const foco = 'focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco';
 /** Usuario y clave cuando no coinciden: no se sabe cuál de los dos está mal, así que se marcan los dos. */
-const campoConError = 'border-[#B42318] hover:border-[#B42318] focus:border-[#B42318] focus:ring-[#FBDDD9]';
+const campoConError =
+    'border-[#B42318] hover:border-[#B42318] focus:border-[#B42318] focus:ring-0 focus:outline-solid focus:outline-2 focus:outline-offset-2 focus:outline-[#B42318]';
 
 /** Un error del ingreso, arriba del formulario. */
 const aviso = 'flex items-start gap-2.5 rounded-[14px] bg-[#FDECEC] px-4 py-3 text-sm leading-snug text-[#7A1F17]';
@@ -299,7 +300,7 @@ export default function Login({ status, acceso }: { status?: string; acceso?: Ac
                                         )}
 
                                         {enPausa ? (
-                                            <div key={`pausa-${intento}`} role="alert" className={aviso}>
+                                            <div key={`pausa-${intento}`} id="acceso-aviso" role="alert" className={aviso}>
                                                 <CircleAlert className="mt-px size-[18px] shrink-0 text-[#B42318]" />
                                                 <div className="space-y-1">
                                                     <p className="font-semibold">El ingreso quedó en pausa</p>
@@ -316,7 +317,7 @@ export default function Login({ status, acceso }: { status?: string; acceso?: Ac
                                                 </div>
                                             </div>
                                         ) : accesoFallido ? (
-                                            <div key={`fallo-${intento}`} role="alert" className={aviso}>
+                                            <div key={`fallo-${intento}`} id="acceso-aviso" role="alert" className={aviso}>
                                                 <CircleAlert className="mt-px size-[18px] shrink-0 text-[#B42318]" />
                                                 <div className="space-y-1">
                                                     <p className="font-semibold">{errors.acceso}</p>
@@ -366,7 +367,10 @@ export default function Login({ status, acceso }: { status?: string; acceso?: Ac
                                                     placeholder="Ej. jperez"
                                                     className={cn(campo, (errors.usuario || accesoFallido) && campoConError)}
                                                     aria-invalid={!!errors.usuario || accesoFallido}
-                                                    aria-describedby={errors.usuario ? 'usuario-error' : undefined}
+                                                    aria-describedby={
+                                                        cn(errors.usuario && 'usuario-error', (accesoFallido || enPausa) && 'acceso-aviso') ||
+                                                        undefined
+                                                    }
                                                 />
                                                 {errors.usuario && (
                                                     <p id="usuario-error" className="animate-in fade-in text-sm text-[#B42318] duration-200">
@@ -394,7 +398,11 @@ export default function Login({ status, acceso }: { status?: string; acceso?: Ac
                                                         className={cn(campo, 'pr-13', (errors.password || accesoFallido) && campoConError)}
                                                         aria-invalid={!!errors.password || accesoFallido}
                                                         aria-describedby={
-                                                            cn(errors.password && 'password-error', mayusculas && 'clave-mayusculas') || undefined
+                                                            cn(
+                                                                errors.password && 'password-error',
+                                                                (accesoFallido || enPausa) && 'acceso-aviso',
+                                                                mayusculas && 'clave-mayusculas',
+                                                            ) || undefined
                                                         }
                                                     />
                                                     <button

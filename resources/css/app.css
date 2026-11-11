@@ -61,6 +61,14 @@
     body {
         @apply bg-background text-foreground;
     }
+
+    /* El foco del teclado en lo que no trae uno propio (enlaces de teléfono, casillas
+       nativas…): el azul de la marca y no el color del sistema operativo, que puede
+       salir naranja o gris claro y casi no verse. */
+    :focus-visible {
+        outline: 2px solid var(--color-foco);
+        outline-offset: 2px;
+    }
 }
 
 /* Toasts (Sileo): píldora blanca con los colores de la marca.

@@ -51,8 +51,10 @@ export function MenuUsuario({ user, tono = 'claro' }: { user: User; tono?: 'clar
                 aria-expanded={abierto}
                 onClick={() => setAbierto((a) => !a)}
                 className={cn(
-                    'flex cursor-pointer items-center gap-2.5 rounded-full p-1 text-sm transition-colors outline-none focus-visible:ring-2 sm:pr-3',
-                    azul ? 'text-white hover:bg-white/15 focus-visible:ring-white/70' : 'hover:bg-[#EEF2FB] focus-visible:ring-[#6E8BD6]',
+                    'flex cursor-pointer items-center gap-2.5 rounded-full p-1 text-sm transition-colors outline-none sm:pr-3',
+                    azul
+                        ? 'text-white hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white/70'
+                        : 'focus-visible:outline-foco hover:bg-[#EEF2FB] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid',
                     abierto && (azul ? 'bg-white/20' : 'bg-[#EEF2FB]'),
                 )}
             >

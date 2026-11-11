@@ -32,7 +32,7 @@ const hoy = () => {
 };
 
 export const campo =
-    'w-full rounded-[12px] border-[1.5px] border-[#D3DDF3] bg-white px-3.5 text-[15px] text-[#16223F] outline-none transition placeholder:text-[#6B7690] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] aria-invalid:border-[#E0897D]';
+    'w-full rounded-[12px] border-[1.5px] border-borde-campo bg-white px-3.5 text-[15px] text-[#16223F] outline-none transition placeholder:text-[#6B7690] focus:border-foco focus:ring-4 focus:ring-[#DCE5F8] aria-invalid:border-[#E0897D]';
 export const dialogo = 'max-w-lg rounded-[22px] border-[#E3E9F6] p-6 font-sans text-[#16223F] sm:rounded-[22px]';
 
 export function Razon({

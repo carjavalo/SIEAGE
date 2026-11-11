@@ -5,16 +5,16 @@ import { type ButtonHTMLAttributes, Children, type ComponentProps, type ReactNod
 /** Piezas de formulario del panel (inscritos, usuarios, configuración). Nada de shadcn. */
 
 export const claseCampo =
-    'h-11 w-full rounded-[12px] border-[1.5px] border-[#D3DDF3] bg-white px-3.5 text-[15px] text-[#16223F] outline-none transition placeholder:text-[#6B7690] hover:border-[#B7C6EA] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] disabled:cursor-default disabled:border-[#E3E9F6] disabled:bg-[#F5F7FC] disabled:text-[#3E4A68] aria-invalid:border-[#E0897D]';
+    'h-11 w-full rounded-[12px] border-[1.5px] border-borde-campo bg-white px-3.5 text-[15px] text-[#16223F] outline-none transition placeholder:text-[#6B7690] hover:border-[#56627F] focus:border-foco focus:ring-4 focus:ring-[#DCE5F8] disabled:cursor-default disabled:border-[#E3E9F6] disabled:bg-[#F5F7FC] disabled:text-[#3E4A68] aria-invalid:border-[#E0897D]';
 
 /** Tarjeta blanca de las páginas del panel. */
 export const tarjeta = 'rounded-[28px] bg-[#F2F5FA]';
 
 export const botonPrimario =
-    'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-full bg-[#1E3A7B] px-5 text-[15px] font-semibold whitespace-nowrap text-white transition hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.99] disabled:cursor-default disabled:opacity-60';
+    'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-full bg-[#1E3A7B] px-5 text-[15px] font-semibold whitespace-nowrap text-white transition hover:bg-[#172E63] focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco active:scale-[0.99] disabled:cursor-default disabled:opacity-60';
 
 export const botonSecundario =
-    'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-full px-4 text-[15px] font-medium whitespace-nowrap text-[#56627F] transition hover:bg-[#EEF2FB] hover:text-[#16223F] focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none';
+    'flex h-11 cursor-pointer items-center justify-center gap-2 rounded-full px-4 text-[15px] font-medium whitespace-nowrap text-[#56627F] transition hover:bg-[#EEF2FB] hover:text-[#16223F] focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco';
 
 /** Etiqueta, control y, debajo, el error o una ayuda. */
 /** El id del texto que describe el campo: el error si lo hay; si no, la ayuda. */
@@ -211,7 +211,7 @@ export function Interruptor({
             />
             <span
                 aria-hidden
-                className="relative h-6 w-11 shrink-0 rounded-full bg-[#D3DDF3] transition peer-checked:bg-[#1E3A7B] peer-focus-visible:ring-4 peer-focus-visible:ring-[#DCE5F8] after:absolute after:top-0.5 after:left-0.5 after:size-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-5"
+                className="peer-focus-visible:outline-foco relative h-6 w-11 shrink-0 rounded-full bg-[#D3DDF3] transition peer-checked:bg-[#1E3A7B] peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-solid after:absolute after:top-0.5 after:left-0.5 after:size-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-5"
             />
         </label>
     );

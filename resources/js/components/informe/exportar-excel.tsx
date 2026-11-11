@@ -36,7 +36,7 @@ export function ExportarExcel({ anio, sedes }: { anio: number; sedes: SedeInform
                 aria-label="Exportar a Excel"
                 disabled={conGrupos.length === 0}
                 onClick={() => setAbierto((a) => !a)}
-                className="flex h-11 cursor-pointer items-center gap-2 rounded-full bg-white px-4 text-[15px] font-semibold whitespace-nowrap text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none disabled:cursor-default disabled:opacity-60 aria-expanded:bg-[#EEF2FB] aria-expanded:ring-[#6E8BD6]"
+                className="focus-visible:outline-foco flex h-11 cursor-pointer items-center gap-2 rounded-full bg-white px-4 text-[15px] font-semibold whitespace-nowrap text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid disabled:cursor-default disabled:opacity-60 aria-expanded:bg-[#EEF2FB] aria-expanded:ring-[#6E8BD6]"
             >
                 <FileSpreadsheet aria-hidden className="size-[18px]" />
                 <span className="hidden sm:inline">Excel</span>

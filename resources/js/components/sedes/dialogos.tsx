@@ -68,7 +68,7 @@ function Eliminar({
                     <button
                         type="button"
                         onClick={() => setConfirmando(true)}
-                        className="-my-0.5 flex h-7 cursor-pointer items-center rounded-full font-semibold text-[#A12B2B] underline-offset-4 hover:underline focus-visible:ring-4 focus-visible:ring-[#F6D5D2] focus-visible:outline-none"
+                        className="-my-0.5 flex h-7 cursor-pointer items-center rounded-full font-semibold text-[#A12B2B] underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B42318] focus-visible:outline-solid"
                     >
                         Eliminar
                     </button>
@@ -423,7 +423,7 @@ function FormularioGrupo({
                     <>
                         <Link
                             href={`/estudiantes?anio=${anio}&${esDeCiclo ? 'jornada=sabatina' : `grado=${grupo.grado_id}`}&sede=${encodeURIComponent(sede.codigo)}`}
-                            className="mt-5 flex items-center justify-between gap-3 rounded-[14px] bg-[#EEF2FB] px-4 py-3 text-[14px] font-semibold text-[#1E3A7B] transition hover:bg-[#DCE5F8] focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none"
+                            className="focus-visible:outline-foco mt-5 flex items-center justify-between gap-3 rounded-[14px] bg-[#EEF2FB] px-4 py-3 text-[14px] font-semibold text-[#1E3A7B] transition hover:bg-[#DCE5F8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid"
                         >
                             <span>
                                 {grupo.activos} {grupo.activos === 1 ? 'estudiante activo' : 'estudiantes activos'}

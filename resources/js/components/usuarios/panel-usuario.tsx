@@ -42,7 +42,13 @@ export type Usuario = {
 };
 
 /** `grados`: los que tiene la sede (los de sus grupos). `grupos`: {grado_id: [{numero, codigo}, …]}, para elegir grupos. */
-export type SedeOpcion = { id: number; codigo: string; nombre: string; grados?: number[]; grupos?: Record<string, { numero: number; codigo: string }[]> };
+export type SedeOpcion = {
+    id: number;
+    codigo: string;
+    nombre: string;
+    grados?: number[];
+    grupos?: Record<string, { numero: number; codigo: string }[]>;
+};
 type GradoOpcion = { id: number; numero: number; nombre: string };
 
 type Props = {
@@ -284,7 +290,7 @@ function FormularioUsuario({
                                         <span
                                             aria-hidden
                                             className={cn(
-                                                'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full transition peer-focus-visible:ring-4 peer-focus-visible:ring-[#DCE5F8]',
+                                                'peer-focus-visible:outline-foco mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full transition peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-solid',
                                                 elegido ? 'bg-[#1E3A7B] text-white' : 'border-[1.5px] border-[#B7C6EA] bg-white',
                                             )}
                                         >
@@ -388,9 +394,7 @@ function FormularioUsuario({
                             <span className="mr-auto">
                                 <EstadoGuardado sucio={form.isDirty} />
                             </span>
-                            <BotonGuardar cargando={form.processing}>
-                                Guardar cambios
-                            </BotonGuardar>
+                            <BotonGuardar cargando={form.processing}>Guardar cambios</BotonGuardar>
                         </>
                     )}
                 </div>
@@ -615,13 +619,17 @@ function GradosDeSede({
         const activos = elegido ? (grupos[g.id]?.length ? grupos[g.id] : todos) : [];
         const nuevos = activos.includes(numero) ? activos.filter((n) => n !== numero) : [...activos, numero].sort((a, b) => a - b);
         const resto = Object.fromEntries(Object.entries(grupos).filter(([id]) => Number(id) !== g.id));
-        if (!nuevos.length) return onCambio(marcados.filter((x) => x !== g.id), resto);
+        if (!nuevos.length)
+            return onCambio(
+                marcados.filter((x) => x !== g.id),
+                resto,
+            );
         const grados = elegido ? marcados : [...marcados, g.id];
         onCambio(grados, nuevos.length === todos.length ? resto : { ...resto, [g.id]: nuevos });
     };
     const chip = (activo: boolean) =>
         cn(
-            'h-7 cursor-pointer rounded-full px-2.5 text-[12.5px] font-semibold ring-1 transition focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none',
+            'focus-visible:outline-foco h-7 cursor-pointer rounded-full px-2.5 text-[12.5px] font-semibold ring-1 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid',
             activo ? 'bg-[#1E3A7B] text-white ring-[#1E3A7B]' : 'text-[#3E4A68] ring-[#D3DDF3] hover:bg-[#EEF2FB]',
         );
     return (
@@ -694,7 +702,7 @@ function CasillaSede({
             <span
                 aria-hidden
                 className={cn(
-                    'flex size-5 shrink-0 items-center justify-center rounded-[6px] transition peer-focus-visible:ring-4 peer-focus-visible:ring-[#DCE5F8]',
+                    'peer-focus-visible:outline-foco flex size-5 shrink-0 items-center justify-center rounded-[6px] transition peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-solid',
                     marcada ? 'bg-[#1E3A7B] text-white' : 'border-[1.5px] border-[#B7C6EA] bg-white',
                 )}
             >

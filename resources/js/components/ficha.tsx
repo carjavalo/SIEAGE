@@ -124,7 +124,7 @@ export function ContenidoFicha({
                 <div className="flex items-center gap-2">
                     <Link
                         href={accion.href}
-                        className="group/btn flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-[13px] bg-[#1E3A7B] px-3 text-[14px] font-semibold whitespace-nowrap text-white transition hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.99]"
+                        className="group/btn focus-visible:outline-foco flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-[13px] bg-[#1E3A7B] px-3 text-[14px] font-semibold whitespace-nowrap text-white transition hover:bg-[#172E63] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid active:scale-[0.99]"
                     >
                         <Icono className="size-[18px] shrink-0 transition-transform group-hover/btn:-translate-y-px" />
                         <span className="truncate">{accion.texto}</span>

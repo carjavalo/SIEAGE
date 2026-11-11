@@ -235,7 +235,7 @@ export function EditarEstudiante({ estudiante, variante = 'lapiz' }: { estudiant
                 <button
                     type="button"
                     onClick={() => setAbierto(true)}
-                    className="flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none"
+                    className="focus-visible:outline-foco flex h-10 cursor-pointer items-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid"
                 >
                     <Pencil className="size-4" />
                     Editar datos
@@ -384,7 +384,7 @@ function FormularioEstudiante({
                     aria-expanded={masDatos}
                     aria-controls={id('mas')}
                     onClick={() => setMasDatos((v) => !v)}
-                    className="mt-5 flex w-full cursor-pointer items-center justify-between gap-3 rounded-[14px] bg-[#F5F7FC] px-4 py-3 text-left transition hover:bg-[#EEF2FB] focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none"
+                    className="focus-visible:outline-foco mt-5 flex w-full cursor-pointer items-center justify-between gap-3 rounded-[14px] bg-[#F5F7FC] px-4 py-3 text-left transition hover:bg-[#EEF2FB] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid"
                 >
                     <span>
                         <span className="block text-[15px] font-medium">Salud, residencia y contacto</span>
@@ -711,7 +711,7 @@ function FormularioAcudiente({
                                 <button
                                     type="button"
                                     onClick={() => setConfirmando(true)}
-                                    className="-my-0.5 flex h-7 cursor-pointer items-center rounded-full font-semibold text-[#A12B2B] underline-offset-4 hover:underline focus-visible:ring-4 focus-visible:ring-[#F6D5D2] focus-visible:outline-none"
+                                    className="-my-0.5 flex h-7 cursor-pointer items-center rounded-full font-semibold text-[#A12B2B] underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B42318] focus-visible:outline-solid"
                                 >
                                     Quitar de este estudiante
                                 </button>
@@ -757,7 +757,7 @@ export function AgregarAcudiente(props: PropsAgregar) {
             <button
                 type="button"
                 onClick={() => setAbierto(true)}
-                className="-my-1.5 flex h-7 cursor-pointer items-center gap-1 rounded-full px-1 text-[13px] font-semibold text-[#1E3A7B] underline-offset-4 hover:underline focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none print:hidden"
+                className="focus-visible:outline-foco -my-1.5 flex h-7 cursor-pointer items-center gap-1 rounded-full px-1 text-[13px] font-semibold text-[#1E3A7B] underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid print:hidden"
             >
                 <Plus className="size-3.5" strokeWidth={2.5} />
                 Agregar

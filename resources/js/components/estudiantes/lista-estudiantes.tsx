@@ -88,7 +88,7 @@ export function ListaEstudiantes(p: Props) {
                                 title={o.titulo}
                                 onClick={() => p.onEstado(o.clave)}
                                 className={cn(
-                                    'flex h-[30px] cursor-pointer items-center gap-1.5 rounded-[9px] px-2.5 text-sm font-medium whitespace-nowrap transition focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none',
+                                    'focus-visible:outline-foco flex h-[30px] cursor-pointer items-center gap-1.5 rounded-[9px] px-2.5 text-sm font-medium whitespace-nowrap transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid',
                                     activo ? 'bg-white text-[#1E3A7B] shadow-[0_1px_3px_rgba(22,34,63,0.12)]' : 'text-[#56627F] hover:text-[#16223F]',
                                 )}
                             >
@@ -126,7 +126,7 @@ export function ListaEstudiantes(p: Props) {
                         aria-describedby="filtro-cuenta"
                         data-filtro
                         className={cn(
-                            'h-9 w-full rounded-[12px] border-[1.5px] border-[#E3E9F6] bg-white pl-9 text-sm transition outline-none placeholder:text-[#6B7690] hover:border-[#D3DDF3] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] [&::-webkit-search-cancel-button]:hidden',
+                            'border-borde-campo focus:border-foco h-9 w-full rounded-[12px] border-[1.5px] bg-white pl-9 text-sm transition outline-none placeholder:text-[#6B7690] hover:border-[#56627F] focus:ring-4 focus:ring-[#DCE5F8] [&::-webkit-search-cancel-button]:hidden',
                             hayTexto ? 'pr-[84px]' : 'pr-3',
                         )}
                     />

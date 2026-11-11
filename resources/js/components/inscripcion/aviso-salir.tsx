@@ -27,7 +27,7 @@ export function AvisoSalir({ abierto, onSeguir, onSalir }: { abierto: boolean; o
                     <button
                         type="button"
                         onClick={onSalir}
-                        className="flex h-12 cursor-pointer items-center justify-center rounded-[16px] px-5 text-[15px] font-semibold text-[#A12B2B] transition-colors duration-200 hover:bg-[#FDF3F2] focus-visible:ring-4 focus-visible:ring-[#F6D5D2] focus-visible:outline-none"
+                        className="flex h-12 cursor-pointer items-center justify-center rounded-[16px] px-5 text-[15px] font-semibold text-[#A12B2B] transition-colors duration-200 hover:bg-[#FDF3F2] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#B42318] focus-visible:outline-solid"
                     >
                         Salir sin enviar
                     </button>

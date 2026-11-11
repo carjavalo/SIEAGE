@@ -245,7 +245,7 @@ export function BotonPromover({
                     setGrupoDestino('');
                     setAbierto(true);
                 }}
-                className="flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-[12px] bg-[#1E3A7B] px-3.5 text-sm font-semibold text-white transition hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none"
+                className="focus-visible:outline-foco flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-[12px] bg-[#1E3A7B] px-3.5 text-sm font-semibold text-white transition hover:bg-[#172E63] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid"
             >
                 {gradua ? <GraduationCap className="size-4" /> : <ArrowUpRight className="size-4" />}
                 Promover
@@ -423,7 +423,7 @@ export function BotonDeshacer({
                     setAbierto(true);
                 }}
                 title="Deshacer promoción"
-                className="relative flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[12px] border-[1.5px] border-[#D3DDF3] bg-white text-sm font-semibold text-[#3E4A68] transition hover:bg-[#F5F7FC] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none @min-[1640px]/lista:w-auto @min-[1640px]/lista:px-3.5"
+                className="focus-visible:outline-foco relative flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-[12px] border-[1.5px] border-[#D3DDF3] bg-white text-sm font-semibold text-[#3E4A68] transition hover:bg-[#F5F7FC] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid @min-[1640px]/lista:w-auto @min-[1640px]/lista:px-3.5"
             >
                 <Undo2 className="size-4" />
                 <span className={nombreBarra}>Deshacer promoción</span>

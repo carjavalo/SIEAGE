@@ -115,7 +115,7 @@ export function BotonConstancias({
                                 aria-checked={a.clave === elegido}
                                 onClick={() => setElegido(a.clave)}
                                 className={cn(
-                                    'flex w-full cursor-pointer items-center gap-3.5 rounded-2xl px-4 py-3 text-left ring-1 transition focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none',
+                                    'focus-visible:outline-foco flex w-full cursor-pointer items-center gap-3.5 rounded-2xl px-4 py-3 text-left ring-1 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid',
                                     a.clave === elegido ? 'bg-[#EEF2FB] ring-[#1E3A7B]' : 'ring-[#E3E9F6] hover:bg-[#F7F9FD] hover:ring-[#D3DDF3]',
                                 )}
                             >

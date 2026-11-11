@@ -63,7 +63,7 @@ export default function Sedes({ anios, anio, editable, sedes, grados, jornadas, 
                                 detalle: a.estado === 'activo' ? 'en curso' : a.estado === 'planeado' ? 'planeado' : undefined,
                             }))}
                             onCambio={(valor) => router.get('/sedes', { anio: valor })}
-                            claseBoton="h-[26px] rounded-full bg-white/75 pr-2 pl-2.5 text-[15px] font-semibold text-[#1E3A7B] tabular-nums ring-1 ring-[#D3DDF3] transition hover:bg-white focus-visible:ring-2 focus-visible:ring-[#6E8BD6] aria-expanded:bg-white aria-expanded:ring-[#6E8BD6]"
+                            claseBoton="h-[26px] rounded-full bg-white/75 pr-2 pl-2.5 text-[15px] font-semibold text-[#1E3A7B] tabular-nums ring-1 ring-[#D3DDF3] transition hover:bg-white focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco aria-expanded:bg-white aria-expanded:ring-[#6E8BD6]"
                         />
                     </div>
                     <p className="mt-1 text-[13px] text-[#56627F]">
@@ -235,7 +235,7 @@ function TarjetaSede({
 }
 
 const claseAgregar =
-    'flex h-8 cursor-pointer items-center gap-1.5 rounded-full px-1.5 text-[14px] font-semibold text-[#1E3A7B] underline-offset-4 hover:underline focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none';
+    'flex h-8 cursor-pointer items-center gap-1.5 rounded-full px-1.5 text-[14px] font-semibold text-[#1E3A7B] underline-offset-4 hover:underline focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco';
 
 /**
  * Una fila por grado con sus grupos: «6-1 32/34». En rojo, el que pasó su cupo.
@@ -257,7 +257,7 @@ function PorGrado({
     const grados: [number, string][] = fila ? [[0, fila]] : [...new Map(grupos.map((g) => [g.grado_id, g.grado])).entries()];
     const clase = (lleno: boolean) =>
         cn(
-            'inline-flex h-[30px] items-baseline gap-1.5 rounded-full bg-white px-2.5 text-[14px] leading-[30px] ring-1 transition hover:ring-[#6E8BD6] focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none',
+            'focus-visible:outline-foco inline-flex h-[30px] items-baseline gap-1.5 rounded-full bg-white px-2.5 text-[14px] leading-[30px] ring-1 transition hover:ring-[#6E8BD6] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid',
             lleno ? 'ring-[#F0C4C0]' : 'ring-[#DCE5F8]',
         );
 

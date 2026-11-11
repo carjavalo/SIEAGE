@@ -147,7 +147,7 @@ export default function ImportarDatos() {
                                     onClick={() => elegirTipo(f.tipo)}
                                     disabled={form.processing}
                                     className={cn(
-                                        'flex cursor-pointer flex-col items-center gap-1.5 rounded-[14px] px-2 py-3 text-center text-[14px] font-semibold transition focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none sm:flex-row sm:justify-center sm:gap-2',
+                                        'focus-visible:outline-foco flex cursor-pointer flex-col items-center gap-1.5 rounded-[14px] px-2 py-3 text-center text-[14px] font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid sm:flex-row sm:justify-center sm:gap-2',
                                         activa ? 'bg-[#EEF2FB] text-[#1E3A7B]' : 'text-[#56627F] hover:bg-[#F7F9FF] hover:text-[#1E3A7B]',
                                     )}
                                 >
@@ -173,7 +173,7 @@ export default function ImportarDatos() {
                                 onDragLeave={() => setArrastrando(false)}
                                 onDrop={alSoltar}
                                 className={cn(
-                                    'group flex cursor-pointer flex-col items-center justify-center rounded-[20px] border-[1.5px] border-dashed px-6 py-9 text-center transition duration-200 focus-within:ring-4 focus-within:ring-[#DCE5F8] [@media(min-height:720px)]:py-12',
+                                    'group has-focus-visible:outline-foco flex cursor-pointer flex-col items-center justify-center rounded-[20px] border-[1.5px] border-dashed px-6 py-9 text-center transition duration-200 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-solid [@media(min-height:720px)]:py-12',
                                     arrastrando
                                         ? 'scale-[1.01] border-[#1E3A7B] bg-[#EEF2FB]'
                                         : error

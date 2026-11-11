@@ -138,7 +138,7 @@ export function Lapiz({ etiqueta, onClick }: { etiqueta: string; onClick: () => 
             onClick={onClick}
             aria-label={etiqueta}
             title={etiqueta}
-            className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] hover:ring-[#6E8BD6] focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none print:hidden"
+            className="focus-visible:outline-foco flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] hover:ring-[#6E8BD6] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid print:hidden"
         >
             <Pencil className="size-[15px]" />
         </button>

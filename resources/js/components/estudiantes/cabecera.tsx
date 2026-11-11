@@ -55,7 +55,7 @@ export function Cabecera({ anios, anio, sedes, sede, todasLasSedes, grados, grad
                             detalle: a.estado === 'activo' ? 'en curso' : a.estado === 'planeado' ? 'planeado' : undefined,
                         }))}
                         onCambio={(valor) => ir({ anio: valor })}
-                        claseBoton={`h-[26px] rounded-full bg-white/75 pr-2 pl-2.5 text-[15px] font-semibold text-[#1E3A7B] tabular-nums ring-1 ring-[#D3DDF3] transition hover:bg-white focus-visible:ring-2 focus-visible:ring-[#6E8BD6] aria-expanded:bg-white aria-expanded:ring-[#6E8BD6] ${alto}:h-8 ${alto}:text-[16px]`}
+                        claseBoton={`h-[26px] rounded-full bg-white/75 pr-2 pl-2.5 text-[15px] font-semibold text-[#1E3A7B] tabular-nums ring-1 ring-[#D3DDF3] transition hover:bg-white focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco aria-expanded:bg-white aria-expanded:ring-[#6E8BD6] ${alto}:h-8 ${alto}:text-[16px]`}
                     />
                     {unaSola ? (
                         <span
@@ -78,7 +78,7 @@ export function Cabecera({ anios, anio, sedes, sede, todasLasSedes, grados, grad
                             ]}
                             onCambio={(valor) => ir({ sede: valor || null })}
                             claseBoton={cn(
-                                `h-[26px] rounded-full pr-2 pl-2.5 text-[14px] font-semibold ring-1 transition focus-visible:ring-2 focus-visible:ring-[#6E8BD6] aria-expanded:ring-[#6E8BD6] ${alto}:h-8 ${alto}:text-[15px]`,
+                                `focus-visible:outline-foco h-[26px] rounded-full pr-2 pl-2.5 text-[14px] font-semibold ring-1 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid aria-expanded:ring-[#6E8BD6] ${alto}:h-8 ${alto}:text-[15px]`,
                                 sede
                                     ? 'bg-[#1E3A7B] text-white ring-[#1E3A7B] hover:bg-[#172E63]'
                                     : 'bg-white/75 text-[#1E3A7B] ring-[#D3DDF3] hover:bg-white aria-expanded:bg-white',
@@ -142,7 +142,7 @@ export function Cabecera({ anios, anio, sedes, sede, todasLasSedes, grados, grad
                                 aria-current={actual ? 'page' : undefined}
                                 title={`${g.nombre} · ${g.activos} activos · ${g.grupos} grupos`}
                                 className={cn(
-                                    `flex min-w-[46px] flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[12px] leading-none transition duration-200 focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none ${alto}:rounded-[14px]`,
+                                    `focus-visible:outline-foco flex min-w-[46px] flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[12px] leading-none transition duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid ${alto}:rounded-[14px]`,
                                     actual
                                         ? 'bg-white text-[#1E3A7B] shadow-[0_1px_3px_rgba(22,34,63,0.14)] ring-1 ring-[#C4D2F1]'
                                         : 'text-[#16223F] hover:bg-white/60',
@@ -163,7 +163,7 @@ export function Cabecera({ anios, anio, sedes, sede, todasLasSedes, grados, grad
                     aria-current={sabatina.elegida ? 'page' : undefined}
                     title={`Jornada sabatina (ciclos) · ${sabatina.activos} activos · ${sabatina.grupos} grupos`}
                     className={cn(
-                        `flex min-w-[78px] flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[12px] leading-none transition duration-200 focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none ${alto}:rounded-[14px]`,
+                        `focus-visible:outline-foco flex min-w-[78px] flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[12px] leading-none transition duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid ${alto}:rounded-[14px]`,
                         sabatina.elegida
                             ? 'bg-white text-[#1E3A7B] shadow-[0_1px_3px_rgba(22,34,63,0.14)] ring-1 ring-[#C4D2F1]'
                             : 'text-[#16223F] hover:bg-white/60',
@@ -255,7 +255,7 @@ function BusquedaGlobal({
                 aria-expanded={abierta && hay}
                 role="combobox"
                 aria-controls="resultados-busqueda"
-                className="h-10 w-full rounded-[14px] border-[1.5px] border-[#D3DDF3] bg-white pr-10 pl-10 text-[15px] text-[#16223F] shadow-[0_1px_2px_rgba(22,34,63,0.05)] transition outline-none placeholder:text-[#6B7690] hover:border-[#B7C6EA] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8] [&::-webkit-search-cancel-button]:hidden [@media(min-height:860px)]:h-11"
+                className="border-borde-campo focus:border-foco h-10 w-full rounded-[14px] border-[1.5px] bg-white pr-10 pl-10 text-[15px] text-[#16223F] shadow-[0_1px_2px_rgba(22,34,63,0.05)] transition outline-none placeholder:text-[#6B7690] hover:border-[#56627F] focus:ring-4 focus:ring-[#DCE5F8] [&::-webkit-search-cancel-button]:hidden [@media(min-height:860px)]:h-11"
             />
             {consulta ? (
                 <button

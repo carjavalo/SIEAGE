@@ -43,10 +43,10 @@ export function AyudaOperador({ tono = 'claro' }: { tono?: 'claro' | 'azul' } = 
                 type="button"
                 title="Ayuda · videos tutoriales"
                 className={cn(
-                    'flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full ring-1 transition focus-visible:ring-4 focus-visible:outline-none',
+                    'flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full ring-1 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid',
                     azul
-                        ? 'text-white ring-white/45 hover:bg-white/15 hover:text-white focus-visible:ring-white/70'
-                        : 'text-[#56627F] ring-[#D3DDF3] hover:bg-[#EEF2FB] hover:text-[#1E3A7B] focus-visible:ring-[#B7C6EA]',
+                        ? 'text-white ring-white/45 hover:bg-white/15 hover:text-white focus-visible:outline-white'
+                        : 'focus-visible:outline-foco text-[#56627F] ring-[#D3DDF3] hover:bg-[#EEF2FB] hover:text-[#1E3A7B]',
                 )}
             >
                 <CircleHelp className="size-5" />

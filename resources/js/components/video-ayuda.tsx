@@ -107,7 +107,7 @@ export function VideoAyuda(props: Props) {
                                             aria-pressed={i === elegido}
                                             onClick={() => cambiar(i)}
                                             className={cn(
-                                                'flex h-9 shrink-0 cursor-pointer items-center gap-2 rounded-full px-3.5 text-sm font-semibold whitespace-nowrap transition focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none',
+                                                'focus-visible:outline-foco flex h-9 shrink-0 cursor-pointer items-center gap-2 rounded-full px-3.5 text-sm font-semibold whitespace-nowrap transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid',
                                                 i === elegido
                                                     ? 'bg-white text-[#1E3A7B] shadow-[0_1px_3px_rgba(22,34,63,0.14)]'
                                                     : 'text-[#56627F] hover:text-[#16223F]',
@@ -128,7 +128,7 @@ export function VideoAyuda(props: Props) {
                                 </span>
                             </>
                         )}
-                        <Dialogo.Close className="ml-auto flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-[#56627F] transition hover:bg-[#EEF2FB] hover:text-[#16223F] focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none">
+                        <Dialogo.Close className="focus-visible:outline-foco ml-auto flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-[#56627F] transition hover:bg-[#EEF2FB] hover:text-[#16223F] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid">
                             <X className="size-5" />
                             <span className="sr-only">Cerrar</span>
                         </Dialogo.Close>
@@ -148,7 +148,7 @@ export function VideoAyuda(props: Props) {
                         controlsList="nodownload"
                         playsInline
                         preload="metadata"
-                        className="block aspect-video w-full bg-[#0F1D45] outline-none focus-visible:ring-4 focus-visible:ring-[#6E8BD6] focus-visible:ring-inset"
+                        className="focus-visible:outline-foco block aspect-video w-full bg-[#0F1D45] outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid"
                     >
                         Tu navegador no puede reproducir este video.
                     </video>
@@ -164,4 +164,4 @@ export function VideoAyuda(props: Props) {
 }
 
 export const BOTON_AYUDA =
-    'group flex h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[16px] bg-[#1E3A7B] px-5 text-[15px] font-semibold whitespace-nowrap text-white transition-all duration-200 hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.98]';
+    'group flex h-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-[16px] bg-[#1E3A7B] px-5 text-[15px] font-semibold whitespace-nowrap text-white transition-all duration-200 hover:bg-[#172E63] focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco active:scale-[0.98]';

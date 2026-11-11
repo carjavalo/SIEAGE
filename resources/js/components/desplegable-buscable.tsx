@@ -122,7 +122,7 @@ export function DesplegableBuscable<T extends string | number>({
                             onKeyDown={alTeclear}
                             placeholder={placeholder}
                             autoComplete="off"
-                            className="h-10 w-full rounded-[12px] border border-[#E3E9F6] bg-[#F7F9FD] pr-3 pl-9 text-[14px] text-[#16223F] outline-none placeholder:text-[#8A93A8] focus:border-[#6E8BD6] focus:ring-4 focus:ring-[#DCE5F8]"
+                            className="border-borde-campo focus:border-foco h-10 w-full rounded-[12px] border bg-[#F7F9FD] pr-3 pl-9 text-[14px] text-[#16223F] outline-none placeholder:text-[#8A93A8] focus:ring-4 focus:ring-[#DCE5F8]"
                         />
                     </div>
                     <ul

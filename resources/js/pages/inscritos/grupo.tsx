@@ -94,7 +94,7 @@ export default function ElegirGrupo({
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <Link
                         href={`/inscritos/${s.id}/documentos`}
-                        className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white/75 pr-3 pl-2 text-[14px] font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-white focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none"
+                        className="focus-visible:outline-foco inline-flex h-8 items-center gap-1.5 rounded-full bg-white/75 pr-3 pl-2 text-[14px] font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid"
                     >
                         <ArrowLeft className="size-4" />
                         Documentos
@@ -152,7 +152,7 @@ export default function ElegirGrupo({
                                                     router.get(`/inscritos/${s.id}/grupo`, { anio: a.anio }, { preserveScroll: true, replace: true })
                                                 }
                                                 className={cn(
-                                                    'flex h-8 cursor-pointer items-center gap-1.5 rounded-full px-3.5 text-[14px] font-semibold tabular-nums transition focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none',
+                                                    'focus-visible:outline-foco flex h-8 cursor-pointer items-center gap-1.5 rounded-full px-3.5 text-[14px] font-semibold tabular-nums transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid',
                                                     a.anio === anio ? 'bg-white text-[#1E3A7B] shadow-sm' : 'text-[#56627F] hover:text-[#1E3A7B]',
                                                 )}
                                             >
@@ -255,7 +255,7 @@ export default function ElegirGrupo({
                                             aria-checked={activo}
                                             onClick={() => form.setData('grupo_id', g.id)}
                                             className={cn(
-                                                'relative flex cursor-pointer flex-col rounded-[22px] bg-white p-4 text-left transition duration-200 focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none',
+                                                'focus-visible:outline-foco relative flex cursor-pointer flex-col rounded-[22px] bg-white p-4 text-left transition duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid',
                                                 activo
                                                     ? 'bg-[#F7F9FF] ring-2 ring-[#1E3A7B]'
                                                     : 'ring-1 ring-[#E3E9F6] hover:-translate-y-0.5 hover:ring-[#C4D2F1]',
@@ -354,7 +354,7 @@ export default function ElegirGrupo({
                                     type="button"
                                     onClick={matricular}
                                     disabled={!elegido || !listos || yaActivo || form.processing}
-                                    className="flex h-11 cursor-pointer items-center gap-2 rounded-[13px] bg-[#1E3A7B] px-5 text-[15px] font-semibold text-white transition hover:bg-[#172E63] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none active:scale-[0.99] disabled:cursor-default disabled:opacity-50"
+                                    className="focus-visible:outline-foco flex h-11 cursor-pointer items-center gap-2 rounded-[13px] bg-[#1E3A7B] px-5 text-[15px] font-semibold text-white transition hover:bg-[#172E63] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid active:scale-[0.99] disabled:cursor-default disabled:opacity-50"
                                 >
                                     {form.processing ? <LoaderCircle className="size-4 animate-spin" /> : <GraduationCap className="size-[18px]" />}
                                     {elegido ? `Matricular en ${elegido.codigo}` : 'Matricular'}

@@ -33,7 +33,7 @@ export function AyudaBoletines() {
             <button
                 type="button"
                 title="Ayuda · cómo hacer los boletines"
-                className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white text-[#56627F] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] hover:text-[#1E3A7B] focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none"
+                className="focus-visible:outline-foco flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white text-[#56627F] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] hover:text-[#1E3A7B] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid"
             >
                 <CircleHelp className="size-5" />
                 <span className="sr-only">Ayuda: video de cómo hacer los boletines</span>

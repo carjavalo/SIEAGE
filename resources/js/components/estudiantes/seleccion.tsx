@@ -90,7 +90,7 @@ export function BarraSeleccion({
         onLimpiar();
     };
     const boton =
-        'flex h-8 cursor-pointer items-center gap-1.5 rounded-[10px] px-3 text-[13px] font-semibold transition focus-visible:ring-4 focus-visible:ring-[#B7C6EA] focus-visible:outline-none';
+        'flex h-8 cursor-pointer items-center gap-1.5 rounded-[10px] px-3 text-[13px] font-semibold transition focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foco';
 
     return (
         <>

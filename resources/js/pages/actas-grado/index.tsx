@@ -24,7 +24,7 @@ const TODOS = 0;
 
 const segmento = (activo: boolean) =>
     cn(
-        'h-7 cursor-pointer rounded-full px-3 text-[13px] font-semibold whitespace-nowrap transition focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none',
+        'focus-visible:outline-foco h-7 cursor-pointer rounded-full px-3 text-[13px] font-semibold whitespace-nowrap transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid',
         activo ? 'bg-white text-[#1E3A7B] shadow-[0_1px_2px_rgba(22,34,63,0.12)]' : 'text-[#56627F] hover:text-[#16223F]',
     );
 
@@ -70,7 +70,7 @@ export default function ActasGrado({ anio, programas, sinModalidad, graduacion, 
                         <Link
                             href={volver}
                             aria-label="Volver"
-                            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full pr-3.5 pl-2.5 text-[14px] font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none"
+                            className="focus-visible:outline-foco inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full pr-3.5 pl-2.5 text-[14px] font-semibold text-[#1E3A7B] ring-1 ring-[#D3DDF3] transition hover:bg-[#EEF2FB] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid"
                         >
                             <ArrowLeft className="size-4" />
                             <span className="hidden sm:inline">Volver</span>
@@ -144,7 +144,7 @@ export default function ActasGrado({ anio, programas, sinModalidad, graduacion, 
                                         setElegido(TODOS);
                                     }}
                                     className={cn(
-                                        'flex h-8 shrink-0 cursor-pointer items-center gap-2 rounded-full px-3.5 text-[13px] font-semibold ring-1 transition focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none',
+                                        'focus-visible:outline-foco flex h-8 shrink-0 cursor-pointer items-center gap-2 rounded-full px-3.5 text-[13px] font-semibold ring-1 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid',
                                         p.clave === programa?.clave
                                             ? 'bg-[#1E3A7B] text-white ring-[#1E3A7B]'
                                             : 'bg-white text-[#3E4A68] ring-[#D3DDF3] hover:bg-[#F7F9FD]',
