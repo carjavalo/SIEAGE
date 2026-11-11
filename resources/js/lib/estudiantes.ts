@@ -190,7 +190,7 @@ export type FichaDetalle = {
               id: number;
               codigo: string;
               nombre: string;
-              grupos: { id: number; codigo: string; grado_id: number; grado: string; grado_numero: number }[];
+              grupos: { id: number; codigo: string; grado_id: number; grado: string; grado_numero: number; ciclo: boolean }[];
           }[]
         | null;
     /** Alerta de edad para el grado de su matrícula. */

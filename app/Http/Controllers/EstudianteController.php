@@ -12,7 +12,9 @@ use App\Support\Documentos;
 use App\Support\Edades;
 use App\Support\Grupos;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -223,6 +225,52 @@ class EstudianteController extends Controller
     }
 
     /**
+     * Los grupos del año en curso a los que se puede pasar a los marcados en la lista
+     * (cambiar de grupo o ciclo a varios a la vez): los mismos que en la ficha.
+     */
+    public function gruposParaCambiar(): JsonResponse
+    {
+        $anio = DB::table('anios_lectivos')->where('estado', 'activo')->orderByDesc('anio')->value('id');
+
+        return response()->json($anio ? self::gruposDelAnio((int) $anio) : []);
+    }
+
+    /**
+     * Todos los grupos de un año dentro del alcance del usuario (de cualquier grado, y los
+     * ciclos de la jornada sabatina), agrupados por sede.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    private static function gruposDelAnio(int $anioLectivoId): Collection
+    {
+        return DB::table('grupos as g')
+            ->join('sedes as s', 's.id', '=', 'g.sede_id')
+            ->join('grados as gr', 'gr.id', '=', 'g.grado_id')
+            ->where('g.anio_lectivo_id', $anioLectivoId)
+            ->tap(fn ($q) => Alcance::filtrar($q, request()->user(), 'g.sede_id', 'g.grado_id'))
+            ->orderBy('s.codigo')
+            ->orderBy('gr.numero')
+            ->orderBy('g.numero')
+            ->get(['g.id', 'g.codigo', 'g.jornada', 'g.grado_id', 'gr.nombre as grado_nombre', 'gr.numero as grado_numero', 's.id as sede_id', 's.codigo as sede_codigo', 's.nombre as sede_nombre'])
+            ->groupBy('sede_id')
+            ->map(fn ($grupos, $sedeId) => [
+                'id' => (int) $sedeId,
+                'codigo' => $grupos->first()->sede_codigo,
+                'nombre' => $grupos->first()->sede_nombre,
+                'grupos' => $grupos->map(fn ($g) => [
+                    'id' => $g->id,
+                    'codigo' => $g->codigo,
+                    'grado_id' => $g->grado_id,
+                    'grado' => $g->grado_nombre,
+                    'grado_numero' => (int) $g->grado_numero,
+                    // Un ciclo de la jornada sabatina («Ciclo VI»): va aparte de los grados.
+                    'ciclo' => $g->jornada === Ciclos::JORNADA,
+                ])->values(),
+            ])
+            ->values();
+    }
+
+    /**
      * Datos de la ficha: el estudiante, su historia de matrículas, sus
      * acudientes y los boletines de la matrícula actual. La usan la página de
      * ficha completa y el panel lateral del listado.
@@ -308,35 +356,11 @@ class EstudianteController extends Controller
                 ->get(['n.id', 'n.tipo', 'n.estado_nuevo', 'n.razon', 'n.fecha', 'n.created_at', 'u.name as usuario'])
             : collect();
 
-        // Para cambiar de grupo, grado o sede sin devolver a inscritos: todos los
-        // grupos del año en curso dentro del alcance del usuario (de cualquier grado),
-        // agrupados por sede. Solo cuando la matrícula actual es del año activo y está activa.
-        $sedes = null;
-        if ($actual && $actual->estado === 'activo' && $actual->estado_anio === 'activo') {
-            $sedes = DB::table('grupos as g')
-                ->join('sedes as s', 's.id', '=', 'g.sede_id')
-                ->join('grados as gr', 'gr.id', '=', 'g.grado_id')
-                ->where('g.anio_lectivo_id', $actual->anio_lectivo_id)
-                ->tap(fn ($q) => Alcance::filtrar($q, request()->user(), 'g.sede_id', 'g.grado_id'))
-                ->orderBy('s.codigo')
-                ->orderBy('gr.numero')
-                ->orderBy('g.numero')
-                ->get(['g.id', 'g.codigo', 'g.grado_id', 'gr.nombre as grado_nombre', 'gr.numero as grado_numero', 's.id as sede_id', 's.codigo as sede_codigo', 's.nombre as sede_nombre'])
-                ->groupBy('sede_id')
-                ->map(fn ($grupos, $sedeId) => [
-                    'id' => (int) $sedeId,
-                    'codigo' => $grupos->first()->sede_codigo,
-                    'nombre' => $grupos->first()->sede_nombre,
-                    'grupos' => $grupos->map(fn ($g) => [
-                        'id' => $g->id,
-                        'codigo' => $g->codigo,
-                        'grado_id' => $g->grado_id,
-                        'grado' => $g->grado_nombre,
-                        'grado_numero' => (int) $g->grado_numero,
-                    ])->values(),
-                ])
-                ->values();
-        }
+        // Para cambiar de grupo, ciclo, grado o sede sin devolver a inscritos. Solo cuando la
+        // matrícula actual es del año activo y está activa.
+        $sedes = $actual && $actual->estado === 'activo' && $actual->estado_anio === 'activo'
+            ? self::gruposDelAnio((int) $actual->anio_lectivo_id)
+            : null;
 
         return [
             'estudiante' => $alumno,

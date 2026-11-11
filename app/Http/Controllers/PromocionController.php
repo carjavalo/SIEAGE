@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
-/** Promover al grado siguiente: un estudiante, un grado o toda la institución. */
+/** Promover al grado siguiente: un estudiante, varios (los marcados en la lista), un grado o toda la institución. */
 class PromocionController extends Controller
 {
     public function store(Request $request): RedirectResponse
@@ -18,15 +18,24 @@ class PromocionController extends Controller
             'anio' => ['required', 'integer'],
             'grado_id' => ['nullable', 'integer', 'exists:grados,id'],
             'estudiante_id' => ['nullable', 'integer', 'exists:estudiantes,id'],
+            // Los marcados en la lista de Estudiantes.
+            'estudiantes' => ['nullable', 'array', 'min:1', 'max:'.self::MAXIMO],
+            'estudiantes.*' => ['integer', 'distinct'],
             'sede' => ['nullable', 'string', 'exists:sedes,codigo'],
             // Promover un grupo completo (p. ej. 5-2) a un grupo de destino elegido (6-2).
             'grupo_id' => ['nullable', 'integer', 'exists:grupos,id'],
             'grupo_destino_id' => ['nullable', 'integer', 'required_with:grupo_id', 'exists:grupos,id'],
         ], [
             'grupo_destino_id.required_with' => 'Elige a qué grupo promover.',
+            'estudiantes.max' => 'Son demasiados a la vez: máximo :max.',
         ]);
 
         $user = $request->user();
+
+        // Los marcados en la lista: a su grupo del grado siguiente (o ciclo siguiente) o a un grupo elegido.
+        if (! empty($datos['estudiantes'])) {
+            return $this->marcados($request, $datos);
+        }
 
         // Promover un grupo completo a un grupo de destino elegido.
         if (isset($datos['grupo_id'])) {
@@ -62,6 +71,39 @@ class PromocionController extends Controller
         // Sin sede pedida, "toda la institución" es todo lo que este usuario puede ver (de ese grado).
         $sedeId ??= $gradoId ? Alcance::sedesDelGrado($user, $gradoId) : Alcance::sedes($user);
         $resumen = Promocion::ejecutar((int) $datos['anio'], $datos['grado_id'] ?? null, $datos['estudiante_id'] ?? null, $sedeId);
+
+        return back()->with('promocion', $resumen);
+    }
+
+    /** Lo más que se promueve de una vez marcándolos en la lista. */
+    private const MAXIMO = 500;
+
+    /**
+     * Promueve a los marcados en la lista. Todos tienen que estar activos en el año en curso y
+     * dentro de lo que ve el usuario; si alguno no, no se promueve a nadie. Con grupo de destino
+     * (del año siguiente), todos van a ese grupo; si no, cada uno sigue las reglas de siempre.
+     *
+     * @param  array<string, mixed>  $datos
+     */
+    private function marcados(Request $request, array $datos): RedirectResponse
+    {
+        $user = $request->user();
+        $ids = array_values(array_unique(array_map('intval', $datos['estudiantes'])));
+        $anioId = DB::table('anios_lectivos')->where('anio', (int) $datos['anio'])->value('id');
+        $suyos = Alcance::filtrar(DB::table('matriculas as m'), $user, 'm.sede_id', 'm.grado_id', 'm.grupo_id')
+            ->where('m.anio_lectivo_id', $anioId)
+            ->whereIn('m.estudiante_id', $ids)
+            ->distinct()
+            ->count('m.estudiante_id');
+        if ($suyos !== count($ids)) {
+            throw ValidationException::withMessages(['promocion' => 'Algunos de los marcados no están matriculados en '.$datos['anio'].' o no los tienes asignados: no se promovió a nadie.']);
+        }
+        if (isset($datos['grupo_destino_id'])) {
+            $destino = DB::table('grupos')->where('id', $datos['grupo_destino_id'])->first(['sede_id', 'grado_id']) ?? abort(404);
+            Alcance::exigir($user, $destino->sede_id, $destino->grado_id, (int) $datos['grupo_destino_id']);
+        }
+
+        $resumen = Promocion::ejecutar((int) $datos['anio'], null, $ids, Alcance::sedes($user), null, $datos['grupo_destino_id'] ?? null);
 
         return back()->with('promocion', $resumen);
     }

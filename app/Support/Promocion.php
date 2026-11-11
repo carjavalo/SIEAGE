@@ -51,7 +51,7 @@ final class Promocion
      *
      * @return array<string, mixed> resumen para mostrar al usuario
      */
-    public static function ejecutar(int $anio, ?int $gradoId = null, ?int $estudianteId = null, int|array|null $sedeId = null, ?int $grupoId = null, ?int $grupoDestinoId = null): array
+    public static function ejecutar(int $anio, ?int $gradoId = null, int|array|null $estudianteId = null, int|array|null $sedeId = null, ?int $grupoId = null, ?int $grupoDestinoId = null): array
     {
         $origen = DB::table('anios_lectivos')->where('anio', $anio)->first();
         if (! $origen || $origen->estado !== 'activo') {
@@ -180,8 +180,11 @@ final class Promocion
         });
     }
 
-    /** Matrículas activas del alcance que todavía no tienen matrícula el año siguiente. */
-    private function pendientes(?int $gradoId, ?int $estudianteId, int|array|null $sedeId = null, ?int $grupoId = null): Collection
+    /**
+     * Matrículas activas del alcance que todavía no tienen matrícula el año siguiente.
+     * `$estudianteId`: uno o una lista (los marcados en la lista de Estudiantes).
+     */
+    private function pendientes(?int $gradoId, int|array|null $estudianteId, int|array|null $sedeId = null, ?int $grupoId = null): Collection
     {
         return DB::table('matriculas as m')
             ->join('grados as gr', 'gr.id', '=', 'm.grado_id')
@@ -191,7 +194,7 @@ final class Promocion
             ->where('m.estado', 'activo')
             ->whereNull('e.deleted_at')
             ->when($gradoId, fn ($q) => $q->where('m.grado_id', $gradoId))
-            ->when($estudianteId, fn ($q) => $q->where('m.estudiante_id', $estudianteId))
+            ->when($estudianteId !== null, fn ($q) => $q->whereIn('m.estudiante_id', (array) $estudianteId))
             // Un grupo específico (p. ej. todo 5-2), para promoverlo a un grupo elegido.
             ->when($grupoId, fn ($q) => $q->where('m.grupo_id', $grupoId))
             // Una sede, o las del usuario que promueve (null = todas).
@@ -475,6 +478,10 @@ final class Promocion
      * Grupos del grado en el año destino. No se copian solos de los del año en
      * curso: se crean antes en Sedes, según la proyección de matrícula. Si
      * todavía no los hay, no se promueve (todo o nada) y se dice cuáles faltan.
+     *
+     * Sin los ciclos de la jornada sabatina: a esos solo pasan los sabatinos
+     * (grupoDelCiclo). Si no, el «Ciclo VI» (Undécimo, número 1) se tomaría por
+     * el 11-1 y un estudiante del 10-1 de la mañana quedaría en la sabatina.
      */
     private function gruposDestino(int $gradoId): Collection
     {
@@ -482,6 +489,7 @@ final class Promocion
             ->join('sedes as s', 's.id', '=', 'g.sede_id')
             ->where('g.anio_lectivo_id', $this->destino->id)
             ->where('g.grado_id', $gradoId)
+            ->where('g.jornada', '<>', Ciclos::JORNADA)
             ->get(['g.id', 'g.numero', 'g.codigo', 'g.sede_id', 'g.jornada', 'g.cupos_proyectados', 's.nombre as sede']);
 
         if ($grupos->isEmpty()) {

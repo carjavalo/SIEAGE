@@ -457,79 +457,143 @@ class DatosEstudianteController extends Controller
 
     public function cambiarGrupo(Request $request, int $estudiante): RedirectResponse
     {
-        $alumno = $this->alumno($estudiante);
-        $matricula = DB::table('matriculas as m')
-            ->join('anios_lectivos as al', 'al.id', '=', 'm.anio_lectivo_id')
-            ->join('grupos as g', 'g.id', '=', 'm.grupo_id')
-            ->join('sedes as s', 's.id', '=', 'g.sede_id')
-            ->join('grados as gr', 'gr.id', '=', 'm.grado_id')
-            ->where('m.estudiante_id', $estudiante)
-            ->where('al.estado', 'activo')
-            ->tap(fn ($q) => Alcance::filtrar($q, $request->user(), 'm.sede_id', 'm.grado_id'))
-            ->first(['m.id', 'm.grupo_id', 'g.sede_id', 'm.grado_id', 'm.estado', 'g.codigo as grupo_actual', 's.codigo as sede_actual', 'gr.nombre as grado_actual']) ?? abort(404);
-
+        $this->alumno($estudiante);
         $datos = $request->validate([
             'grupo_id' => ['required', 'integer', 'exists:grupos,id'],
             'razon' => ['required', 'string', 'min:10', 'max:300'],
-        ], [
-            'grupo_id.required' => 'Elige el nuevo grupo.',
-            'grupo_id.exists' => 'Grupo no válido.',
-            'razon.required' => 'Escribe la razón del cambio.',
-            'razon.min' => 'Mínimo 10 caracteres.',
-        ]);
+        ], self::MENSAJES_CAMBIO);
 
-        $nuevoGrupo = DB::table('grupos as g')
+        [$movidos, $grupo] = $this->moverA($request, [$estudiante], (int) $datos['grupo_id'], $datos['razon']);
+        $m = $movidos[0];
+
+        return back()->with('success', 'Cambió a '.($m['cambia_grado'] ? "{$grupo->grado} – {$grupo->codigo}" : $grupo->codigo).'.');
+    }
+
+    /**
+     * Cambiar de grupo (o de ciclo, grado o sede) a varios a la vez: los marcados en la lista
+     * de Estudiantes, todos al mismo grupo y con la misma razón. Todos o ninguno.
+     */
+    public function cambiarGrupoVarios(Request $request): RedirectResponse
+    {
+        $datos = $request->validate([
+            'estudiantes' => ['required', 'array', 'min:1', 'max:500'],
+            'estudiantes.*' => ['integer', 'distinct'],
+            'grupo_id' => ['required', 'integer', 'exists:grupos,id'],
+            'razon' => ['required', 'string', 'min:10', 'max:300'],
+        ], [...self::MENSAJES_CAMBIO, 'estudiantes.required' => 'Marca al menos un estudiante.', 'estudiantes.max' => 'Son demasiados a la vez: máximo :max.']);
+
+        $ids = array_values(array_unique(array_map('intval', $datos['estudiantes'])));
+        [$movidos, $grupo] = $this->moverA($request, $ids, (int) $datos['grupo_id'], $datos['razon']);
+        $n = count($movidos);
+
+        return back()->with('success', ($n === 1 ? '1 estudiante cambió' : "{$n} estudiantes cambiaron")." a {$grupo->codigo} ({$grupo->sede}).");
+    }
+
+    private const MENSAJES_CAMBIO = [
+        'grupo_id.required' => 'Elige el nuevo grupo.',
+        'grupo_id.exists' => 'Grupo no válido.',
+        'razon.required' => 'Escribe la razón del cambio.',
+        'razon.min' => 'Mínimo 10 caracteres.',
+    ];
+
+    /**
+     * Pasa a los estudiantes al grupo (de su año en curso): su matrícula activa toma el grupo,
+     * el grado, la sede y la jornada del grupo, y queda la novedad en su historial. Antes de
+     * cambiar a nadie revisa que todos estén activos y a su alcance, que ninguno esté ya en
+     * ese grupo y que alcancen los cupos.
+     *
+     * @param  list<int>  $estudiantes
+     * @return array{0: list<array{matricula: int, cambia_grado: bool}>, 1: object}
+     */
+    private function moverA(Request $request, array $estudiantes, int $grupoId, string $razon): array
+    {
+        $user = $request->user();
+        $matriculas = DB::table('matriculas as m')
+            ->join('anios_lectivos as al', 'al.id', '=', 'm.anio_lectivo_id')
+            ->join('estudiantes as e', 'e.id', '=', 'm.estudiante_id')
+            ->leftJoin('grupos as g', 'g.id', '=', 'm.grupo_id')
+            ->leftJoin('sedes as s', 's.id', '=', 'm.sede_id')
+            ->join('grados as gr', 'gr.id', '=', 'm.grado_id')
+            ->whereIn('m.estudiante_id', $estudiantes)
+            ->where('al.estado', 'activo')
+            ->where('m.estado', 'activo')
+            ->whereNull('e.deleted_at')
+            ->tap(fn ($q) => Alcance::filtrar($q, $user, 'm.sede_id', 'm.grado_id', 'm.grupo_id'))
+            ->get(['m.id', 'm.estudiante_id', 'm.grupo_id', 'm.sede_id', 'm.grado_id', 'm.estado', 'm.anio_lectivo_id', 'e.nombre_completo',
+                'g.codigo as grupo_actual', 's.codigo as sede_actual', 'gr.nombre as grado_actual']);
+        if ($matriculas->pluck('estudiante_id')->unique()->count() !== count($estudiantes)) {
+            throw ValidationException::withMessages(['estudiantes' => count($estudiantes) === 1
+                ? 'No está activo en el año en curso o no lo tienes asignado.'
+                : 'Algunos de los marcados no están activos en el año en curso o no los tienes asignados: no se cambió a nadie.']);
+        }
+
+        $nuevo = DB::table('grupos as g')
             ->join('sedes as s', 's.id', '=', 'g.sede_id')
             ->join('grados as gr', 'gr.id', '=', 'g.grado_id')
-            ->where('g.id', $datos['grupo_id'])
-            ->tap(fn ($q) => Alcance::filtrar($q, $request->user(), 'g.sede_id', 'g.grado_id'))
-            ->first(['g.id', 'g.codigo', 'g.sede_id', 's.codigo as sede', 'g.grado_id', 'gr.nombre as grado']) ?? abort(403);
+            ->where('g.id', $grupoId)
+            ->tap(fn ($q) => Alcance::filtrar($q, $user, 'g.sede_id', 'g.grado_id', 'g.id'))
+            ->first(['g.id', 'g.codigo', 'g.sede_id', 'g.jornada', 'g.anio_lectivo_id', 'g.cupos_proyectados', 's.codigo as sede', 'g.grado_id', 'gr.nombre as grado']) ?? abort(403);
+        // Solo a un grupo del mismo año de la matrícula (el año en curso).
+        if ($matriculas->contains(fn ($m) => (int) $m->anio_lectivo_id !== (int) $nuevo->anio_lectivo_id)) {
+            throw ValidationException::withMessages(['grupo_id' => 'Ese grupo es de otro año lectivo.']);
+        }
 
-        if ($nuevoGrupo->id == $matricula->grupo_id) {
-            throw ValidationException::withMessages(['grupo_id' => 'Ya está en ese grupo.']);
+        $yaEstan = $matriculas->where('grupo_id', $nuevo->id);
+        if ($yaEstan->isNotEmpty()) {
+            throw ValidationException::withMessages(['grupo_id' => $yaEstan->count() === 1 && $matriculas->count() === 1
+                ? 'Ya está en ese grupo.'
+                : 'Ya están en ese grupo: '.$yaEstan->pluck('nombre_completo')->take(5)->implode(', ').($yaEstan->count() > 5 ? '…' : '').'. Quítalos de la selección.']);
         }
 
         // El cupo no se guarda: es lo proyectado menos los que ya están activos en el grupo.
-        $cupos = (int) DB::table('grupos')->where('id', $nuevoGrupo->id)->value('cupos_proyectados');
-        $activos = (int) DB::table('matriculas')->where('grupo_id', $nuevoGrupo->id)->where('estado', 'activo')->count();
-        if ($cupos - $activos <= 0) {
-            throw ValidationException::withMessages(['grupo_id' => 'No hay cupos disponibles en ese grupo.']);
+        $activos = (int) DB::table('matriculas')->where('grupo_id', $nuevo->id)->where('estado', 'activo')->count();
+        $libres = (int) $nuevo->cupos_proyectados - $activos;
+        if ($libres < $matriculas->count()) {
+            throw ValidationException::withMessages(['grupo_id' => $libres <= 0
+                ? 'No hay cupos disponibles en ese grupo.'
+                : "En ese grupo solo quedan {$libres} cupos y son {$matriculas->count()} estudiantes."]);
         }
 
-        $cambiaGrado = $nuevoGrupo->grado_id != $matricula->grado_id;
-        $cambiaSede = $nuevoGrupo->sede_id != $matricula->sede_id;
+        $movidos = DB::transaction(function () use ($user, $matriculas, $nuevo, $razon) {
+            $movidos = [];
+            foreach ($matriculas as $m) {
+                $cambiaGrado = (int) $nuevo->grado_id !== (int) $m->grado_id;
+                $cambiaSede = (int) $nuevo->sede_id !== (int) $m->sede_id;
+                // La jornada va con el grupo: al pasar de un ciclo (sabatina) a un grupo de la
+                // mañana, o al revés, deja de contar (o empieza a contar) en la pestaña Sabatina.
+                $cambios = ['grupo_id' => $nuevo->id, 'jornada' => $nuevo->jornada, 'updated_at' => now()];
+                if ($cambiaGrado) {
+                    $cambios['grado_id'] = $nuevo->grado_id;
+                }
+                if ($cambiaSede) {
+                    $cambios['sede_id'] = $nuevo->sede_id;
+                }
+                // Al cambiar de grado o sede, el consecutivo de la ficha (único por año/grado/sede)
+                // ya no corresponde: se limpia y se renumera al imprimir la constancia.
+                if ($cambiaGrado || $cambiaSede) {
+                    $cambios['consecutivo'] = null;
+                }
+                DB::table('matriculas')->where('id', $m->id)->update($cambios);
 
-        DB::transaction(function () use ($request, $matricula, $nuevoGrupo, $datos, $cambiaGrado, $cambiaSede) {
-            $cambios = ['grupo_id' => $nuevoGrupo->id, 'updated_at' => now()];
-            if ($cambiaGrado) {
-                $cambios['grado_id'] = $nuevoGrupo->grado_id;
+                $desde = $m->grupo_actual ?? $m->grado_actual;
+                $detalleGrado = $cambiaGrado ? " [de {$m->grado_actual} a {$nuevo->grado}]" : '';
+                DB::table('novedades_matricula')->insert([
+                    'matricula_id' => $m->id,
+                    'tipo' => 'cambio_grupo',
+                    'estado_anterior' => $m->estado,
+                    'estado_nuevo' => $m->estado,
+                    'razon' => "Cambió de {$desde} ({$m->sede_actual}) a {$nuevo->codigo} ({$nuevo->sede}){$detalleGrado}: {$razon}",
+                    'fecha' => now()->toDateString(),
+                    'user_id' => $user->id,
+                    'created_at' => now(),
+                ]);
+                $movidos[] = ['matricula' => (int) $m->id, 'cambia_grado' => $cambiaGrado];
             }
-            if ($cambiaSede) {
-                $cambios['sede_id'] = $nuevoGrupo->sede_id;
-            }
-            // Al cambiar de grado o sede, el consecutivo de la ficha (único por año/grado/sede)
-            // ya no corresponde: se limpia y se renumera al imprimir la constancia.
-            if ($cambiaGrado || $cambiaSede) {
-                $cambios['consecutivo'] = null;
-            }
-            DB::table('matriculas')->where('id', $matricula->id)->update($cambios);
 
-            $detalleGrado = $cambiaGrado ? " [de {$matricula->grado_actual} a {$nuevoGrupo->grado}]" : '';
-            DB::table('novedades_matricula')->insert([
-                'matricula_id' => $matricula->id,
-                'tipo' => 'cambio_grupo',
-                'estado_anterior' => $matricula->estado,
-                'estado_nuevo' => $matricula->estado,
-                'razon' => "Cambió de {$matricula->grupo_actual} ({$matricula->sede_actual}) a {$nuevoGrupo->codigo} ({$nuevoGrupo->sede}){$detalleGrado}: {$datos['razon']}",
-                'fecha' => now()->toDateString(),
-                'user_id' => $request->user()->id,
-                'created_at' => now(),
-            ]);
+            return $movidos;
         });
 
-        $destino = $cambiaGrado ? "{$nuevoGrupo->grado} – {$nuevoGrupo->codigo}" : $nuevoGrupo->codigo;
-
-        return back()->with('success', "Cambió a {$destino}.");
+        return [$movidos, $nuevo];
     }
 
     /**

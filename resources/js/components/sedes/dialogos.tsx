@@ -1,14 +1,15 @@
 import { Desplegable } from '@/components/desplegable';
 import { Cabeza, Cuerpo, type EstadoDialogo, Marco, Pie, claseLista, exito, revisar, useAvisar } from '@/components/dialogo-formulario';
 import { Campo, claseCampo } from '@/components/formulario';
-import { type GradoSede, type GrupoSede, type SedeConGrupos } from '@/lib/sedes';
+import { type CicloSede, type GradoSede, type GrupoSede, type SedeConGrupos, esCiclo } from '@/lib/sedes';
 import { Link, router, useForm } from '@inertiajs/react';
 import { ArrowRight, LoaderCircle } from 'lucide-react';
 import { type ComponentProps, type FormEventHandler, type ReactNode, type RefObject, useId, useState } from 'react';
 import { sileo } from 'sileo';
 
 /**
- * Los diálogos de Sedes: crear o editar una sede, y crear o editar un grupo.
+ * Los diálogos de Sedes: crear o editar una sede, y crear o editar un grupo o un
+ * ciclo de la jornada sabatina.
  * Eliminar solo se ofrece cuando no se pierde nada: una sede sin historia, un
  * grupo sin estudiantes.
  */
@@ -217,6 +218,9 @@ type PropsGrupo = {
     anio: number;
     grados: GradoSede[];
     jornadas: string[];
+    ciclos: CicloSede[];
+    /** Es (o será) un ciclo de la jornada sabatina: se elige el ciclo y solo se cambian el cupo y el director(a). */
+    ciclo: boolean;
 };
 
 export function DialogoGrupo({ abierto, onCambio, ...props }: PropsGrupo & { abierto: boolean; onCambio: (v: boolean) => void }) {
@@ -227,7 +231,7 @@ export function DialogoGrupo({ abierto, onCambio, ...props }: PropsGrupo & { abi
     );
 }
 
-type FormGrupo = { anio: number; grado_id: number; numero: string; jornada: string; cupos: string; director_id: number };
+type FormGrupo = { anio: number; grado_id: number; numero: string; jornada: string; cupos: string; director_id: number; ciclo: string };
 
 /** Sin director(a) en la lista del grupo. */
 const SIN_DIRECTOR = 0;
@@ -240,16 +244,23 @@ function FormularioGrupo({
     anio,
     grados,
     jornadas,
+    ciclos,
+    ciclo: esDeCiclo,
     estado,
     onCerrar,
 }: PropsGrupo & { estado: RefObject<EstadoDialogo>; onCerrar: () => void }) {
+    // Los ciclos que la sede todavía no tiene (uno por sede); el primero de ellos, por defecto.
+    const cicloTomado = (c: CicloSede) => sede.grupos.some((g) => esCiclo(g) && g.codigo === c.codigo);
+    const cicloLibre = ciclos.find((c) => !cicloTomado(c))?.ciclo ?? '';
+    // Los ciclos no cuentan para el número ni el grado de un grupo nuevo (el «Ciclo VI» es Undécimo con número 1).
+    const regulares = sede.grupos.filter((g) => !esCiclo(g));
     /** El número que sigue en la sede para ese grado. */
-    const siguiente = (gradoId: number) => String(Math.max(0, ...sede.grupos.filter((g) => g.grado_id === gradoId).map((g) => g.numero)) + 1);
+    const siguiente = (gradoId: number) => String(Math.max(0, ...regulares.filter((g) => g.grado_id === gradoId).map((g) => g.numero)) + 1);
     /** Por defecto, la jornada que más se repite en la sede; si está vacía, la primera. */
     const jornadaHabitual =
-        jornadas.map((j) => ({ j, n: sede.grupos.filter((g) => g.jornada === j).length })).sort((a, b) => b.n - a.n)[0]?.j ?? jornadas[0];
+        jornadas.map((j) => ({ j, n: regulares.filter((g) => g.jornada === j).length })).sort((a, b) => b.n - a.n)[0]?.j ?? jornadas[0];
     // Un grupo nuevo empieza en el último grado que tiene la sede (lo usual es abrir otro curso del mismo grado).
-    const gradoInicial = grupo?.grado_id ?? sede.grupos.at(-1)?.grado_id ?? 0;
+    const gradoInicial = grupo?.grado_id ?? regulares.at(-1)?.grado_id ?? 0;
 
     const form = useForm<FormGrupo>({
         anio,
@@ -258,6 +269,7 @@ function FormularioGrupo({
         jornada: grupo?.jornada ?? jornadaHabitual,
         cupos: String(grupo?.cupos ?? 34),
         director_id: grupo?.director_usuario_id ?? (grupo?.director ? SIN_USUARIO : SIN_DIRECTOR),
+        ciclo: grupo || !esDeCiclo ? '' : cicloLibre,
     });
     const errores = form.errors as Partial<Record<string, string>>;
     const d = form.data;
@@ -287,17 +299,19 @@ function FormularioGrupo({
 
     const guardar: FormEventHandler = (ev) => {
         ev.preventDefault();
-        form.transform(({ director_id, ...resto }) => ({
-            ...resto,
+        form.transform(({ director_id, ciclo, ...resto }) => ({
+            // Un ciclo: el año, el ciclo y el cupo (al editarlo, solo el cupo); el nombre y la jornada los pone el servidor.
+            ...(esDeCiclo ? { anio: resto.anio, cupos: resto.cupos, ...(grupo ? {} : { ciclo }) } : resto),
             // Sin director_id: el que ya estaba (sin usuario) se queda.
             ...(director_id === SIN_USUARIO ? {} : { director_id: director_id || null }),
         }));
+        const que = esDeCiclo ? 'Ciclo' : 'Grupo';
         const opciones = {
             preserveScroll: true,
             preserveState: true,
             onSuccess: (pagina: { props: unknown }) => {
                 onCerrar();
-                exito(grupo ? 'Grupo actualizado' : 'Grupo creado')(pagina);
+                exito(grupo ? `${que} actualizado` : `${que} creado`)(pagina);
             },
             onError: revisar,
         };
@@ -307,14 +321,41 @@ function FormularioGrupo({
 
     return (
         <form onSubmit={guardar} className="flex min-h-0 flex-1 flex-col">
-            <Cabeza titulo={grupo ? `Grupo ${grupo.codigo}` : 'Agregar grupo'}>
+            <Cabeza titulo={grupo ? (esDeCiclo ? grupo.codigo : `Grupo ${grupo.codigo}`) : esDeCiclo ? 'Agregar ciclo' : 'Agregar grupo'}>
                 {sede.nombre} · año lectivo {anio}
-                {grupo && ` · ${grupo.grado}`}
+                {esDeCiclo ? ' · jornada sabatina' : grupo && ` · ${grupo.grado}`}
             </Cabeza>
 
             <Cuerpo>
                 <div className="grid gap-x-4 gap-y-4 sm:grid-cols-2">
-                    {!grupo && (
+                    {esDeCiclo && !grupo && (
+                        <div className="sm:col-span-2">
+                            <Campo
+                                id={id('ciclo')}
+                                etiqueta="Ciclo"
+                                ayuda={
+                                    cicloLibre
+                                        ? 'Uno por sede, en la jornada sabatina. Sus estudiantes quedan en el último grado del ciclo.'
+                                        : 'Esta sede ya tiene todos los ciclos.'
+                                }
+                                error={errores.ciclo ?? errores.anio}
+                            >
+                                <Desplegable
+                                    id={id('ciclo')}
+                                    etiqueta="Ciclo"
+                                    placeholder="Elige el ciclo"
+                                    valor={d.ciclo}
+                                    opciones={ciclos
+                                        .filter((c) => !cicloTomado(c))
+                                        .map((c) => ({ valor: c.ciclo, etiqueta: c.codigo, detalle: c.grados }))}
+                                    onCambio={(v) => form.setData('ciclo', v)}
+                                    invalido={!!errores.ciclo}
+                                    claseBoton={claseLista}
+                                />
+                            </Campo>
+                        </div>
+                    )}
+                    {!esDeCiclo && !grupo && (
                         <div className="sm:col-span-2">
                             <Campo id={id('grado_id')} etiqueta="Grado" error={errores.grado_id}>
                                 <Desplegable
@@ -330,30 +371,34 @@ function FormularioGrupo({
                             </Campo>
                         </div>
                     )}
-                    <Campo
-                        id={id('numero')}
-                        etiqueta="Número del grupo"
-                        ayuda={codigo && codigo !== grupo?.codigo ? `Se llamará ${codigo}.` : undefined}
-                        error={errores.numero ?? errores.anio}
-                    >
-                        <input {...numero('numero', { min: 1, max: 30 })} />
-                    </Campo>
+                    {!esDeCiclo && (
+                        <Campo
+                            id={id('numero')}
+                            etiqueta="Número del grupo"
+                            ayuda={codigo && codigo !== grupo?.codigo ? `Se llamará ${codigo}.` : undefined}
+                            error={errores.numero ?? errores.anio}
+                        >
+                            <input {...numero('numero', { min: 1, max: 30 })} />
+                        </Campo>
+                    )}
                     <Campo id={id('cupos')} etiqueta="Cupos" error={errores.cupos}>
                         <input {...numero('cupos', { min: 1, max: 99 })} />
                     </Campo>
-                    <div className="sm:col-span-2">
-                        <Campo id={id('jornada')} etiqueta="Jornada" error={errores.jornada}>
-                            <Desplegable
-                                id={id('jornada')}
-                                etiqueta="Jornada"
-                                valor={d.jornada}
-                                opciones={jornadas.map((j) => ({ valor: j, etiqueta: j }))}
-                                onCambio={(v) => form.setData('jornada', v)}
-                                invalido={!!errores.jornada}
-                                claseBoton={claseLista}
-                            />
-                        </Campo>
-                    </div>
+                    {!esDeCiclo && (
+                        <div className="sm:col-span-2">
+                            <Campo id={id('jornada')} etiqueta="Jornada" error={errores.jornada}>
+                                <Desplegable
+                                    id={id('jornada')}
+                                    etiqueta="Jornada"
+                                    valor={d.jornada}
+                                    opciones={jornadas.map((j) => ({ valor: j, etiqueta: j }))}
+                                    onCambio={(v) => form.setData('jornada', v)}
+                                    invalido={!!errores.jornada}
+                                    claseBoton={claseLista}
+                                />
+                            </Campo>
+                        </div>
+                    )}
                     <div className="sm:col-span-2">
                         <Campo
                             id={id('director_id')}
@@ -377,12 +422,14 @@ function FormularioGrupo({
                 {grupo && (
                     <>
                         <Link
-                            href={`/estudiantes?anio=${anio}&grado=${grupo.grado_id}&sede=${encodeURIComponent(sede.codigo)}`}
+                            href={`/estudiantes?anio=${anio}&${esDeCiclo ? 'jornada=sabatina' : `grado=${grupo.grado_id}`}&sede=${encodeURIComponent(sede.codigo)}`}
                             className="mt-5 flex items-center justify-between gap-3 rounded-[14px] bg-[#EEF2FB] px-4 py-3 text-[14px] font-semibold text-[#1E3A7B] transition hover:bg-[#DCE5F8] focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none"
                         >
                             <span>
                                 {grupo.activos} {grupo.activos === 1 ? 'estudiante activo' : 'estudiantes activos'}
-                                <span className="block text-[13px] font-normal text-[#3E4A68]">Ver la lista de {grupo.grado} en esta sede</span>
+                                <span className="block text-[13px] font-normal text-[#3E4A68]">
+                                    {esDeCiclo ? 'Ver la jornada sabatina en esta sede' : `Ver la lista de ${grupo.grado} en esta sede`}
+                                </span>
                             </span>
                             <ArrowRight aria-hidden className="size-[18px] shrink-0" />
                         </Link>
@@ -390,7 +437,7 @@ function FormularioGrupo({
                             pregunta="¿Se creó por error?"
                             confirmacion={
                                 <>
-                                    ¿Eliminar el grupo <b className="font-semibold">{grupo.codigo}</b>?
+                                    ¿Eliminar {esDeCiclo ? 'el' : 'el grupo'} <b className="font-semibold">{grupo.codigo}</b>?
                                 </>
                             }
                             impedimento={
@@ -408,8 +455,8 @@ function FormularioGrupo({
             <Pie
                 sucio={form.isDirty}
                 cargando={form.processing}
-                desactivado={(!!grupo && !form.isDirty) || !d.grado_id || borrar.ocupado}
-                guardar={grupo ? 'Guardar' : 'Crear grupo'}
+                desactivado={(!!grupo && !form.isDirty) || (esDeCiclo ? !grupo && !d.ciclo : !d.grado_id) || borrar.ocupado}
+                guardar={grupo ? 'Guardar' : esDeCiclo ? 'Crear ciclo' : 'Crear grupo'}
                 onCancelar={onCerrar}
             />
         </form>

@@ -1,6 +1,7 @@
 import { Esqueleto, FilasEsqueleto } from '@/components/esqueleto';
 import { MarcaExtraedad } from '@/components/estudiantes/alerta-edad';
 import { Marca, PuntoSede, Resaltado, sedeInfo } from '@/components/estudiantes/etiquetas';
+import { Casilla } from '@/components/estudiantes/seleccion';
 import { type Estudiante, type FiltroEstado, type Grado, type Grupo, telefono } from '@/lib/estudiantes';
 import { cn } from '@/lib/utils';
 import { ChevronRight, ListFilter, X } from 'lucide-react';
@@ -33,7 +34,14 @@ type Props = {
     onFila: (id: number) => void;
     /** Botones al final de la barra (p. ej. Promover). */
     acciones?: ReactNode;
+    /** Marcar varios para hacer algo con todos (promover, cambiar de grupo): sin esto, no hay casillas. */
+    marcar?: Marcar;
+    /** La barra con lo que se hace con los marcados (flota al pie de la lista). */
+    barraMarcados?: ReactNode;
 };
+
+/** Las casillas de la lista: quiénes están marcados y cómo marcar uno o todos los de la vista. */
+export type Marcar = { marcados: ReadonlySet<number>; onUno: (id: number) => void; onTodos: (marcar: boolean) => void };
 
 const opcionesEstado: { clave: FiltroEstado; nombre: string; titulo?: string }[] = [
     { clave: 'activo', nombre: 'Activos' },
@@ -54,13 +62,15 @@ const Sep = () => (
 /** Tercera franja: la lista del grado (o del grupo elegido) con sus filtros. */
 export function ListaEstudiantes(p: Props) {
     const hayTexto = p.buscadas.length > 0;
+    // Con marcados, la barra flota al pie de la lista: se deja lugar para ver la última fila.
+    const conMarcados = !!p.marcar && p.filas.some((e) => p.marcar!.marcados.has(e.id));
 
     return (
         <section
             aria-label="Lista de estudiantes"
             aria-busy={p.cargando}
             // @container/lista: los botones de la barra muestran su nombre según el ancho de la lista (ver estudiantes/barra.ts).
-            className="@container/lista flex min-h-[420px] min-w-0 flex-1 flex-col overflow-hidden rounded-[28px] border border-[#E6EBF4] bg-white lg:min-h-0"
+            className="@container/lista relative flex min-h-[420px] min-w-0 flex-1 flex-col overflow-hidden rounded-[28px] border border-[#E6EBF4] bg-white lg:min-h-0"
         >
             <div
                 className={`flex shrink-0 flex-col gap-2.5 border-b border-[#EEF2F9] px-4 py-2.5 md:min-h-[42px] md:flex-row md:flex-wrap md:items-center md:gap-x-4 md:gap-y-1.5 md:px-5 md:py-1 ${alto}:md:min-h-12`}
@@ -146,9 +156,20 @@ export function ListaEstudiantes(p: Props) {
 
             <div
                 ref={p.lista}
-                className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-color:#C4D2F1_transparent] [scrollbar-width:thin]"
+                className={cn(
+                    'relative min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-color:#C4D2F1_transparent] [scrollbar-width:thin]',
+                    conMarcados && 'pb-20',
+                )}
             >
-                <Tabla cargando={p.cargando} filas={p.filas} columnas={p.columnas} seleccion={p.seleccion} buscadas={p.buscadas} onFila={p.onFila} />
+                <Tabla
+                    cargando={p.cargando}
+                    filas={p.filas}
+                    columnas={p.columnas}
+                    seleccion={p.seleccion}
+                    buscadas={p.buscadas}
+                    onFila={p.onFila}
+                    marcar={p.marcar}
+                />
                 {p.filas.length === 0 &&
                     !p.cargando &&
                     (p.grupos.length === 0 && p.total === 0 ? (
@@ -161,6 +182,7 @@ export function ListaEstudiantes(p: Props) {
                         />
                     ))}
             </div>
+            {p.barraMarcados}
         </section>
     );
 }
@@ -417,6 +439,8 @@ function armarColumnas(c: Columnas): Columna[] {
 export const th = `sticky top-0 z-10 h-[30px] border-b border-[#E3E9F6] bg-white/95 px-3 text-left align-middle text-[12px] font-semibold tracking-[0.06em] text-[#56627F] uppercase backdrop-blur ${alto}:h-9`;
 export const td = `h-9 border-b border-[#EEF2F9] px-3 align-middle transition-colors duration-150 ${alto}:h-10`;
 
+const celdaCasilla = 'w-10 pr-0 pl-4 sm:pl-5';
+
 function Tabla({
     cargando,
     filas,
@@ -424,6 +448,7 @@ function Tabla({
     seleccion,
     buscadas,
     onFila,
+    marcar,
 }: {
     cargando: boolean;
     filas: Estudiante[];
@@ -431,13 +456,26 @@ function Tabla({
     seleccion: number | null;
     buscadas: string[];
     onFila: (id: number) => void;
+    marcar?: Marcar;
 }) {
     const cols = useMemo(() => armarColumnas(columnas), [columnas]);
+    const cuantos = marcar ? filas.filter((e) => marcar.marcados.has(e.id)).length : 0;
+    const todos = filas.length > 0 && cuantos === filas.length;
 
     return (
         <table className="w-full table-fixed border-separate border-spacing-0 text-sm">
             <thead>
                 <tr>
+                    {marcar && (
+                        <th scope="col" className={cn(th, celdaCasilla)}>
+                            <Casilla
+                                marcada={todos}
+                                intermedia={cuantos > 0 && !todos}
+                                etiqueta={todos ? 'Quitar las marcas de toda la lista' : 'Marcar a todos los de la lista'}
+                                onCambio={() => marcar.onTodos(!todos)}
+                            />
+                        </th>
+                    )}
                     {cols.map((k) => (
                         <th key={k.titulo} scope="col" className={cn(th, k.ancho, k.visible, k.extra)}>
                             {k.titulo === '#' ? (
@@ -452,11 +490,26 @@ function Tabla({
                 </tr>
             </thead>
             {cargando ? (
-                <FilasEsqueleto celdas={cols.map((k) => ({ clase: cn(td, k.visible, k.extra), barra: k.barra }))} />
+                <FilasEsqueleto
+                    celdas={[
+                        ...(marcar ? [{ clase: cn(td, celdaCasilla), barra: null }] : []),
+                        ...cols.map((k) => ({ clase: cn(td, k.visible, k.extra), barra: k.barra })),
+                    ]}
+                />
             ) : (
                 <tbody>
                     {filas.map((e, i) => (
-                        <Fila key={e.id} estudiante={e} indice={i} columnas={cols} elegida={e.id === seleccion} buscadas={buscadas} onFila={onFila} />
+                        <Fila
+                            key={e.id}
+                            estudiante={e}
+                            indice={i}
+                            columnas={cols}
+                            elegida={e.id === seleccion}
+                            buscadas={buscadas}
+                            onFila={onFila}
+                            marcado={marcar ? marcar.marcados.has(e.id) : undefined}
+                            onMarcar={marcar?.onUno}
+                        />
                     ))}
                 </tbody>
             )}
@@ -472,6 +525,8 @@ const Fila = memo(function Fila({
     elegida,
     buscadas,
     onFila,
+    marcado,
+    onMarcar,
 }: {
     estudiante: Estudiante;
     indice: number;
@@ -479,7 +534,11 @@ const Fila = memo(function Fila({
     elegida: boolean;
     buscadas: string[];
     onFila: (id: number) => void;
+    /** Sin casillas: undefined. */
+    marcado?: boolean;
+    onMarcar?: (id: number) => void;
 }) {
+    const fondo = elegida ? 'bg-[#EEF2FB]' : marcado ? 'bg-[#F5F8FE] group-hover:bg-[#EEF3FC]' : 'group-hover:bg-[#F7F9FD]';
     return (
         <tr
             data-fila={e.id}
@@ -488,17 +547,31 @@ const Fila = memo(function Fila({
             onClick={() => onFila(e.id)}
             className={`group cursor-pointer scroll-mt-[30px] outline-none ${alto}:scroll-mt-9`}
         >
+            {marcado !== undefined && onMarcar && (
+                <td
+                    className={cn(
+                        td,
+                        celdaCasilla,
+                        fondo,
+                        elegida && 'shadow-[inset_3px_0_0_#1E3A7B]',
+                        'group-focus-visible:shadow-[inset_3px_0_0_#1E3A7B]',
+                    )}
+                >
+                    <Casilla marcada={marcado} etiqueta={`Marcar a ${e.nombre}`} onCambio={() => onMarcar(e.id)} />
+                </td>
+            )}
             {columnas.map((k, j) => (
                 <td
                     key={k.titulo}
                     className={cn(
                         td,
-                        elegida ? 'bg-[#EEF2FB]' : 'group-hover:bg-[#F7F9FD]',
+                        fondo,
                         k.visible,
                         k.extra,
-                        j === 0 && elegida && 'shadow-[inset_3px_0_0_#1E3A7B]',
+                        // El borde azul de la fila elegida va en la primera celda (la casilla, si la hay).
+                        j === 0 && marcado === undefined && elegida && 'shadow-[inset_3px_0_0_#1E3A7B]',
                         // Con el foco del teclado en la fila, el mismo borde azul.
-                        j === 0 && 'group-focus-visible:shadow-[inset_3px_0_0_#1E3A7B]',
+                        j === 0 && marcado === undefined && 'group-focus-visible:shadow-[inset_3px_0_0_#1E3A7B]',
                     )}
                 >
                     {k.celda(e, indice, elegida, buscadas)}

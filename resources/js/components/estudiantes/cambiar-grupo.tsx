@@ -20,7 +20,7 @@ export function CambiarGrupo({
     nombre: string;
     grupoActual: string;
     sedeActual: string;
-    grupos: Array<{ id: number; codigo: string; sede: string; sede_id: number; grado_id: number; grado: string; grado_numero: number }>;
+    grupos: Array<{ id: number; codigo: string; sede: string; sede_id: number; grado_id: number; grado: string; grado_numero: number; ciclo: boolean }>;
     gradoActual: number;
     className?: string;
 }) {
@@ -35,14 +35,20 @@ export function CambiarGrupo({
         return { id, nombre: g?.sede };
     });
 
-    // Todos los grupos de la sede elegida (de cualquier grado), agrupados por grado.
+    // Todos los grupos de la sede elegida (de cualquier grado), agrupados por grado; los
+    // ciclos de la jornada sabatina van aparte, al final, en orden (Ciclo I… Ciclo VI).
     const gruposDeLaSede = grupos
         .filter((g) => (sedeId ? g.sede_id.toString() === sedeId : true))
         .sort((a, b) => a.grado_numero - b.grado_numero || a.codigo.localeCompare(b.codigo));
-    const gradosDeLaSede = Array.from(new Set(gruposDeLaSede.map((g) => g.grado_id))).map((id) => {
-        const g = gruposDeLaSede.find((x) => x.grado_id === id)!;
-        return { id, nombre: g.grado, numero: g.grado_numero, grupos: gruposDeLaSede.filter((x) => x.grado_id === id) };
+    const regulares = gruposDeLaSede.filter((g) => !g.ciclo);
+    const ciclos = gruposDeLaSede.filter((g) => g.ciclo);
+    const gradosDeLaSede = Array.from(new Set(regulares.map((g) => g.grado_id))).map((id) => {
+        const g = regulares.find((x) => x.grado_id === id)!;
+        return { id, nombre: g.grado, numero: g.grado_numero, grupos: regulares.filter((x) => x.grado_id === id) };
     });
+    const hayCiclos = grupos.some((g) => g.ciclo);
+    // Si ya está en un ciclo, su grado no es «el grado actual» de la lista de grupos.
+    const enCiclo = grupos.some((g) => g.ciclo && g.codigo === grupoActual);
 
     const cambiar = () => {
         if (!grupoId || !razon.trim()) return;
@@ -82,10 +88,10 @@ export function CambiarGrupo({
             <Dialog open={abierto} onOpenChange={(v) => !enviando && setAbierto(v)}>
                 <DialogContent className={dialogo}>
                     <DialogHeader>
-                        <DialogTitle className="text-xl font-semibold">Cambiar de grupo, grado o sede</DialogTitle>
+                        <DialogTitle className="text-xl font-semibold">Cambiar de grupo, {hayCiclos ? 'ciclo, ' : ''}grado o sede</DialogTitle>
                         <DialogDescription className="text-[#56627F]">
-                            {nombre} está en <b className="font-semibold text-[#16223F]">{grupoActual}</b> ({sedeActual}). Elige el nuevo grupo,
-                            que puede ser de otro grado o sede.
+                            {nombre} está en <b className="font-semibold text-[#16223F]">{grupoActual}</b> ({sedeActual}). Elige el nuevo{' '}
+                            {hayCiclos ? 'grupo o ciclo' : 'grupo'}, que puede ser de otro grado o sede.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
@@ -116,9 +122,9 @@ export function CambiarGrupo({
                                 disabled={enviando || gruposDeLaSede.length === 0}
                                 className="w-full px-4 py-2 border border-[#D3DDF3] rounded-lg text-[14px] focus:outline-none focus:ring-2 focus:ring-[#1E3A7B]"
                             >
-                                <option value="">Elige un grupo...</option>
+                                <option value="">{hayCiclos ? 'Elige un grupo o ciclo...' : 'Elige un grupo...'}</option>
                                 {gradosDeLaSede.map((gr) => (
-                                    <optgroup key={gr.id} label={gr.nombre + (gr.id === gradoActual ? ' (grado actual)' : '')}>
+                                    <optgroup key={gr.id} label={gr.nombre + (gr.id === gradoActual && !enCiclo ? ' (grado actual)' : '')}>
                                         {gr.grupos.map((g) => (
                                             <option key={g.id} value={g.id}>
                                                 {g.codigo} ({g.sede})
@@ -126,6 +132,15 @@ export function CambiarGrupo({
                                         ))}
                                     </optgroup>
                                 ))}
+                                {ciclos.length > 0 && (
+                                    <optgroup label="Jornada sabatina (ciclos)">
+                                        {ciclos.map((g) => (
+                                            <option key={g.id} value={g.id}>
+                                                {g.codigo} ({g.sede})
+                                            </option>
+                                        ))}
+                                    </optgroup>
+                                )}
                             </select>
                             {gruposDeLaSede.length === 0 && sedeId && (
                                 <p className="text-xs text-[#A12B2B] mt-1">No hay grupos disponibles en esta sede</p>

@@ -233,6 +233,121 @@ class SedesTest extends TestCase
         $this->assertDatabaseMissing('grupos', ['id' => $vacio]);
     }
 
+    public function test_crea_un_ciclo_sabatino_y_de_el_solo_se_cambia_el_cupo()
+    {
+        $sede = $this->nuevaSede();
+        $undecimo = DB::table('grados')->where('numero', 11)->value('id');
+
+        // Se elige el ciclo: queda en el último grado que abarca, con jornada sabatina y número 1.
+        $this->actingAs($this->secretaria)->post("/sedes/{$sede}/grupos", ['anio' => 2026, 'ciclo' => 'VI', 'cupos' => 25])
+            ->assertSessionHasNoErrors()->assertSessionHas('success', 'Ciclo VI creado en Sede de Prueba.');
+        $ciclo = DB::table('grupos')->where(['sede_id' => $sede, 'codigo' => 'Ciclo VI'])->first();
+        $this->assertSame([$undecimo, 1, 'Sabatina', 25, $this->anioId], [(int) $ciclo->grado_id, (int) $ciclo->numero, $ciclo->jornada, (int) $ciclo->cupos_proyectados, (int) $ciclo->anio_lectivo_id]);
+
+        // Uno por sede; un ciclo que no existe, no; el docente no crea ciclos; en un año cerrado tampoco.
+        $this->actingAs($this->secretaria)->post("/sedes/{$sede}/grupos", ['anio' => 2026, 'ciclo' => 'VI', 'cupos' => 25])->assertSessionHasErrors('ciclo');
+        $this->actingAs($this->secretaria)->post("/sedes/{$sede}/grupos", ['anio' => 2026, 'ciclo' => 'VII', 'cupos' => 25])->assertSessionHasErrors('ciclo');
+        $this->actingAs($this->usuario('docente'))->post("/sedes/{$sede}/grupos", ['anio' => 2026, 'ciclo' => 'V', 'cupos' => 25])->assertForbidden();
+        $this->actingAs($this->secretaria)->post("/sedes/{$sede}/grupos", ['anio' => 2025, 'ciclo' => 'V', 'cupos' => 25])->assertSessionHasErrors('ciclo');
+
+        // El 11-1 de la mañana no se confunde con el Ciclo VI (también es Undécimo, número 1).
+        $this->actingAs($this->secretaria)->post("/sedes/{$sede}/grupos", ['anio' => 2026, 'grado_id' => $undecimo, 'numero' => 1, 'jornada' => 'Mañana', 'cupos' => 34])
+            ->assertSessionHasNoErrors();
+        $this->assertSame(['11-1', 'Ciclo VI'], DB::table('grupos')->where('sede_id', $sede)->orderBy('codigo')->pluck('codigo')->all());
+
+        // Al editarlo solo cambia el cupo: el nombre y la jornada quedan, aunque lleguen otros.
+        $this->actingAs($this->secretaria)->put("/grupos/{$ciclo->id}", ['cupos' => 30, 'numero' => 7, 'jornada' => 'Mañana'])->assertSessionHasNoErrors();
+        $g = DB::table('grupos')->find($ciclo->id);
+        $this->assertSame(['Ciclo VI', 'Sabatina', 1, 30], [$g->codigo, $g->jornada, (int) $g->numero, (int) $g->cupos_proyectados]);
+
+        // La página trae los ciclos que se pueden crear y el de la sede entre sus grupos.
+        $this->actingAs($this->secretaria)->get('/sedes')->assertInertia(fn (Assert $page) => $page
+            ->has('ciclos', 6)
+            ->where('ciclos.5', ['ciclo' => 'VI', 'codigo' => 'Ciclo VI', 'grados' => '11.º'])
+            ->where('ciclos.0.grados', '1.º, 2.º, 3.º')
+            ->where('sedes', fn ($sedes) => collect(collect($sedes)->firstWhere('id', $sede)['grupos'])->contains(fn ($x) => $x['codigo'] === 'Ciclo VI' && $x['jornada'] === 'Sabatina'))
+            ->etc());
+
+        // Vacío, se elimina como cualquier grupo.
+        $this->actingAs($this->secretaria)->delete("/grupos/{$ciclo->id}")->assertSessionHasNoErrors();
+        $this->assertDatabaseMissing('grupos', ['id' => $ciclo->id]);
+    }
+
+    public function test_un_estudiante_pasa_de_un_ciclo_a_otro_y_de_vuelta_a_un_grupo()
+    {
+        $sede = DB::table('sedes')->where('codigo', 'P')->value('id');
+        foreach (['III', 'IV'] as $c) {
+            $this->actingAs($this->secretaria)->post("/sedes/{$sede}/grupos", ['anio' => 2026, 'ciclo' => $c, 'cupos' => 25])->assertSessionHasNoErrors();
+        }
+        $cicloIII = DB::table('grupos')->where(['sede_id' => $sede, 'codigo' => 'Ciclo III', 'anio_lectivo_id' => $this->anioId])->first();
+        $cicloIV = DB::table('grupos')->where(['sede_id' => $sede, 'codigo' => 'Ciclo IV', 'anio_lectivo_id' => $this->anioId])->first();
+        $m = DB::table('matriculas as m')->join('grupos as g', 'g.id', '=', 'm.grupo_id')
+            ->where('m.anio_lectivo_id', $this->anioId)->where('m.estado', 'activo')->where('g.sede_id', $sede)->where('g.jornada', '<>', 'Sabatina')
+            ->first(['m.id', 'm.estudiante_id', 'm.grupo_id', 'g.jornada']);
+        $cambiar = fn (int $grupo) => $this->actingAs($this->secretaria)
+            ->post("/estudiantes/{$m->estudiante_id}/cambiar-grupo", ['grupo_id' => $grupo, 'razon' => 'Pasa a la jornada sabatina por trabajo.']);
+        $sabatinos = fn () => DB::table('matriculas as x')->join('grupos as gx', 'gx.id', '=', 'x.grupo_id')
+            ->where('x.anio_lectivo_id', $this->anioId)->where('x.estado', 'activo')->whereRaw("coalesce(x.jornada, gx.jornada) = 'Sabatina'")->count();
+
+        // En la ficha, los ciclos van marcados para ir aparte de los grados.
+        $this->actingAs($this->secretaria)->get("/estudiantes/{$m->estudiante_id}")->assertInertia(fn (Assert $page) => $page
+            ->where('sedes', fn ($sedes) => collect($sedes)->flatMap(fn ($s) => $s['grupos'])->where('ciclo', true)->pluck('codigo')->sort()->values()->all() === ['Ciclo III', 'Ciclo IV'])
+            ->etc());
+
+        // A un ciclo: toma su grado (Séptimo) y la jornada sabatina.
+        $cambiar($cicloIII->id)->assertSessionHasNoErrors();
+        $x = DB::table('matriculas')->find($m->id);
+        $this->assertSame([$cicloIII->id, $cicloIII->grado_id, 'Sabatina'], [(int) $x->grupo_id, (int) $x->grado_id, $x->jornada]);
+        $this->assertSame(1, $sabatinos());
+
+        // De un ciclo a otro.
+        $cambiar($cicloIV->id)->assertSessionHasNoErrors();
+        $x = DB::table('matriculas')->find($m->id);
+        $this->assertSame([$cicloIV->id, $cicloIV->grado_id, 'Sabatina'], [(int) $x->grupo_id, (int) $x->grado_id, $x->jornada]);
+
+        // Y de vuelta a su grupo de antes: sale de la sabatina.
+        $cambiar((int) $m->grupo_id)->assertSessionHasNoErrors();
+        $this->assertSame($m->jornada, DB::table('matriculas')->where('id', $m->id)->value('jornada'));
+        $this->assertSame(0, $sabatinos());
+    }
+
+    public function test_cambia_de_grupo_o_ciclo_a_varios_marcados_a_la_vez()
+    {
+        $sede = DB::table('sedes')->where('codigo', 'P')->value('id');
+        $this->actingAs($this->secretaria)->post("/sedes/{$sede}/grupos", ['anio' => 2026, 'ciclo' => 'IV', 'cupos' => 3])->assertSessionHasNoErrors();
+        $ciclo = DB::table('grupos')->where(['sede_id' => $sede, 'codigo' => 'Ciclo IV', 'anio_lectivo_id' => $this->anioId])->first();
+        $activos = DB::table('matriculas as m')->join('grupos as g', 'g.id', '=', 'm.grupo_id')
+            ->where('m.anio_lectivo_id', $this->anioId)->where('m.estado', 'activo')->where('g.sede_id', $sede)->where('g.jornada', '<>', 'Sabatina')
+            ->orderBy('m.id')->limit(4)->get(['m.id', 'm.estudiante_id']);
+        $ids = $activos->pluck('estudiante_id')->all();
+        $cambiar = fn (array $estudiantes, ?int $grupo = null) => $this->actingAs($this->secretaria)
+            ->post('/estudiantes/cambiar-grupo', ['estudiantes' => $estudiantes, 'grupo_id' => $grupo ?? $ciclo->id, 'razon' => 'Pasan a la sabatina por trabajo.']);
+
+        // La lista de grupos para elegir trae los ciclos marcados.
+        $this->actingAs($this->secretaria)->getJson('/estudiantes/grupos-para-cambiar')->assertOk()
+            ->assertJson(fn ($json) => $json->etc())
+            ->assertJsonFragment(['codigo' => 'Ciclo IV', 'ciclo' => true]);
+
+        // Cuatro no caben en un ciclo de 3 cupos: no se cambia a nadie.
+        $cambiar($ids)->assertSessionHasErrors(['grupo_id' => 'En ese grupo solo quedan 3 cupos y son 4 estudiantes.']);
+        $this->assertSame(0, DB::table('matriculas')->where('grupo_id', $ciclo->id)->count());
+
+        // Tres sí: todos al ciclo, en Noveno y jornada sabatina, con su novedad.
+        $tres = array_slice($ids, 0, 3);
+        $cambiar($tres)->assertSessionHasNoErrors()->assertSessionHas('success', '3 estudiantes cambiaron a Ciclo IV (P).');
+        $this->assertSame(3, DB::table('matriculas')->where('grupo_id', $ciclo->id)->where('jornada', 'Sabatina')->where('grado_id', $ciclo->grado_id)->count());
+        $this->assertSame(3, DB::table('novedades_matricula')->whereIn('matricula_id', $activos->take(3)->pluck('id'))->where('tipo', 'cambio_grupo')->count());
+
+        // Alguien que ya está en ese grupo entre los marcados: no se cambia a nadie.
+        $cambiar([$ids[3], $ids[0]])->assertSessionHasErrors('grupo_id');
+        // Alguien fuera del año en curso (o retirado): tampoco.
+        DB::table('matriculas')->where('id', $activos[3]->id)->update(['estado' => 'retirado']);
+        $cambiar([$ids[3]])->assertSessionHasErrors('estudiantes');
+        // Sin permiso de editar estudiantes, no.
+        $this->actingAs($this->usuario('docente'))->post('/estudiantes/cambiar-grupo', ['estudiantes' => $tres, 'grupo_id' => $ciclo->id, 'razon' => 'Una razón de prueba.'])
+            ->assertForbidden();
+    }
+
     /** Un docente activo de la sede. */
     private function docenteDe(int $sedeId, string $nombre): User
     {

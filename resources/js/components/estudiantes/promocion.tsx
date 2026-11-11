@@ -24,10 +24,21 @@ export type ResumenPromocion = {
     reparto: { grupo: string; sede: string; n: number; libres: number | null }[];
 };
 
-type Alcance = { estudiante_id?: number; grado_id?: number; sede?: string; grupo_id?: number; grupo_destino_id?: number };
+type Alcance = {
+    estudiante_id?: number;
+    /** Los marcados en la lista. */
+    estudiantes?: number[];
+    grado_id?: number;
+    sede?: string;
+    grupo_id?: number;
+    grupo_destino_id?: number;
+};
 
-/** Promueve y avisa con los toasts de Sileo: primero "Promoviendo…", luego el resultado. */
-export function promover(anio: number, alcance: Alcance, { onFin }: { onFin?: () => void } = {}) {
+/**
+ * Promueve y avisa con los toasts de Sileo: primero "Promoviendo…", luego el resultado.
+ * `onFin` llega siempre (también con error); `onExito`, solo si se promovió.
+ */
+export function promover(anio: number, alcance: Alcance, { onFin, onExito }: { onFin?: () => void; onExito?: (r: ResumenPromocion) => void } = {}) {
     const envio = new Promise<ResumenPromocion>((resolver, rechazar) => {
         router.post(
             '/promociones',
@@ -54,6 +65,7 @@ export function promover(anio: number, alcance: Alcance, { onFin }: { onFin?: ()
 
     envio
         .then((r) => {
+            onExito?.(r);
             if (r.sobreCupo > 0) {
                 sileo.warning({
                     title: `${r.sobreCupo} ${r.sobreCupo === 1 ? 'quedó' : 'quedaron'} sobre el cupo`,

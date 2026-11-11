@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Support\Alcance;
 use App\Support\AniosLectivos;
+use App\Support\Ciclos;
 use App\Support\Firmantes;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -96,6 +97,12 @@ class SedeController extends Controller
             'sedes' => $sedes,
             'grados' => DB::table('grados')->orderBy('numero')->get(['id', 'numero', 'nombre']),
             'jornadas' => self::JORNADAS,
+            // Los ciclos de la jornada sabatina que se pueden crear («Ciclo VI · 11.º»).
+            'ciclos' => collect(Ciclos::GRADOS)->map(fn ($grados, $ciclo) => [
+                'ciclo' => $ciclo,
+                'codigo' => Ciclos::codigo($ciclo),
+                'grados' => implode(', ', array_map(fn ($g) => $g.'.º', $grados)),
+            ])->values(),
         ]);
     }
 

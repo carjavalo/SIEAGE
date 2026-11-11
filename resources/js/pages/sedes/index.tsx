@@ -4,7 +4,7 @@ import { botonPrimario } from '@/components/formulario';
 import { DialogoGrupo, DialogoSede } from '@/components/sedes/dialogos';
 import PanelLayout from '@/layouts/panel-layout';
 import { numero } from '@/lib/estudiantes';
-import { type GradoSede, type GrupoSede, type SedeConGrupos, colorDeSede, jornadasDe } from '@/lib/sedes';
+import { type CicloSede, type GradoSede, type GrupoSede, type SedeConGrupos, colorDeSede, esCiclo, jornadasDe } from '@/lib/sedes';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
@@ -20,16 +20,20 @@ type Props = {
     sedes: SedeConGrupos[];
     grados: GradoSede[];
     jornadas: string[];
+    ciclos: CicloSede[];
 };
 
 /** Qué diálogo está abierto. Se guarda aparte de `abierto` para que no se vacíe mientras se cierra. */
-type Dialogo = { tipo: 'sede'; sede: SedeConGrupos | null } | { tipo: 'grupo'; sede: SedeConGrupos; grupo: GrupoSede | null };
+type Dialogo =
+    | { tipo: 'sede'; sede: SedeConGrupos | null }
+    /** `ciclo`: el grupo nuevo es un ciclo de la jornada sabatina. */
+    | { tipo: 'grupo'; sede: SedeConGrupos; grupo: GrupoSede | null; ciclo?: boolean };
 
 /**
  * Sedes: una tarjeta por sede con sus grupos del año a la vista (matriculados
- * sobre cupos). Desde aquí se crean las sedes y sus grupos.
+ * sobre cupos). Desde aquí se crean las sedes, sus grupos y sus ciclos sabatinos.
  */
-export default function Sedes({ anios, anio, editable, sedes, grados, jornadas }: Props) {
+export default function Sedes({ anios, anio, editable, sedes, grados, jornadas, ciclos }: Props) {
     const { auth } = usePage<SharedData>().props;
     const puede = auth.puedeGestionarSedes;
     const [dialogo, setDialogo] = useState<Dialogo>({ tipo: 'sede', sede: null });
@@ -91,7 +95,7 @@ export default function Sedes({ anios, anio, editable, sedes, grados, jornadas }
                         puede={puede}
                         editable={editable}
                         onEditar={() => abrir({ tipo: 'sede', sede: s })}
-                        onGrupo={(grupo) => abrir({ tipo: 'grupo', sede: s, grupo })}
+                        onGrupo={(grupo, ciclo) => abrir({ tipo: 'grupo', sede: s, grupo, ciclo })}
                     />
                 ))}
             </div>
@@ -110,6 +114,8 @@ export default function Sedes({ anios, anio, editable, sedes, grados, jornadas }
                             anio={anio}
                             grados={grados}
                             jornadas={jornadas}
+                            ciclos={ciclos}
+                            ciclo={dialogo.grupo ? esCiclo(dialogo.grupo) : !!dialogo.ciclo}
                             abierto={abierto}
                             onCambio={setAbierto}
                         />
@@ -135,16 +141,21 @@ function TarjetaSede({
     puede: boolean;
     editable: boolean;
     onEditar: () => void;
-    /** null: agregar un grupo. */
-    onGrupo: (grupo: GrupoSede | null) => void;
+    /** null: agregar un grupo (`ciclo`: agregar un ciclo de la jornada sabatina). */
+    onGrupo: (grupo: GrupoSede | null, ciclo?: boolean) => void;
 }) {
     const titulo = `sede-${sede.id}`;
+    // Los ciclos de la jornada sabatina van aparte, después de los grupos.
+    const regulares = sede.grupos.filter((g) => !esCiclo(g));
+    const ciclos = sede.grupos.filter(esCiclo);
     // Con más de una jornada, los grupos van separados por jornada; con una sola, basta decirla arriba.
-    const presentes = jornadas.filter((j) => sede.grupos.some((g) => g.jornada === j));
+    const presentes = jornadas.filter((j) => regulares.some((g) => g.jornada === j));
     const bloques =
         presentes.length > 1
-            ? presentes.map((j) => ({ jornada: j, grupos: sede.grupos.filter((g) => g.jornada === j) }))
-            : [{ jornada: null, grupos: sede.grupos }];
+            ? presentes.map((j) => ({ jornada: j, grupos: regulares.filter((g) => g.jornada === j) }))
+            : regulares.length > 0
+              ? [{ jornada: null, grupos: regulares }]
+              : [];
 
     return (
         <section aria-labelledby={titulo} className="mb-5 break-inside-avoid rounded-[28px] bg-[#F2F5FA] p-5 md:p-6">
@@ -172,7 +183,7 @@ function TarjetaSede({
                     <p className="mt-1 text-[14px] text-[#3E4A68]">
                         <b className="font-semibold text-[#16223F] tabular-nums">{numero(sede.estudiantes)}</b>{' '}
                         {sede.estudiantes === 1 ? 'estudiante' : 'estudiantes'} · {sede.grupos.length} {sede.grupos.length === 1 ? 'grupo' : 'grupos'}
-                        {presentes.length === 1 && ` · ${jornadasDe(sede.grupos, jornadas)}`}
+                        {presentes.length === 1 && ` · ${jornadasDe(regulares, jornadas)}`}
                     </p>
                     <p className="mt-0.5 text-[13px] text-[#56627F]">{sede.direccion ?? 'Sin dirección registrada'}</p>
                 </div>
@@ -194,6 +205,13 @@ function TarjetaSede({
                 ))
             )}
 
+            {ciclos.length > 0 && (
+                <div className="mt-4">
+                    <h3 className="mb-1 text-[12px] font-semibold tracking-[0.08em] text-[#5E6983] uppercase">Sabatina (ciclos) · {ciclos.length}</h3>
+                    <PorGrado grupos={ciclos} sede={sede} anio={anio} abrir={puede && editable ? onGrupo : undefined} fila="Ciclos" />
+                </div>
+            )}
+
             {sede.sin_grupo > 0 && (
                 <p className="mt-3 text-[13px] text-[#8A5A0B]">
                     {sede.sin_grupo} {sede.sin_grupo === 1 ? 'estudiante activo no tiene' : 'estudiantes activos no tienen'} grupo asignado.
@@ -201,22 +219,42 @@ function TarjetaSede({
             )}
 
             {puede && editable && (
-                <button
-                    type="button"
-                    onClick={() => onGrupo(null)}
-                    className="mt-3 -ml-1 flex h-8 cursor-pointer items-center gap-1.5 rounded-full px-1.5 text-[14px] font-semibold text-[#1E3A7B] underline-offset-4 hover:underline focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none"
-                >
-                    <Plus aria-hidden className="size-3.5" strokeWidth={2.5} />
-                    Agregar grupo
-                </button>
+                <div className="mt-3 -ml-1 flex flex-wrap gap-x-4">
+                    <button type="button" onClick={() => onGrupo(null)} className={claseAgregar}>
+                        <Plus aria-hidden className="size-3.5" strokeWidth={2.5} />
+                        Agregar grupo
+                    </button>
+                    <button type="button" onClick={() => onGrupo(null, true)} className={claseAgregar}>
+                        <Plus aria-hidden className="size-3.5" strokeWidth={2.5} />
+                        Agregar ciclo (sabatina)
+                    </button>
+                </div>
             )}
         </section>
     );
 }
 
-/** Una fila por grado con sus grupos: «6-1 32/34». En rojo, el que pasó su cupo. */
-function PorGrado({ grupos, sede, anio, abrir }: { grupos: GrupoSede[]; sede: SedeConGrupos; anio: number; abrir?: (g: GrupoSede) => void }) {
-    const grados = [...new Map(grupos.map((g) => [g.grado_id, g.grado])).entries()];
+const claseAgregar =
+    'flex h-8 cursor-pointer items-center gap-1.5 rounded-full px-1.5 text-[14px] font-semibold text-[#1E3A7B] underline-offset-4 hover:underline focus-visible:ring-4 focus-visible:ring-[#DCE5F8] focus-visible:outline-none';
+
+/**
+ * Una fila por grado con sus grupos: «6-1 32/34». En rojo, el que pasó su cupo.
+ * Con `fila`, todos en una sola fila con ese rótulo (los ciclos: «Ciclos»).
+ */
+function PorGrado({
+    grupos,
+    sede,
+    anio,
+    abrir,
+    fila,
+}: {
+    grupos: GrupoSede[];
+    sede: SedeConGrupos;
+    anio: number;
+    abrir?: (g: GrupoSede) => void;
+    fila?: string;
+}) {
+    const grados: [number, string][] = fila ? [[0, fila]] : [...new Map(grupos.map((g) => [g.grado_id, g.grado])).entries()];
     const clase = (lleno: boolean) =>
         cn(
             'inline-flex h-[30px] items-baseline gap-1.5 rounded-full bg-white px-2.5 text-[14px] leading-[30px] ring-1 transition hover:ring-[#6E8BD6] focus-visible:ring-2 focus-visible:ring-[#6E8BD6] focus-visible:outline-none',
@@ -230,7 +268,7 @@ function PorGrado({ grupos, sede, anio, abrir }: { grupos: GrupoSede[]; sede: Se
                     <dt className="w-[76px] shrink-0 pt-[5px] text-[14px] text-[#3E4A68]">{nombre}</dt>
                     <dd className="flex flex-wrap gap-1.5">
                         {grupos
-                            .filter((g) => g.grado_id === gradoId)
+                            .filter((g) => !!fila || g.grado_id === gradoId)
                             .map((g) => {
                                 const lleno = g.activos > g.cupos;
                                 const contenido = (
@@ -259,7 +297,7 @@ function PorGrado({ grupos, sede, anio, abrir }: { grupos: GrupoSede[]; sede: Se
                                 ) : (
                                     <Link
                                         key={g.id}
-                                        href={`/estudiantes?anio=${anio}&grado=${g.grado_id}&sede=${encodeURIComponent(sede.codigo)}`}
+                                        href={`/estudiantes?anio=${anio}&${esCiclo(g) ? 'jornada=sabatina' : `grado=${g.grado_id}`}&sede=${encodeURIComponent(sede.codigo)}`}
                                         title={director}
                                         aria-label={`${etiqueta}. Ver estudiantes`}
                                         className={clase(lleno)}

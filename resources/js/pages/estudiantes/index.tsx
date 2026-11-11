@@ -7,6 +7,7 @@ import { sedeInfo } from '@/components/estudiantes/etiquetas';
 import { FichaEstudiante } from '@/components/estudiantes/ficha-estudiante';
 import { ListaEstudiantes } from '@/components/estudiantes/lista-estudiantes';
 import { BotonDeshacer, BotonPromover, puedePromover } from '@/components/estudiantes/promocion';
+import { BarraSeleccion } from '@/components/estudiantes/seleccion';
 import { TableroGrupos } from '@/components/estudiantes/tablero-grupos';
 import { VeloFicha } from '@/components/ficha';
 import { useListaConFicha } from '@/hooks/use-lista-con-ficha';
@@ -31,7 +32,7 @@ import { puede } from '@/lib/permisos';
 import { type SharedData } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
 import { FileText, GraduationCap, NotebookPen } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type Props = {
     anios: { id: number; anio: number; estado: string }[];
@@ -122,6 +123,42 @@ export default function Estudiantes({
         [conTexto],
     );
     const total = useMemo(() => delAlcance.filter((e) => cumpleEstado(e.estado, estado)).length, [delAlcance, estado]);
+
+    // Marcar varios en la lista para promoverlos o cambiarlos de grupo a la vez (solo en el año en curso).
+    const marcaPromover = puedePromover(auth) && anio === anioEnCurso;
+    const marcaCambiar = auth.puedeEditarDatos && anio === anioEnCurso;
+    const [marcados, setMarcados] = useState<ReadonlySet<number>>(() => new Set());
+    // Otro grado, año, sede o la sabatina: se empieza sin marcas.
+    useEffect(() => setMarcados(new Set()), [anio, gradoId, sede, sabatina.elegida]);
+    // Lo que se hace es con los marcados que se ven ahora (no con los que quedaron ocultos por un filtro).
+    const marcadosVisibles = useMemo(() => visibles.filter((e) => marcados.has(e.id)), [visibles, marcados]);
+    // Estable: las filas (memorizadas) solo se vuelven a pintar si cambia su propia marca.
+    const marcarUno = useCallback(
+        (id: number) =>
+            setMarcados((antes) => {
+                const nuevo = new Set(antes);
+                if (nuevo.has(id)) nuevo.delete(id);
+                else nuevo.add(id);
+                return nuevo;
+            }),
+        [],
+    );
+    const marcar = useMemo(
+        () => ({
+            marcados,
+            onUno: marcarUno,
+            onTodos: (todos: boolean) =>
+                setMarcados((antes) => {
+                    const nuevo = new Set(antes);
+                    for (const e of visibles) {
+                        if (todos) nuevo.add(e.id);
+                        else nuevo.delete(e.id);
+                    }
+                    return nuevo;
+                }),
+        }),
+        [marcados, marcarUno, visibles],
+    );
     // Las columnas que no distinguen nada en el grado no se muestran.
     const columnas = useMemo(
         () => ({
@@ -238,6 +275,20 @@ export default function Estudiantes({
                         setEstado('activo');
                     }}
                     onFila={ficha.abrirFila}
+                    marcar={(marcaPromover || marcaCambiar) && !navegando ? marcar : undefined}
+                    barraMarcados={
+                        (marcaPromover || marcaCambiar) && (
+                            <BarraSeleccion
+                                anio={anio}
+                                marcados={navegando ? [] : marcadosVisibles}
+                                puedePromover={marcaPromover}
+                                puedeCambiar={marcaCambiar}
+                                gruposDestino={gruposDestino}
+                                enSabatina={enSabatina}
+                                onLimpiar={() => setMarcados(new Set())}
+                            />
+                        )
+                    }
                     acciones={
                         grado &&
                         !navegando && (

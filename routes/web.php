@@ -128,6 +128,9 @@ Route::middleware(['auth'])->group(function () {
         Route::put('estudiantes/{estudiante}/documentos', [DatosEstudianteController::class, 'documentos'])->whereNumber('estudiante')->name('estudiantes.documentos');
         Route::put('estudiantes/{estudiante}/modalidad', [DatosEstudianteController::class, 'modalidad'])->whereNumber('estudiante')->name('estudiantes.modalidad');
         Route::post('estudiantes/{estudiante}/cambiar-grupo', [DatosEstudianteController::class, 'cambiarGrupo'])->whereNumber('estudiante')->name('estudiantes.cambiar-grupo');
+        // Los marcados en la lista, todos al mismo grupo o ciclo.
+        Route::post('estudiantes/cambiar-grupo', [DatosEstudianteController::class, 'cambiarGrupoVarios'])->name('estudiantes.cambiar-grupo.varios');
+        Route::get('estudiantes/grupos-para-cambiar', [EstudianteController::class, 'gruposParaCambiar'])->name('estudiantes.grupos-para-cambiar');
         // POST y no GET: el documento no debe quedar en la dirección ni en los registros del servidor.
         Route::post('acudientes/buscar', [DatosEstudianteController::class, 'buscarAcudiente'])->name('acudientes.buscar');
         Route::post('estudiantes/{estudiante}/acudientes', [DatosEstudianteController::class, 'agregarAcudiente'])->whereNumber('estudiante')->name('estudiantes.acudientes.agregar');

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Support\Alcance;
 use App\Support\AniosLectivos;
+use App\Support\Ciclos;
 use App\Support\Firmantes;
 use App\Support\Grupos;
 use Illuminate\Http\RedirectResponse;
@@ -16,6 +17,11 @@ use Illuminate\Validation\ValidationException;
  * Los grupos de una sede: crearlos, cambiarles el número, la jornada o el cupo
  * y eliminar los que quedaron vacíos (desde Sedes), y guardar los cupos de un
  * grado completo (desde Estudiantes). En un año lectivo cerrado no se toca nada.
+ *
+ * Los ciclos de la jornada sabatina también son grupos (ver App\Support\Ciclos):
+ * «Ciclo VI» va en el último grado que abarca (Undécimo), con número 1 y jornada
+ * Sabatina, uno por sede. Se crean eligiendo el ciclo y de ellos solo se cambian el
+ * cupo y el director(a): el nombre y la jornada quedan fijos.
  */
 class GrupoController extends Controller
 {
@@ -32,12 +38,11 @@ class GrupoController extends Controller
     {
         Alcance::exigirSede($request->user(), $sede);
         $sede = DB::table('sedes')->find($sede) ?? abort(404);
+        if ($request->filled('ciclo')) {
+            return $this->crearCiclo($request, $sede);
+        }
         $datos = $request->validate([
-            // Un año que ya existe o el siguiente al que está en curso (sus grupos se crean según la proyección de matrícula).
-            'anio' => ['required', 'integer', Rule::when(
-                (int) $request->input('anio') !== AniosLectivos::siguiente(),
-                ['exists:anios_lectivos,anio'],
-            )],
+            'anio' => $this->reglaAnio($request),
             'grado_id' => ['required', 'integer', 'exists:grados,id'],
             ...$this->reglas($sede->id),
         ], self::MENSAJES);
@@ -71,10 +76,55 @@ class GrupoController extends Controller
         return back()->with('success', "Grupo {$codigo} creado en {$sede->nombre}.");
     }
 
+    /** Un ciclo de la jornada sabatina («Ciclo VI»): se elige el ciclo, no el grado ni el número. */
+    private function crearCiclo(Request $request, object $sede): RedirectResponse
+    {
+        $datos = $request->validate([
+            'anio' => $this->reglaAnio($request),
+            'ciclo' => ['required', Rule::in(array_keys(Ciclos::GRADOS))],
+            'cupos' => ['required', 'integer', 'min:1', 'max:99'],
+            'director_id' => ['sometimes', 'nullable', 'integer', Firmantes::regla($sede->id)],
+        ], self::MENSAJES);
+        $ciclo = $datos['ciclo'];
+        $grado = DB::table('grados')->where('numero', Ciclos::grado($ciclo))->first() ?? abort(404);
+        Alcance::exigir($request->user(), $sede->id, $grado->id);
+        abort_unless(Alcance::veGradoCompleto($request->user(), $sede->id, $grado->id), 404);
+
+        $codigo = Ciclos::codigo($ciclo);
+        DB::transaction(function () use ($datos, $sede, $grado, $codigo) {
+            $anio = AniosLectivos::abrir((int) $datos['anio']);
+            $this->abierto($anio->estado, 'ciclo');
+            $existe = DB::table('grupos')
+                ->where(['anio_lectivo_id' => $anio->id, 'sede_id' => $sede->id, 'grado_id' => $grado->id, 'jornada' => Ciclos::JORNADA])
+                ->exists();
+            if ($existe) {
+                throw ValidationException::withMessages(['ciclo' => "Ya existe el {$codigo} en esta sede."]);
+            }
+
+            DB::table('grupos')->insert([
+                'anio_lectivo_id' => $anio->id,
+                'sede_id' => $sede->id,
+                'grado_id' => $grado->id,
+                'numero' => 1,
+                'codigo' => $codigo,
+                'jornada' => Ciclos::JORNADA,
+                'cupos_proyectados' => (int) $datos['cupos'],
+                'director_id' => empty($datos['director_id']) ? null : Firmantes::docenteDe((int) $datos['director_id']),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        });
+
+        return back()->with('success', "{$codigo} creado en {$sede->nombre}.");
+    }
+
     public function update(Request $request, int $grupo): RedirectResponse
     {
         $actual = DB::table('grupos')->find($grupo) ?? abort(404);
         Alcance::exigir($request->user(), $actual->sede_id, $actual->grado_id, $actual->id);
+        if ($actual->jornada === Ciclos::JORNADA) {
+            return $this->actualizarCiclo($request, $actual);
+        }
         $datos = $request->validate($this->reglas($actual->sede_id), self::MENSAJES);
         // Con solo algunos grupos del grado, no lo vuelve un número que no tiene.
         $numeros = Alcance::numerosDelGrado($request->user(), $actual->sede_id, $actual->grado_id);
@@ -104,6 +154,37 @@ class GrupoController extends Controller
         });
 
         return back()->with('success', "Grupo {$codigo} actualizado.");
+    }
+
+    /** De un ciclo solo se cambian el cupo y quién lo dirige: el nombre y la jornada sabatina quedan. */
+    private function actualizarCiclo(Request $request, object $actual): RedirectResponse
+    {
+        $datos = $request->validate([
+            'cupos' => ['required', 'integer', 'min:1', 'max:99'],
+            'director_id' => ['sometimes', 'nullable', 'integer', Firmantes::regla($actual->sede_id)],
+        ], self::MENSAJES);
+        $this->abierto(DB::table('anios_lectivos')->where('id', $actual->anio_lectivo_id)->value('estado'), 'cupos');
+
+        DB::table('grupos')->where('id', $actual->id)->update([
+            'cupos_proyectados' => (int) $datos['cupos'],
+            ...(array_key_exists('director_id', $datos) ? ['director_id' => $datos['director_id'] ? Firmantes::docenteDe((int) $datos['director_id']) : null] : []),
+            'updated_at' => now(),
+        ]);
+
+        return back()->with('success', "{$actual->codigo} actualizado.");
+    }
+
+    /**
+     * Un año que ya existe o el siguiente al que está en curso (sus grupos se crean según la proyección de matrícula).
+     *
+     * @return list<mixed>
+     */
+    private function reglaAnio(Request $request): array
+    {
+        return ['required', 'integer', Rule::when(
+            (int) $request->input('anio') !== AniosLectivos::siguiente(),
+            ['exists:anios_lectivos,anio'],
+        )];
     }
 
     public function destroy(Request $request, int $grupo): RedirectResponse
@@ -136,22 +217,24 @@ class GrupoController extends Controller
         ];
     }
 
-    private function abierto(?string $estado): void
+    private function abierto(?string $estado, string $campo = 'numero'): void
     {
         if ($estado === 'cerrado') {
-            throw ValidationException::withMessages(['numero' => 'Ese año lectivo ya está cerrado: sus grupos no se cambian.']);
+            throw ValidationException::withMessages([$campo => 'Ese año lectivo ya está cerrado: sus grupos no se cambian.']);
         }
     }
 
     /**
      * El código del grupo («6-3»), si ese número está libre en la sede para ese
      * grado y año. No se repite ni en otra jornada: dos «6-3» en la misma sede se confundirían.
+     * Los ciclos no cuentan: «Ciclo VI» va en Undécimo con número 1, pero no se confunde con el 11-1.
      */
     private function libre(int $anioId, int $sedeId, object $grado, int $numero, ?int $excepto = null): string
     {
         $codigo = Grupos::codigo((int) $grado->numero, $numero);
         $ocupado = DB::table('grupos')
             ->where(['anio_lectivo_id' => $anioId, 'sede_id' => $sedeId, 'grado_id' => $grado->id, 'numero' => $numero])
+            ->where('jornada', '<>', Ciclos::JORNADA)
             ->when($excepto, fn ($q) => $q->where('id', '<>', $excepto))
             ->exists();
         if ($ocupado) {

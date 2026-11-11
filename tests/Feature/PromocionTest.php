@@ -73,6 +73,71 @@ class PromocionTest extends TestCase
         $this->assertSame(1, DB::table('matriculas')->where('estudiante_id', $m->estudiante_id)->where('anio_lectivo_id', $this->anioId(2027))->count());
     }
 
+    public function test_un_estudiante_de_la_manana_no_pasa_a_un_ciclo_del_anio_siguiente()
+    {
+        // Un estudiante del 9-1 (no sabatino).
+        $m = DB::table('matriculas as m')->join('grupos as g', 'g.id', '=', 'm.grupo_id')
+            ->where('m.anio_lectivo_id', $this->anioId(2026))->where('m.grado_id', $this->grado(9))->where('m.estado', 'activo')
+            ->where('g.numero', 1)->where('g.jornada', '<>', 'Sabatina')
+            ->first(['m.estudiante_id', 'm.sede_id']);
+
+        // En 2027, primero se crea en su sede el Ciclo V (Décimo, número 1, sabatina)…
+        $this->actingAs($this->secretaria)->post("/sedes/{$m->sede_id}/grupos", ['anio' => 2027, 'ciclo' => 'V', 'cupos' => 25])->assertSessionHasNoErrors();
+        // …que no cuenta como grupo de Décimo: sin los de la mañana, no se promueve.
+        $this->actingAs($this->secretaria)->post('/promociones', ['anio' => 2026, 'estudiante_id' => $m->estudiante_id])
+            ->assertSessionHasErrors(['promocion' => 'Todavía no hay grupos de Décimo en 2027: créalos en Sedes, según la proyección de matrícula, y vuelve a promover.']);
+
+        // Con el 10-1 creado después del ciclo, pasa al 10-1 y no al Ciclo V.
+        $this->crearGruposDelSiguiente(2026, [10]);
+        $this->promover(['estudiante_id' => $m->estudiante_id]);
+        $nueva = DB::table('matriculas as x')->join('grupos as g', 'g.id', '=', 'x.grupo_id')
+            ->where('x.estudiante_id', $m->estudiante_id)->where('x.anio_lectivo_id', $this->anioId(2027))
+            ->first(['g.codigo', 'g.jornada', 'x.jornada as jornada_matricula']);
+        $this->assertSame('10-1', $nueva->codigo);
+        $this->assertNotSame('Sabatina', $nueva->jornada);
+        $this->assertNotSame('Sabatina', $nueva->jornada_matricula);
+    }
+
+    public function test_promueve_solo_a_los_marcados_en_la_lista()
+    {
+        $this->crearGruposDelSiguiente(2026, [8]);
+        // Tres de séptimo, de grupos distintos; se marcan dos.
+        $septimo = DB::table('matriculas as m')->join('grupos as g', 'g.id', '=', 'm.grupo_id')
+            ->where('m.anio_lectivo_id', $this->anioId(2026))->where('m.grado_id', $this->grado(7))->where('m.estado', 'activo')
+            ->orderBy('g.numero')->get(['m.estudiante_id', 'g.numero', 'm.sede_id']);
+        $marcados = [$septimo->first()->estudiante_id, $septimo->last()->estudiante_id];
+        $otro = $septimo->first(fn ($x) => ! in_array($x->estudiante_id, $marcados, true))->estudiante_id;
+
+        $resumen = $this->promover(['estudiantes' => $marcados]);
+        $this->assertSame(2, $resumen['promovidos']);
+        $en2027 = fn (int $id) => DB::table('matriculas as x')->leftJoin('grupos as g', 'g.id', '=', 'x.grupo_id')
+            ->where('x.estudiante_id', $id)->where('x.anio_lectivo_id', $this->anioId(2027))->value('g.codigo');
+        // Cada uno a su mismo grupo de octavo; el que no se marcó, sigue sin promover.
+        $this->assertSame('8-'.$septimo->first()->numero, $en2027($marcados[0]));
+        $this->assertNull($en2027($otro));
+
+        // Todos a un grupo elegido.
+        $destino = DB::table('grupos')->where(['anio_lectivo_id' => $this->anioId(2027), 'grado_id' => $this->grado(8), 'sede_id' => $septimo->first()->sede_id])
+            ->orderByDesc('numero')->first(['id', 'codigo']);
+        $dos = $septimo->pluck('estudiante_id')->reject(fn ($id) => in_array($id, $marcados, true))->take(2)->values()->all();
+        $this->assertSame(2, $this->promover(['estudiantes' => $dos, 'grupo_destino_id' => $destino->id])['promovidos']);
+        $this->assertSame([$destino->codigo, $destino->codigo], array_map($en2027, $dos));
+    }
+
+    public function test_promover_marcados_es_todo_o_nada_y_solo_a_su_alcance()
+    {
+        $this->crearGruposDelSiguiente(2026, [8]);
+        $uno = DB::table('matriculas')->where('anio_lectivo_id', $this->anioId(2026))->where('grado_id', $this->grado(7))->where('estado', 'activo')->value('estudiante_id');
+        // Alguien sin matrícula en 2026 entre los marcados: no se promueve a nadie.
+        $sinMatricula = DB::table('estudiantes')->insertGetId(['tipo_documento' => 'T.I.', 'numero_documento' => '99887766', 'nombre_completo' => 'Prueba Sin Matricula']);
+        $this->actingAs($this->secretaria)->post('/promociones', ['anio' => 2026, 'estudiantes' => [$uno, $sinMatricula]])->assertSessionHasErrors('promocion');
+        $this->assertNull($this->anioId(2027) ? DB::table('matriculas')->where('estudiante_id', $uno)->where('anio_lectivo_id', $this->anioId(2027))->value('id') : null);
+
+        // Un docente no promueve.
+        $docente = User::factory()->create(['rol_id' => Rol::where('nombre', 'docente')->value('id')]);
+        $this->actingAs($docente)->post('/promociones', ['anio' => 2026, 'estudiantes' => [$uno]])->assertForbidden();
+    }
+
     public function test_todos_pasan_a_su_mismo_grupo_sin_importar_el_cupo()
     {
         $this->crearGruposDelSiguiente();

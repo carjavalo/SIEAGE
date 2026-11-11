@@ -38,6 +38,13 @@ export type SedeConGrupos = {
 
 export type GradoSede = { id: number; numero: number; nombre: string };
 
+/** Un ciclo de la jornada sabatina que se puede crear: «Ciclo VI», que abarca «11.º». */
+export type CicloSede = { ciclo: string; codigo: string; grados: string };
+
+/** La jornada de los ciclos (App\Support\Ciclos::JORNADA). */
+export const JORNADA_CICLOS = 'Sabatina';
+export const esCiclo = (g: { jornada: string }) => g.jornada === JORNADA_CICLOS;
+
 /** Las cinco sedes con las que empezó el colegio tienen su color; las nuevas toman uno de reserva, siempre el mismo. */
 const FIJOS: Record<string, string> = { P: '#1E3A7B', LF: '#5B7BD0', CP: '#23948C', RP: '#D08A1E', PT: '#C04E83' };
 const RESERVA = ['#7A5AC8', '#3D8B5E', '#B5563A', '#3F8FA8', '#8A6D1F', '#9B4D96'];
