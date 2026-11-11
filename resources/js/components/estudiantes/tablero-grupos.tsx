@@ -76,8 +76,6 @@ export function TableroGrupos({ grupos, estudiantes, grupoId, onElegir, anio, va
             </Cifra>
         </Fragment>
     ));
-    let orden = 0;
-
     return (
         <section
             ref={tablero}
@@ -131,7 +129,6 @@ export function TableroGrupos({ grupos, estudiantes, grupoId, onElegir, anio, va
                                 grupo={g}
                                 elegido={g.id === grupoId}
                                 conJornada={conJornada}
-                                retraso={40 + orden++ * 30}
                                 onClick={() => onElegir(g.id === grupoId ? null : g.id)}
                             />
                         ))}
@@ -142,19 +139,7 @@ export function TableroGrupos({ grupos, estudiantes, grupoId, onElegir, anio, va
     );
 }
 
-function Tarjeta({
-    grupo: g,
-    elegido,
-    conJornada,
-    retraso,
-    onClick,
-}: {
-    grupo: Grupo;
-    elegido: boolean;
-    conJornada: boolean;
-    retraso: number;
-    onClick: () => void;
-}) {
+function Tarjeta({ grupo: g, elegido, conJornada, onClick }: { grupo: Grupo; elegido: boolean; conJornada: boolean; onClick: () => void }) {
     const exceso = g.activos > g.cupos;
     const director = g.director ?? 'Sin director asignado';
     const corto = directorCorto(director);
@@ -167,12 +152,7 @@ function Tarjeta({
             aria-pressed={elegido}
             aria-label={`Grupo ${g.codigo}, ${g.sede}, jornada ${g.jornada}: ${g.activos} de ${g.cupos} cupos, ${nuevos}. Director ${director}`}
             title={`${g.codigo} · ${g.sede} · ${g.jornada}\n${g.activos} de ${g.cupos} cupos · ${nuevos}\nDirector: ${director}`}
-            style={{ animationDelay: `${retraso}ms` }}
-            className={cn(
-                tarjetaBase,
-                'animate-in fade-in slide-in-from-bottom-2 fill-mode-both duration-[420ms] ease-out motion-reduce:animate-none',
-                elegido ? tonoElegido : tonoNormal,
-            )}
+            className={cn(tarjetaBase, 'animate-in fade-in duration-150 ease-out motion-reduce:animate-none', elegido ? tonoElegido : tonoNormal)}
         >
             <span className="flex items-baseline gap-2">
                 <span

@@ -35,19 +35,24 @@ export function Casilla({
         if (ref.current) ref.current.indeterminate = intermedia;
     }, [intermedia]);
 
+    // La etiqueta agranda el área para el clic a 40 px sin mover la fila (-m-3): la casilla sola mide 16.
     return (
-        <input
-            ref={ref}
-            type="checkbox"
-            checked={marcada}
-            onChange={onCambio}
+        <label
+            className="-m-3 inline-flex cursor-pointer p-3 align-middle"
             // Marcar no abre la ficha…
             onClick={(ev) => ev.stopPropagation()}
             // …ni se lleva el foco con el mouse: ↑ ↓ siguen moviéndose entre filas. Con Tab sí se llega.
             onMouseDown={(ev) => ev.preventDefault()}
-            aria-label={etiqueta}
-            className="size-4 cursor-pointer align-middle accent-[#1E3A7B]"
-        />
+        >
+            <input
+                ref={ref}
+                type="checkbox"
+                checked={marcada}
+                onChange={onCambio}
+                aria-label={etiqueta}
+                className="size-4 cursor-pointer accent-[#1E3A7B]"
+            />
+        </label>
     );
 }
 

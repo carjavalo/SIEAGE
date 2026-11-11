@@ -1,11 +1,12 @@
 import { Desplegable } from '@/components/desplegable';
 import { ResultadosEsqueleto } from '@/components/esqueleto';
 import { Marca, Resaltado, iniciales } from '@/components/estudiantes/etiquetas';
+import { bordesDesvanecidos, useBordesDesplazables } from '@/hooks/use-bordes-desplazables';
 import { type Grado, type Resultado, type Sabatina, type SedeFiltro, gradoCorto, numero, palabras } from '@/lib/estudiantes';
 import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
 import { Search, X } from 'lucide-react';
-import { Fragment, type RefObject, useEffect, useState } from 'react';
+import { Fragment, type RefObject, useEffect, useRef, useState } from 'react';
 
 type Props = {
     anios: { id: number; anio: number; estado: string }[];
@@ -29,6 +30,13 @@ const alto = '[@media(min-height:860px)]';
 
 /** Primera franja: título con el año, grados en segmentos y búsqueda en toda la institución. */
 export function Cabecera({ anios, anio, sedes, sede, todasLasSedes, grados, gradoId, sabatina, totales, busqueda, entrada, onElegir }: Props) {
+    // En pantallas medianas los grados no caben: la franja se desplaza, se desvanece donde hay más
+    // y el grado elegido (p. ej. Sabatina, al final) siempre queda a la vista.
+    const franja = useRef<HTMLElement>(null);
+    useBordesDesplazables(franja);
+    useEffect(() => {
+        franja.current?.querySelector('[aria-current="page"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }, [gradoId, sabatina.elegida]);
     // Con una sola sede asignada no hay nada que elegir: se muestra su nombre.
     const unaSola = !todasLasSedes && sedes.length === 1;
     // Cambiar de año o de sede deja la pestaña en que se está (un grado o la sabatina); elegir un grado sale de la sabatina.
@@ -91,7 +99,7 @@ export function Cabecera({ anios, anio, sedes, sede, todasLasSedes, grados, grad
                             onClick={() => ir({ sede: null })}
                             aria-label="Quitar el filtro de sede"
                             title={todasLasSedes ? 'Ver todas las sedes' : 'Ver todas mis sedes'}
-                            className="-ml-1 flex size-[26px] cursor-pointer items-center justify-center rounded-full text-[#56627F] transition hover:bg-white hover:text-[#16223F]"
+                            className="relative -ml-1 flex size-[26px] cursor-pointer items-center justify-center rounded-full text-[#56627F] transition-colors after:absolute after:-inset-2 hover:bg-white hover:text-[#16223F]"
                         >
                             <X className="size-3.5" />
                         </button>
@@ -123,8 +131,11 @@ export function Cabecera({ anios, anio, sedes, sede, todasLasSedes, grados, grad
             </div>
 
             <nav
+                ref={franja}
                 aria-label="Grados"
-                className={`order-last flex h-11 w-full min-w-0 items-stretch gap-0.5 overflow-x-auto rounded-[16px] bg-[#D3DDF3]/45 p-1 ring-1 ring-white/70 [scrollbar-width:none] xl:order-none xl:w-auto xl:flex-1 ${alto}:h-[52px] ${alto}:rounded-[18px]`}
+                data-antes="false"
+                data-despues="false"
+                className={`order-last flex h-11 w-full min-w-0 items-stretch gap-0.5 overflow-x-auto rounded-[16px] bg-[#D3DDF3]/45 p-1 ring-1 ring-white/70 xl:order-none xl:w-auto xl:flex-1 ${alto}:h-[52px] ${alto}:rounded-[18px] ${bordesDesvanecidos}`}
             >
                 {grados.map((g, i) => {
                     const actual = !sabatina.elegida && g.id === gradoId;

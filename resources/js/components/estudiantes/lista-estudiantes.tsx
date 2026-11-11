@@ -88,7 +88,7 @@ export function ListaEstudiantes(p: Props) {
                                 title={o.titulo}
                                 onClick={() => p.onEstado(o.clave)}
                                 className={cn(
-                                    'focus-visible:outline-foco flex h-[30px] cursor-pointer items-center gap-1.5 rounded-[9px] px-2.5 text-sm font-medium whitespace-nowrap transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid',
+                                    'focus-visible:outline-foco flex h-[30px] cursor-pointer items-center gap-1.5 rounded-[8px] px-2.5 text-sm font-medium whitespace-nowrap transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid',
                                     activo ? 'bg-white text-[#1E3A7B] shadow-[0_1px_3px_rgba(22,34,63,0.12)]' : 'text-[#56627F] hover:text-[#16223F]',
                                 )}
                             >
@@ -145,7 +145,7 @@ export function ListaEstudiantes(p: Props) {
                                 p.campoFiltro.current?.focus();
                             }}
                             aria-label="Quitar el filtro de texto"
-                            className="absolute top-1/2 right-1.5 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-[#56627F] hover:bg-[#EEF2FB] hover:text-[#16223F]"
+                            className="absolute top-1/2 right-1.5 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-[#56627F] after:absolute after:-inset-1.5 hover:bg-[#EEF2FB] hover:text-[#16223F]"
                         >
                             <X className="size-4" />
                         </button>
@@ -241,7 +241,7 @@ function Alcance({
                             onClick={onQuitarGrupo}
                             aria-label="Quitar el filtro de grupo y ver todo el grado"
                             title="Ver todo el grado"
-                            className="flex size-6 cursor-pointer items-center justify-center rounded-full hover:bg-white"
+                            className="relative flex size-6 cursor-pointer items-center justify-center rounded-full after:absolute after:-inset-2 hover:bg-white"
                         >
                             <X className="size-3.5" />
                         </button>

@@ -3,6 +3,7 @@ import { Tecla, Vacio, td, th } from '@/components/estudiantes/lista-estudiantes
 import { VeloFicha } from '@/components/ficha';
 import { botonPrimario } from '@/components/formulario';
 import { EnLinea, MarcaActivo, PanelUsuario, type SedeOpcion, type Usuario } from '@/components/usuarios/panel-usuario';
+import { bordesDesvanecidos, useBordesDesplazables } from '@/hooks/use-bordes-desplazables';
 import PanelLayout from '@/layouts/panel-layout';
 import { palabras, plano } from '@/lib/estudiantes';
 import { puede } from '@/lib/permisos';
@@ -11,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { Search, ShieldCheck, UserPlus, X } from 'lucide-react';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 type FiltroEstado = 'activos' | 'desactivados' | 'todos';
 
@@ -64,22 +65,7 @@ export default function Usuarios({ usuarios, roles, sedes }: { usuarios: Usuario
 
     // En celular los roles no caben: la franja se desliza y se desvanece por el lado
     // en que queda algo más, para que se note que sigue.
-    useLayoutEffect(() => {
-        const f = franjaRoles.current;
-        if (!f) return;
-        const medir = () => {
-            f.dataset.antes = String(f.scrollLeft > 1);
-            f.dataset.despues = String(f.scrollLeft + f.clientWidth < f.scrollWidth - 1);
-        };
-        const observador = new ResizeObserver(medir);
-        observador.observe(f);
-        f.addEventListener('scroll', medir, { passive: true });
-        medir();
-        return () => {
-            observador.disconnect();
-            f.removeEventListener('scroll', medir);
-        };
-    }, []);
+    useBordesDesplazables(franjaRoles);
 
     return (
         <PanelLayout titulo="Usuarios" completa>
@@ -105,7 +91,7 @@ export default function Usuarios({ usuarios, roles, sedes }: { usuarios: Usuario
                     aria-label="Roles"
                     data-antes="false"
                     data-despues="false"
-                    className={`order-last flex h-11 w-full min-w-0 snap-x scroll-px-1 items-stretch gap-0.5 overflow-x-auto rounded-[16px] bg-[#D3DDF3]/45 p-1 ring-1 ring-white/70 [--antes:#000] [--despues:#000] [mask-image:linear-gradient(to_right,var(--antes),#000_40px,#000_calc(100%-40px),var(--despues))] [scrollbar-width:none] data-[antes=true]:[--antes:transparent] data-[despues=true]:[--despues:transparent] xl:order-none xl:w-auto xl:flex-1 ${alto}:h-[52px] ${alto}:rounded-[18px]`}
+                    className={`order-last flex h-11 w-full min-w-0 snap-x scroll-px-1 items-stretch gap-0.5 overflow-x-auto rounded-[16px] bg-[#D3DDF3]/45 p-1 ring-1 ring-white/70 ${bordesDesvanecidos} xl:order-none xl:w-auto xl:flex-1 ${alto}:h-[52px] ${alto}:rounded-[18px]`}
                 >
                     {[
                         { id: null, nombre: null, etiqueta: null } as { id: number | null; nombre: string | null; etiqueta: string | null },

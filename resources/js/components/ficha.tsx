@@ -124,7 +124,7 @@ export function ContenidoFicha({
                 <div className="flex items-center gap-2">
                     <Link
                         href={accion.href}
-                        className="group/btn focus-visible:outline-foco flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-[13px] bg-[#1E3A7B] px-3 text-[14px] font-semibold whitespace-nowrap text-white transition hover:bg-[#172E63] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid active:scale-[0.99]"
+                        className="group/btn focus-visible:outline-foco flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-[13px] bg-[#1E3A7B] px-3 text-[14px] font-semibold whitespace-nowrap text-white transition hover:bg-[#172E63] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid active:scale-[0.96]"
                     >
                         <Icono className="size-[18px] shrink-0 transition-transform group-hover/btn:-translate-y-px" />
                         <span className="truncate">{accion.texto}</span>
@@ -183,7 +183,7 @@ export function EncabezadoFicha({
                     onClick={onCerrar}
                     aria-label="Cerrar (Esc)"
                     title="Cerrar (Esc)"
-                    className="flex size-8 cursor-pointer items-center justify-center rounded-full bg-white/70 text-[#3E4A68] transition hover:bg-white hover:text-[#16223F]"
+                    className="relative flex size-8 cursor-pointer items-center justify-center rounded-full bg-white/70 text-[#3E4A68] transition-colors after:absolute after:-inset-1 hover:bg-white hover:text-[#16223F]"
                 >
                     <X className="size-4" />
                 </button>
