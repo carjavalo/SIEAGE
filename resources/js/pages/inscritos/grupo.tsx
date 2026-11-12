@@ -18,6 +18,8 @@ type Props = FichaInscrito & {
     anios: { anio: number; estado: 'activo' | 'planeado' }[];
     gradoNumero: number;
     grupos: Grupo[];
+    /** Los ciclos de la jornada sabatina del año (de cualquier grado): el formulario no los ofrece. */
+    ciclos: Grupo[];
     /** Si el estudiante (por su documento) ya tiene matrícula ese año. */
     matriculaExistente: {
         estado: string;
@@ -39,7 +41,8 @@ function cupo(libres: number) {
 
 /**
  * Tercer paso para matricular a un inscrito: elegir el grupo, dentro del
- * grado que pidió la familia, viendo cuántos estudiantes tiene cada uno.
+ * grado que pidió la familia, viendo cuántos estudiantes tiene cada uno; o un
+ * ciclo de la jornada sabatina (Ciclo VI → Undécimo), que el formulario no ofrece.
  */
 export default function ElegirGrupo({
     solicitud: s,
@@ -50,6 +53,7 @@ export default function ElegirGrupo({
     anios,
     gradoNumero,
     grupos: gruposServidor,
+    ciclos: ciclosServidor,
     matriculaExistente: existente,
     edad,
 }: Props) {
@@ -70,11 +74,85 @@ export default function ElegirGrupo({
                 ),
         [gruposServidor],
     );
-    const variasSedes = new Set(grupos.map((g) => g.sede_codigo)).size > 1;
+    // Los ciclos ya vienen en orden (Ciclo I… Ciclo VI).
+    const ciclos = useMemo(
+        () => ciclosServidor.map((g) => ({ ...g, activos: Number(g.activos), nuevos: Number(g.nuevos), cupos: Number(g.cupos) })),
+        [ciclosServidor],
+    );
+    // Con los ciclos: si el mismo ciclo está en dos sedes, cada tarjeta dice la suya.
+    const variasSedes = new Set([...grupos, ...ciclos].map((g) => g.sede_codigo)).size > 1;
     const variasJornadas = new Set(grupos.map((g) => g.jornada)).size > 1;
     // El que tiene más cupos libres lleva una marca, para decidir rápido.
     const masLibre = grupos.reduce<(typeof grupos)[number] | null>((m, g) => (g.cupos - g.activos > (m ? m.cupos - m.activos : 0) ? g : m), null);
-    const elegido = grupos.find((g) => g.id === form.data.grupo_id);
+    const elegido = grupos.find((g) => g.id === form.data.grupo_id) ?? ciclos.find((g) => g.id === form.data.grupo_id);
+    const hayAlguno = grupos.length > 0 || ciclos.length > 0;
+
+    /** La tarjeta de un grupo (o un ciclo) para elegirlo. `conMarca`: puede llevar la marca «Más cupos». */
+    const tarjetaGrupo = (g: (typeof grupos)[number], conMarca: boolean) => {
+        const libres = g.cupos - g.activos;
+        const estadoCupo = cupo(libres);
+        const activo = g.id === form.data.grupo_id;
+        return (
+            <button
+                key={g.id}
+                type="button"
+                role="radio"
+                aria-checked={activo}
+                onClick={() => form.setData('grupo_id', g.id)}
+                className={cn(
+                    'focus-visible:outline-foco relative flex cursor-pointer flex-col rounded-[22px] bg-white p-4 text-left transition duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid',
+                    activo ? 'bg-[#F7F9FF] ring-2 ring-[#1E3A7B]' : 'ring-1 ring-[#E3E9F6] hover:-translate-y-0.5 hover:ring-[#C4D2F1]',
+                )}
+            >
+                {activo && (
+                    <span className="absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full bg-[#1E3A7B] text-white shadow-sm">
+                        <Check className="size-3.5" strokeWidth={3} />
+                    </span>
+                )}
+                <span className="flex items-start justify-between gap-3">
+                    <span className="min-w-0">
+                        <span className="block text-[28px] leading-8 font-semibold tracking-[-0.02em]">{g.codigo}</span>
+                        <span className="mt-0.5 flex items-center gap-1.5 text-[13px] text-[#56627F]">
+                            {variasSedes && (
+                                <>
+                                    <PuntoSede codigo={g.sede_codigo} />
+                                    <span className="truncate" title={g.sede}>
+                                        {sedeInfo(g.sede_codigo).corto}
+                                    </span>
+                                    <span aria-hidden>·</span>
+                                </>
+                            )}
+                            <span className={cn(variasJornadas && g.jornada === 'Tarde' && 'font-medium text-[#8A5A0B]')}>{g.jornada}</span>
+                        </span>
+                    </span>
+                    <span className="shrink-0 text-right">
+                        <span className="block leading-8 tabular-nums">
+                            <b className={cn('text-[28px] font-semibold tracking-[-0.02em]', libres < 0 ? 'text-[#B42318]' : 'text-[#16223F]')}>
+                                {g.activos}
+                            </b>
+                            <span className="text-[16px] text-[#56627F]">/{g.cupos}</span>
+                        </span>
+                        <span className="block text-[12px] text-[#5E6983]">estudiantes</span>
+                    </span>
+                </span>
+                <Barra grupo={g} elegido={false} className="mt-3 h-2 [@media(min-height:860px)]:mt-3 [@media(min-height:860px)]:h-2" />
+                <span className="mt-2.5 flex items-baseline justify-between gap-2 text-[14px]">
+                    <span className={cn('font-semibold', estadoCupo.color)}>{estadoCupo.texto}</span>
+                    <span className="text-[13px] text-[#56627F] tabular-nums">
+                        {g.nuevos} nuevo{g.nuevos === 1 ? '' : 's'}
+                    </span>
+                </span>
+                <span className="mt-1 flex items-center justify-between gap-2 text-[13px] text-[#3E4A68]">
+                    <span className="min-w-0 truncate">
+                        <span className="text-[#5E6983]">Dir.</span> {g.director ?? 'Sin director asignado'}
+                    </span>
+                    {conMarca && masLibre?.id === g.id && (
+                        <span className="shrink-0 rounded-full bg-[#E3F4EC] px-2 py-0.5 text-[12px] font-medium text-[#1C6B4A]">Más cupos</span>
+                    )}
+                </span>
+            </button>
+        );
+    };
 
     const matricular = () => {
         if (!elegido) return;
@@ -82,7 +160,9 @@ export default function ElegirGrupo({
             onSuccess: () =>
                 sileo.success({
                     title: `${s.sexo === 'F' ? 'Matriculada' : 'Matriculado'} en ${elegido.codigo}`,
-                    description: `${nombre} ya aparece en Estudiantes, ${s.grado}.`,
+                    description: ciclos.includes(elegido)
+                        ? `${nombre} ya aparece en Estudiantes, pestaña Sabatina.`
+                        : `${nombre} ya aparece en Estudiantes, ${s.grado}.`,
                 }),
             onError: (e) => sileo.warning({ title: 'No se pudo matricular', description: e.grupo_id ?? 'Revisa los datos e inténtalo de nuevo.' }),
         });
@@ -230,12 +310,16 @@ export default function ElegirGrupo({
                         )}
 
                         {grupos.length === 0 ? (
-                            <div className={cn(tarjeta, 'mt-5 px-6 py-12 text-center')}>
+                            <div className={cn(tarjeta, 'mt-5 px-6 py-8 text-center')}>
                                 <p className="text-[16px] font-semibold">
                                     No hay grupos de {s.grado}
                                     {anio ? ` en ${anio}` : ''}
                                 </p>
-                                <p className="mt-1 text-sm text-[#56627F]">Hay que crear los grupos del grado antes de matricular.</p>
+                                <p className="mt-1 text-sm text-[#56627F]">
+                                    {ciclos.length > 0
+                                        ? 'Se puede matricular en un ciclo de la jornada sabatina (abajo) o crear antes los grupos del grado.'
+                                        : 'Hay que crear los grupos del grado antes de matricular.'}
+                                </p>
                             </div>
                         ) : (
                             <div
@@ -243,90 +327,30 @@ export default function ElegirGrupo({
                                 aria-labelledby="titulo-grupos"
                                 className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
                             >
-                                {grupos.map((g) => {
-                                    const libres = g.cupos - g.activos;
-                                    const estadoCupo = cupo(libres);
-                                    const activo = g.id === form.data.grupo_id;
-                                    return (
-                                        <button
-                                            key={g.id}
-                                            type="button"
-                                            role="radio"
-                                            aria-checked={activo}
-                                            onClick={() => form.setData('grupo_id', g.id)}
-                                            className={cn(
-                                                'focus-visible:outline-foco relative flex cursor-pointer flex-col rounded-[22px] bg-white p-4 text-left transition duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid',
-                                                activo
-                                                    ? 'bg-[#F7F9FF] ring-2 ring-[#1E3A7B]'
-                                                    : 'ring-1 ring-[#E3E9F6] hover:-translate-y-0.5 hover:ring-[#C4D2F1]',
-                                            )}
-                                        >
-                                            {activo && (
-                                                <span className="absolute -top-2 -right-2 flex size-6 items-center justify-center rounded-full bg-[#1E3A7B] text-white shadow-sm">
-                                                    <Check className="size-3.5" strokeWidth={3} />
-                                                </span>
-                                            )}
-                                            <span className="flex items-start justify-between gap-3">
-                                                <span className="min-w-0">
-                                                    <span className="block text-[28px] leading-8 font-semibold tracking-[-0.02em]">{g.codigo}</span>
-                                                    <span className="mt-0.5 flex items-center gap-1.5 text-[13px] text-[#56627F]">
-                                                        {variasSedes && (
-                                                            <>
-                                                                <PuntoSede codigo={g.sede_codigo} />
-                                                                <span className="truncate" title={g.sede}>
-                                                                    {sedeInfo(g.sede_codigo).corto}
-                                                                </span>
-                                                                <span aria-hidden>·</span>
-                                                            </>
-                                                        )}
-                                                        <span className={cn(variasJornadas && g.jornada === 'Tarde' && 'font-medium text-[#8A5A0B]')}>
-                                                            {g.jornada}
-                                                        </span>
-                                                    </span>
-                                                </span>
-                                                <span className="shrink-0 text-right">
-                                                    <span className="block leading-8 tabular-nums">
-                                                        <b
-                                                            className={cn(
-                                                                'text-[28px] font-semibold tracking-[-0.02em]',
-                                                                libres < 0 ? 'text-[#B42318]' : 'text-[#16223F]',
-                                                            )}
-                                                        >
-                                                            {g.activos}
-                                                        </b>
-                                                        <span className="text-[16px] text-[#56627F]">/{g.cupos}</span>
-                                                    </span>
-                                                    <span className="block text-[12px] text-[#5E6983]">estudiantes</span>
-                                                </span>
-                                            </span>
-                                            <Barra
-                                                grupo={g}
-                                                elegido={false}
-                                                className="mt-3 h-2 [@media(min-height:860px)]:mt-3 [@media(min-height:860px)]:h-2"
-                                            />
-                                            <span className="mt-2.5 flex items-baseline justify-between gap-2 text-[14px]">
-                                                <span className={cn('font-semibold', estadoCupo.color)}>{estadoCupo.texto}</span>
-                                                <span className="text-[13px] text-[#56627F] tabular-nums">
-                                                    {g.nuevos} nuevo{g.nuevos === 1 ? '' : 's'}
-                                                </span>
-                                            </span>
-                                            <span className="mt-1 flex items-center justify-between gap-2 text-[13px] text-[#3E4A68]">
-                                                <span className="min-w-0 truncate">
-                                                    <span className="text-[#5E6983]">Dir.</span> {g.director ?? 'Sin director asignado'}
-                                                </span>
-                                                {masLibre?.id === g.id && grupos.length > 1 && (
-                                                    <span className="shrink-0 rounded-full bg-[#E3F4EC] px-2 py-0.5 text-[12px] font-medium text-[#1C6B4A]">
-                                                        Más cupos
-                                                    </span>
-                                                )}
-                                            </span>
-                                        </button>
-                                    );
-                                })}
+                                {grupos.map((g) => tarjetaGrupo(g, grupos.length > 1))}
                             </div>
                         )}
 
-                        {grupos.length > 0 && (
+                        {ciclos.length > 0 && (
+                            <div className="mt-8">
+                                <h3 id="titulo-ciclos" className="text-[17px] font-semibold tracking-[-0.01em]">
+                                    O en un ciclo de la jornada sabatina
+                                </h3>
+                                <p className="mt-1 text-[14px] text-[#56627F]">
+                                    Para jóvenes y adultos. El ciclo define el grado: queda en el último que abarca (Ciclo V → Décimo, Ciclo VI →
+                                    Undécimo).
+                                </p>
+                                <div
+                                    role="radiogroup"
+                                    aria-labelledby="titulo-ciclos"
+                                    className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
+                                >
+                                    {ciclos.map((g) => tarjetaGrupo(g, false))}
+                                </div>
+                            </div>
+                        )}
+
+                        {hayAlguno && (
                             <div className="sticky bottom-4 z-10 mt-6 flex flex-wrap items-center justify-end gap-3 rounded-[18px] border border-[#E3E9F6] bg-white/90 p-2.5 pl-4 backdrop-blur">
                                 <p className="mr-auto min-w-0 text-[14px] text-[#56627F]">
                                     {form.errors.grupo_id ? (

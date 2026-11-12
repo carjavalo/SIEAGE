@@ -444,6 +444,50 @@ class InscritosTest extends TestCase
         $this->assertSame(SolicitudInscripcion::APROBADA, $this->solicitud->fresh()->estado);
     }
 
+    public function test_quien_estaba_cancelado_en_otro_grado_vuelve_a_un_ciclo_sin_chocar_su_numero_de_ficha()
+    {
+        // Estaba en 7-1 con la ficha 5 y quedó cancelado; en el grado del ciclo otro ya tiene la ficha 5.
+        $matricula = $this->yaMatriculadoEsteAnio('cancelado', '7-1');
+        DB::table('matriculas')->where('id', $matricula)->update(['consecutivo' => 5]);
+        $g = DB::table('grupos')->where('codigo', '7-1')->first();
+        $undecimo = DB::table('grados')->where('numero', 11)->value('id');
+        $cicloVI = DB::table('grupos')->insertGetId(['anio_lectivo_id' => $g->anio_lectivo_id, 'sede_id' => $g->sede_id, 'grado_id' => $undecimo,
+            'numero' => 1, 'codigo' => 'Ciclo VI', 'jornada' => 'Sabatina', 'cupos_proyectados' => 25]);
+        $otro = DB::table('estudiantes')->insertGetId(['tipo_documento' => 'T.I.', 'numero_documento' => '1109555999', 'nombre_completo' => 'Otro Estudiante']);
+        DB::table('matriculas')->insert(['estudiante_id' => $otro, 'anio_lectivo_id' => $g->anio_lectivo_id, 'grado_id' => $undecimo, 'grupo_id' => $cicloVI,
+            'sede_id' => $g->sede_id, 'condicion' => 'antiguo', 'estado' => 'activo', 'consecutivo' => 5]);
+        $usuario = User::factory()->create();
+        $this->actingAs($usuario)->put("/inscritos/{$this->solicitud->id}/padres", $this->padres());
+
+        // El paso del grupo ofrece los ciclos aparte, aunque la familia haya pedido séptimo.
+        $this->actingAs($usuario)->get("/inscritos/{$this->solicitud->id}/grupo")->assertInertia(fn (Assert $page) => $page
+            ->where('grupos', fn ($x) => collect($x)->pluck('codigo')->sort()->values()->all() === ['7-1', '7-2'])
+            ->where('ciclos', fn ($x) => collect($x)->pluck('codigo')->all() === ['Ciclo VI']));
+
+        // Se matricula en el Ciclo VI: misma matrícula, en Undécimo, jornada sabatina y sin la ficha 5 (se renumera al imprimir).
+        $this->actingAs($usuario)->post("/inscritos/{$this->solicitud->id}/matricular", ['grupo_id' => $cicloVI])->assertSessionHasNoErrors();
+        $m = DB::table('matriculas')->find($matricula);
+        $this->assertSame(['activo', $cicloVI, $undecimo, 'Sabatina', null], [$m->estado, (int) $m->grupo_id, (int) $m->grado_id, $m->jornada, $m->consecutivo]);
+
+        // Un grupo regular de otro grado sigue sin poderse.
+        $otra = $this->solicitud->replicate();
+        $otra->forceFill(['numero_documento' => '1109555777', 'estado' => SolicitudInscripcion::PENDIENTE, 'matricula_id' => null])->save();
+        $this->actingAs($usuario)->put("/inscritos/{$otra->id}/padres", $this->padres());
+        $this->actingAs($usuario)->post("/inscritos/{$otra->id}/matricular", ['grupo_id' => DB::table('grupos')->where('codigo', '8-1')->value('id')])
+            ->assertSessionHasErrors(['grupo_id' => 'Ese grupo no es del grado que pidió la familia.']);
+    }
+
+    public function test_quien_vuelve_a_su_mismo_grado_conserva_su_numero_de_ficha()
+    {
+        $matricula = $this->yaMatriculadoEsteAnio('retirado', '7-1');
+        DB::table('matriculas')->where('id', $matricula)->update(['consecutivo' => 7]);
+        $usuario = User::factory()->create();
+        $this->actingAs($usuario)->put("/inscritos/{$this->solicitud->id}/padres", $this->padres());
+        $this->actingAs($usuario)->post("/inscritos/{$this->solicitud->id}/matricular", ['grupo_id' => DB::table('grupos')->where('codigo', '7-2')->value('id')])
+            ->assertSessionHasNoErrors();
+        $this->assertSame(7, (int) DB::table('matriculas')->where('id', $matricula)->value('consecutivo'));
+    }
+
     public function test_quien_ya_esta_activo_este_anio_no_se_matricula_otra_vez()
     {
         $this->yaMatriculadoEsteAnio('activo', '7-1');

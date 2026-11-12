@@ -6,6 +6,7 @@ use App\Models\Padre;
 use App\Models\SolicitudInscripcion;
 use App\Support\Alcance;
 use App\Support\Barrios;
+use App\Support\Ciclos;
 use App\Support\Documentos;
 use App\Support\Edades;
 use App\Support\Grupos;
@@ -177,7 +178,9 @@ class InscritoController extends Controller
 
     /**
      * Tercer paso: elegir el grupo, dentro del grado que pidió la familia,
-     * viendo cuántos estudiantes tiene cada uno.
+     * viendo cuántos estudiantes tiene cada uno. Aparte, los ciclos de la jornada
+     * sabatina (de cualquier grado): el formulario no ofrece undécimo ni ciclos, y
+     * un joven o adulto que va al Ciclo VI se inscribe en otro grado.
      */
     public function grupo(Request $request, SolicitudInscripcion $solicitud): Response
     {
@@ -191,8 +194,10 @@ class InscritoController extends Controller
             'anio' => DB::table('anios_lectivos')->where('id', $anioId)->value('anio'),
             'anios' => $anios->map(fn ($a) => ['anio' => (int) $a->anio, 'estado' => $a->estado])->values(),
             'gradoNumero' => DB::table('grados')->where('id', $solicitud->grado_id)->value('numero'),
-            // Solo los grupos de las sedes del usuario.
-            'grupos' => Alcance::soloGruposVisibles(Grupos::conOcupacion($anioId, $solicitud->grado_id, Alcance::sedesDelGrado(request()->user(), (int) $solicitud->grado_id)), request()->user()),
+            // Solo los grupos de las sedes del usuario; los ciclos van aparte.
+            'grupos' => Alcance::soloGruposVisibles(Grupos::conOcupacion($anioId, $solicitud->grado_id, Alcance::sedesDelGrado(request()->user(), (int) $solicitud->grado_id)), request()->user())
+                ->where('jornada', '!=', Ciclos::JORNADA)->values(),
+            'ciclos' => Grupos::sabatinos($anioId, fn ($q) => Alcance::filtrar($q, request()->user(), 'g.sede_id', 'g.grado_id')),
             // Si ya está en la institución este año (por su documento): activo, no se matricula otra vez; retirado, se reactiva.
             'matriculaExistente' => $solicitud->estado === SolicitudInscripcion::PENDIENTE
                 ? $this->matriculaDelAnio(DB::table('estudiantes')->where('numero_documento', $solicitud->numero_documento)->value('id'), $anioId)
@@ -218,7 +223,7 @@ class InscritoController extends Controller
             ->join('grados as gr', 'gr.id', '=', 'm.grado_id')
             ->where('m.estudiante_id', $estudianteId)
             ->where('m.anio_lectivo_id', $anioId)
-            ->first(['m.id', 'm.estado', 'm.observaciones', 'g.codigo as grupo', 'gr.nombre as grado', 'm.fecha_retiro', 'm.motivo_retiro']);
+            ->first(['m.id', 'm.estado', 'm.observaciones', 'm.grado_id', 'm.sede_id', 'g.codigo as grupo', 'gr.nombre as grado', 'm.fecha_retiro', 'm.motivo_retiro']);
     }
 
     /**
@@ -233,9 +238,12 @@ class InscritoController extends Controller
             'grupo_id' => [
                 'required',
                 'integer',
-                // Del grado que pidió la familia, en el año en curso o en uno siguiente ya creado.
-                Rule::exists('grupos', 'id')->where('grado_id', $solicitud->grado_id)->whereIn('anio_lectivo_id', $this->aniosParaMatricular()->pluck('id')->all())
-                    ->when(! Alcance::todas($request->user()), fn ($r) => $r->whereIn('sede_id', Alcance::sedesDelGrado($request->user(), (int) $solicitud->grado_id))),
+                // Del grado que pidió la familia (o un ciclo de la jornada sabatina, de cualquier
+                // grado), en el año en curso o en uno siguiente ya creado. Lo que ve el usuario se
+                // revisa abajo, con el grado del grupo elegido.
+                Rule::exists('grupos', 'id')
+                    ->where(fn ($q) => $q->where('grado_id', $solicitud->grado_id)->orWhere('jornada', Ciclos::JORNADA))
+                    ->whereIn('anio_lectivo_id', $this->aniosParaMatricular()->pluck('id')->all()),
             ],
         ], [
             'grupo_id.required' => 'Elige el grupo.',
@@ -325,7 +333,8 @@ class InscritoController extends Controller
             DB::table('padres')->where('solicitud_inscripcion_id', $s->id)->whereNotIn('parentesco', $yaTiene)->update(['estudiante_id' => $estudianteId]);
 
             $nueva = [
-                'grado_id' => $s->grado_id,
+                // El del grupo: el que pidió la familia o, en un ciclo, el último grado del ciclo (Ciclo VI → Undécimo).
+                'grado_id' => $grupo->grado_id,
                 'grupo_id' => $grupo->id,
                 'sede_id' => $grupo->sede_id,
                 'jornada' => $grupo->jornada,
@@ -342,8 +351,13 @@ class InscritoController extends Controller
             ];
             if ($existente) {
                 // Vuelve después de retirarse este mismo año: se reactiva su matrícula, sin el retiro.
+                // En otro grado o sede, su número de ficha (consecutivo, único por año, grado y sede) ya
+                // no le corresponde y puede ser el de otro: se limpia y se renumera al imprimir la
+                // constancia (si no, la base lo rechaza como repetido y la página da error 500).
+                $otroLugar = (int) $existente->grado_id !== (int) $grupo->grado_id || (int) $existente->sede_id !== (int) $grupo->sede_id;
                 DB::table('matriculas')->where('id', $existente->id)->update([
                     ...$nueva,
+                    ...($otroLugar ? ['consecutivo' => null] : []),
                     'resultado' => null,
                     'fecha_retiro' => null,
                     'motivo_retiro' => null,
